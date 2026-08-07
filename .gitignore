@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.sqlite3-*
+.env
+.env.*
+*.gguf
+*.bin
+*.onnx
+SELMA0_ANDROID_AGENT_V1/selma0_data_android_v1/
