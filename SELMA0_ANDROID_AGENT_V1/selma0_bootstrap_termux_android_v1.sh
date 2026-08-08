@@ -5,11 +5,12 @@ SELMA0_HOME_V1="$HOME/SELMA0_ANDROID_AGENT_V1"
 mkdir -p "$SELMA0_HOME_V1"
 
 pkg update -y
-pkg install -y python git
+pkg install -y python git termux-api
 
 cp -f "$(dirname "$0")/selma0_runtime_android_v1.py" "$SELMA0_HOME_V1/selma0_runtime_android_v1.py"
 cp -f "$(dirname "$0")/selma0_llm_router_android_v1.py" "$SELMA0_HOME_V1/selma0_llm_router_android_v1.py"
 cp -f "$(dirname "$0")/selma0_memory_android_v1.py" "$SELMA0_HOME_V1/selma0_memory_android_v1.py"
+cp -f "$(dirname "$0")/selma0_safety_guardian_android_v1.py" "$SELMA0_HOME_V1/selma0_safety_guardian_android_v1.py"
 
 cat > "$SELMA0_HOME_V1/selma0_start_android_v1.sh" <<'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
@@ -24,3 +25,4 @@ echo "Selma.0 Android Agent V1 installed at: $SELMA0_HOME_V1"
 echo "Start: $SELMA0_HOME_V1/selma0_start_android_v1.sh"
 echo "UI: http://127.0.0.1:8765"
 echo "Offline LLM default endpoint: http://127.0.0.1:8080/v1"
+echo "Safety Guardian deployed. Termux:API Android companion app permissions are still required for location, notifications, Wi-Fi info, and SMS actions."
