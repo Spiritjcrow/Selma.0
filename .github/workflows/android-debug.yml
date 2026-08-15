@@ -1,31 +1,40 @@
 name: Build Selma Android APK
-on:
-  workflow_dispatch:
+"on":
+  workflow_dispatch: {}
   push:
-    branches: [codex/selma-android-installable]
+    branches:
+      - codex/selma-android-installable
     paths:
-      - "android/**"
-      - ".github/workflows/android-debug.yml"
+      - android/**
+      - .github/workflows/android-debug.yml
+
 permissions:
   contents: read
+
 jobs:
   build:
+    name: Assemble debug APK
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
-      - uses: android-actions/setup-android@v3
-      - uses: gradle/actions/setup-gradle@v4
+          java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Set up Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.7"
+          gradle-version: '8.7'
       - name: Build debug-signed APK
         working-directory: android
         run: gradle --no-daemon assembleDebug
-      - uses: actions/upload-artifact@v4
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: Selma-Android-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
