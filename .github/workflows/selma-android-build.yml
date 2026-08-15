@@ -1,0 +1,42 @@
+name: Selma Android Build
+"on":
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/selma-android-build.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Assemble Selma debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out approved Android branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/selma-android-installable
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Set up Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Build debug-signed APK
+        working-directory: android
+        run: gradle --no-daemon assembleDebug
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Selma-Android-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
