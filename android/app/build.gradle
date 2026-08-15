@@ -1,0 +1,13 @@
+plugins { id 'com.android.application' }
+android {
+  namespace 'com.selma.universal'
+  compileSdk 35
+  defaultConfig {
+    applicationId 'com.selma.universal'
+    minSdk 23
+    targetSdk 35
+    versionCode 1
+    versionName '1.0.0-universal-alpha'
+  }
+}
+dependencies { implementation 'androidx.core:core:1.13.1' }
