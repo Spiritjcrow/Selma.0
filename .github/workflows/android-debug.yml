@@ -1,4 +1,5 @@
 name: Build Selma Android APK
+# Permissions verified; revision 1
 "on":
   workflow_dispatch: {}
   push:
