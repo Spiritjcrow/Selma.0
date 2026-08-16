@@ -1,6 +1,6 @@
 {
   "name": "replika_migration_v1",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Import user-authorized Replika exports into Selma memory with provenance, deduplication, local SSH/stdin stream staging, and no private-endpoint scraping.",
   "provider": "replika",
   "capabilities": [
@@ -25,12 +25,12 @@
   "tools": [
     {
       "name": "replika.preview_archive",
-      "risk": "read_local",
+      "risk": "read",
       "requires_approval": false
     },
     {
       "name": "replika.import_archive",
-      "risk": "write_local_data",
+      "risk": "write",
       "requires_approval": true
     }
   ]
