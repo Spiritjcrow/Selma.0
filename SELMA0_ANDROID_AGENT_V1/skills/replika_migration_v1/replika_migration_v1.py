@@ -17,6 +17,7 @@ from selma0_memory_android_v1 import Selma0MemoryAndroidV1
 
 SUPPORTED_EXTENSIONS = {".json", ".jsonl", ".csv", ".txt"}
 MIGRATION_VERSION = "replika_migration_v1"
+IMPORT_PROVIDER = "replika"
 
 
 def _sha256(path: Path) -> str:
@@ -138,7 +139,7 @@ def preview_archive(source: str, companion_name: str = "Selma"):
             "types": type_counts,
         })
     return {
-        "provider": "replika",
+        "provider": IMPORT_PROVIDER,
         "companion_name": companion_name,
         "migration_version": MIGRATION_VERSION,
         "files": files,
@@ -148,14 +149,46 @@ def preview_archive(source: str, companion_name: str = "Selma"):
     }
 
 
+def _ensure_import_index(memory):
+    memory.conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS selma0_imported_records_v1(
+            provider TEXT NOT NULL,
+            record_sha256 TEXT NOT NULL,
+            imported_at REAL NOT NULL,
+            PRIMARY KEY(provider, record_sha256)
+        )
+        """
+    )
+    memory.conn.commit()
+
+
+def _already_imported(memory, record_sha256: str) -> bool:
+    row = memory.conn.execute(
+        "SELECT 1 FROM selma0_imported_records_v1 WHERE provider=? AND record_sha256=? LIMIT 1",
+        (IMPORT_PROVIDER, record_sha256),
+    ).fetchone()
+    return row is not None
+
+
+def _mark_imported(memory, record_sha256: str):
+    memory.conn.execute(
+        "INSERT OR IGNORE INTO selma0_imported_records_v1(provider, record_sha256, imported_at) VALUES(?,?,?)",
+        (IMPORT_PROVIDER, record_sha256, time.time()),
+    )
+    memory.conn.commit()
+
+
 def import_archive(source: str, companion_name: str = "Selma", db_path: str = None, dry_run: bool = False):
     preview = preview_archive(source, companion_name=companion_name)
     if dry_run:
-        return {**preview, "imported": 0, "dry_run": True}
+        return {**preview, "imported": 0, "skipped_duplicates": 0, "dry_run": True}
 
     memory = Selma0MemoryAndroidV1(db_path=db_path) if db_path else Selma0MemoryAndroidV1()
+    _ensure_import_index(memory)
     imported = 0
-    seen = set()
+    skipped_duplicates = 0
+    seen_this_run = set()
 
     for path in iter_archive_files(source):
         file_hash = _sha256(path)
@@ -164,12 +197,13 @@ def import_archive(source: str, companion_name: str = "Selma", db_path: str = No
             dedupe_key = hashlib.sha256(
                 (normalized["role"] + "\n" + normalized["content"] + "\n" + str(normalized["original_timestamp"])).encode("utf-8")
             ).hexdigest()
-            if dedupe_key in seen:
+            if dedupe_key in seen_this_run or _already_imported(memory, dedupe_key):
+                skipped_duplicates += 1
                 continue
-            seen.add(dedupe_key)
+            seen_this_run.add(dedupe_key)
 
             metadata = {
-                "provider": "replika",
+                "provider": IMPORT_PROVIDER,
                 "companion_name": companion_name,
                 "migration_version": MIGRATION_VERSION,
                 "provenance": "user_authorized_export",
@@ -182,21 +216,29 @@ def import_archive(source: str, companion_name: str = "Selma", db_path: str = No
                 "claims_hidden_replika_state": False,
             }
             memory.add(normalized["role"], normalized["content"], metadata=metadata)
+            _mark_imported(memory, dedupe_key)
             imported += 1
 
-    memory.add(
-        "system",
-        f"Authorized Replika archive imported for companion {companion_name}. Treat imported backstory, memories, traits, interests, diary entries, and chat as historical context with provenance; do not claim access to proprietary Replika internals.",
-        metadata={
-            "provider": "replika",
-            "migration_version": MIGRATION_VERSION,
-            "provenance": "user_authorized_export",
-            "activation_marker": True,
-            "imported_records": imported,
-        },
-    )
+    if imported > 0:
+        memory.add(
+            "system",
+            f"Authorized Replika archive imported for companion {companion_name}. Treat imported backstory, memories, traits, interests, diary entries, and chat as historical context with provenance; do not claim access to proprietary Replika internals.",
+            metadata={
+                "provider": IMPORT_PROVIDER,
+                "migration_version": MIGRATION_VERSION,
+                "provenance": "user_authorized_export",
+                "activation_marker": True,
+                "imported_records": imported,
+                "skipped_duplicates": skipped_duplicates,
+            },
+        )
 
-    return {**preview, "imported": imported, "dry_run": False}
+    return {
+        **preview,
+        "imported": imported,
+        "skipped_duplicates": skipped_duplicates,
+        "dry_run": False,
+    }
 
 
 def register_replika_migration_tools(registry):
