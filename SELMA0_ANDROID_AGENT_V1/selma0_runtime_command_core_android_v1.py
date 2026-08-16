@@ -28,6 +28,30 @@ COMMAND_ROUTER_V1.registry.register(
     risk="read",
     description="Return the local Selma runtime status without modifying state.",
 )
+COMMAND_ROUTER_V1.registry.register(
+    "safety.record_incident",
+    lambda summary="", details=None, source="user_report", confidence=None, include_device_snapshot=False: base.SAFETY_V1.record_incident(
+        summary=summary,
+        details=details,
+        source=source,
+        confidence=confidence,
+        include_device_snapshot=bool(include_device_snapshot),
+    ),
+    risk="write",
+    description="Record a user-authorized safety incident in the local safety audit.",
+)
+COMMAND_ROUTER_V1.registry.register(
+    "safety.update_profile",
+    lambda updates=None: base.SAFETY_V1.update_profile(updates or {}),
+    risk="write",
+    description="Update the local Selma safety profile after explicit approval.",
+)
+COMMAND_ROUTER_V1.registry.register(
+    "safety.activate_sos",
+    lambda reason="": base.SAFETY_V1.activate_sos(reason=reason, confirmed=True),
+    risk="external_effect",
+    description="Activate the user-confirmed local SOS workflow, which may send configured SMS messages.",
+)
 
 
 def _allow_nonloopback_bind_v1():
@@ -90,9 +114,12 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
         if self.path == "/api/selma0/tools/execute/v1":
             try:
                 body = self.read_json_body()
+                arguments = body.get("arguments", {})
+                if not isinstance(arguments, dict):
+                    raise ValueError("arguments must be an object")
                 result = COMMAND_ROUTER_V1.execute(
                     tool_name=body.get("tool", ""),
-                    arguments=body.get("arguments", {}),
+                    arguments=arguments,
                     approved=body.get("approved") is True,
                     request_id=body.get("request_id"),
                 )
@@ -144,6 +171,64 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
                 )
                 status = 201 if result.get("ok") is True else _http_status_for_result(result)
                 self.send_json(status, result)
+            except ValueError as exc:
+                self.send_json(400, {"error": str(exc)})
+            except Exception as exc:
+                self.send_json(500, {"error": str(exc)})
+            return
+
+        if self.path == "/api/selma0/safety/incident/v1":
+            try:
+                body = self.read_json_body()
+                result = COMMAND_ROUTER_V1.execute(
+                    "safety.record_incident",
+                    {
+                        "summary": body.get("summary", ""),
+                        "details": body.get("details"),
+                        "source": body.get("source", "user_report"),
+                        "confidence": body.get("confidence"),
+                        "include_device_snapshot": bool(body.get("include_device_snapshot", False)),
+                    },
+                    approved=body.get("confirmed") is True,
+                    request_id=body.get("request_id"),
+                )
+                status = 201 if result.get("ok") is True else _http_status_for_result(result)
+                self.send_json(status, result)
+            except ValueError as exc:
+                self.send_json(400, {"error": str(exc)})
+            except Exception as exc:
+                self.send_json(500, {"error": str(exc)})
+            return
+
+        if self.path == "/api/selma0/safety/profile/v1":
+            try:
+                body = self.read_json_body()
+                updates = dict(body)
+                updates.pop("confirmed", None)
+                updates.pop("request_id", None)
+                result = COMMAND_ROUTER_V1.execute(
+                    "safety.update_profile",
+                    {"updates": updates},
+                    approved=body.get("confirmed") is True,
+                    request_id=body.get("request_id"),
+                )
+                self.send_json(_http_status_for_result(result), result)
+            except ValueError as exc:
+                self.send_json(400, {"error": str(exc)})
+            except Exception as exc:
+                self.send_json(500, {"error": str(exc)})
+            return
+
+        if self.path == "/api/selma0/safety/sos/v1":
+            try:
+                body = self.read_json_body()
+                result = COMMAND_ROUTER_V1.execute(
+                    "safety.activate_sos",
+                    {"reason": body.get("reason", "")},
+                    approved=body.get("confirmed") is True,
+                    request_id=body.get("request_id"),
+                )
+                self.send_json(_http_status_for_result(result), result)
             except ValueError as exc:
                 self.send_json(400, {"error": str(exc)})
             except Exception as exc:
