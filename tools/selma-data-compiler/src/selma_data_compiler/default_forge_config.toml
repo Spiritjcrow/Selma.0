@@ -1,0 +1,13 @@
+[policy]
+minimal_questions = true
+max_questions_before_best_effort = 1
+
+[sandbox]
+timeout_seconds = 45
+
+[forge]
+additional_roots = []
+
+[evidence]
+retain_conflicts = true
+preserve_provenance = true
