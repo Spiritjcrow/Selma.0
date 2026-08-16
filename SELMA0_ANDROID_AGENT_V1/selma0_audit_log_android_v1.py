@@ -125,6 +125,19 @@ class Selma0AuditLogAndroidV1:
             rows = result
         return rows[-limit:]
 
+    def request_events(self, request_id):
+        request_id = str(request_id or "").strip()
+        if not request_id:
+            return []
+        result = self._all_events_v1()
+        if isinstance(result, tuple):
+            rows, error = result
+            if error:
+                return []
+        else:
+            rows = result
+        return [row for row in rows if str(row.get("request_id", "")) == request_id]
+
     def verify_chain(self):
         result = self._all_events_v1()
         if isinstance(result, tuple):
