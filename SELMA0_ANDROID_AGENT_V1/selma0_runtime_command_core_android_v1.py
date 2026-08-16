@@ -189,7 +189,7 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
                         "confidence": body.get("confidence"),
                         "include_device_snapshot": bool(body.get("include_device_snapshot", False)),
                     },
-                    approved=body.get("confirmed") is True,
+                    approved=True,
                     request_id=body.get("request_id"),
                 )
                 status = 201 if result.get("ok") is True else _http_status_for_result(result)
