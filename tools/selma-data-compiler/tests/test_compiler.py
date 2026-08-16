@@ -19,14 +19,23 @@ class CompilerTests(unittest.TestCase):
                 self.assertIn(domain, domains)
             self.assertTrue((out / "catalog.sqlite3").exists())
 
-    def test_conflict_retained(self):
+    def test_same_relative_role_across_roots_conflicts(self):
+        with tempfile.TemporaryDirectory() as td:
+            first = Path(td) / "A"; second = Path(td) / "B"
+            (first / "memory").mkdir(parents=True); (second / "memory").mkdir(parents=True)
+            (first / "memory" / "store.py").write_text("VALUE=1\n")
+            (second / "memory" / "store.py").write_text("VALUE=2\n")
+            result = SelmaDataCompiler(Path(td) / "out").compile([first, second])
+            self.assertEqual(len(result["conflicts"]), 1)
+
+    def test_scoped_readmes_are_not_conflicts(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td) / "Selma.0"
-            (root / "a" / "memory").mkdir(parents=True); (root / "b" / "memory").mkdir(parents=True)
-            (root / "a" / "memory" / "store.py").write_text("VALUE=1\n")
-            (root / "b" / "memory" / "store.py").write_text("VALUE=2\n")
+            (root / "tools" / "compiler").mkdir(parents=True)
+            (root / "README.md").write_text("# Root\n")
+            (root / "tools" / "compiler" / "README.md").write_text("# Tool\n")
             result = SelmaDataCompiler(root / ".compiler-test").compile([root])
-            self.assertGreaterEqual(len(result["conflicts"]), 1)
+            self.assertEqual(result["conflicts"], [])
 
     def test_config_role_beats_content_keyword(self):
         with tempfile.TemporaryDirectory() as td:
