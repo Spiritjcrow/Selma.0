@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 AGENT_ROOT = Path(__file__).resolve().parents[1]
 if str(AGENT_ROOT) not in sys.path:
@@ -18,6 +19,7 @@ from selma0_audit_log_android_v1 import Selma0AuditLogAndroidV1
 from selma0_command_router_android_v1 import Selma0CommandRouterAndroidV1
 from selma0_memory_android_v1 import Selma0MemoryAndroidV1
 from selma0_permission_engine_android_v1 import Selma0PermissionEngineAndroidV1
+from selma0_runtime_command_core_android_v1 import _is_loopback_host_v1, _validate_bind_host_v1
 from selma0_tool_registry_android_v1 import Selma0ToolRegistryAndroidV1
 from replika_migration_v1 import import_archive, preview_archive, register_replika_migration_tools
 from ssh_stream_bridge_v1 import _stage
@@ -42,6 +44,28 @@ class PermissionEngineTests(unittest.TestCase):
     def test_invalid_risk_fails_closed(self):
         decision = self.permissions.evaluate({"risk": "read_local", "enabled": True}, approved=True)
         self.assertFalse(decision.allowed)
+
+
+class CommandCoreBindPolicyTests(unittest.TestCase):
+    def test_loopback_hosts_are_accepted(self):
+        for host in ("127.0.0.1", "127.1.2.3", "::1", "[::1]", "localhost"):
+            with self.subTest(host=host):
+                self.assertTrue(_is_loopback_host_v1(host))
+                with patch.dict(os.environ, {}, clear=False):
+                    os.environ.pop("SELMA0_ALLOW_NONLOOPBACK_V1", None)
+                    self.assertEqual(_validate_bind_host_v1(host), host)
+
+    def test_nonloopback_hosts_fail_closed_without_opt_in(self):
+        for host in ("0.0.0.0", "::", "192.168.1.20", "selma.local"):
+            with self.subTest(host=host):
+                with patch.dict(os.environ, {}, clear=False):
+                    os.environ.pop("SELMA0_ALLOW_NONLOOPBACK_V1", None)
+                    with self.assertRaises(RuntimeError):
+                        _validate_bind_host_v1(host)
+
+    def test_nonloopback_bind_requires_explicit_opt_in(self):
+        with patch.dict(os.environ, {"SELMA0_ALLOW_NONLOOPBACK_V1": "1"}, clear=False):
+            self.assertEqual(_validate_bind_host_v1("0.0.0.0"), "0.0.0.0")
 
 
 class AuditAndRouterTests(unittest.TestCase):
