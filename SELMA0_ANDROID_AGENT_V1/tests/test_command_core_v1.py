@@ -21,6 +21,9 @@ from selma0_memory_android_v1 import Selma0MemoryAndroidV1
 from selma0_permission_engine_android_v1 import Selma0PermissionEngineAndroidV1
 from selma0_runtime_command_core_android_v1 import (
     COMMAND_ROUTER_V1,
+    _hostname_from_authority_v1,
+    _is_allowed_http_host_v1,
+    _is_allowed_origin_v1,
     _is_loopback_host_v1,
     _validate_bind_host_v1,
 )
@@ -70,6 +73,49 @@ class CommandCoreBindPolicyTests(unittest.TestCase):
     def test_nonloopback_bind_requires_explicit_opt_in(self):
         with patch.dict(os.environ, {"SELMA0_ALLOW_NONLOOPBACK_V1": "1"}, clear=False):
             self.assertEqual(_validate_bind_host_v1("0.0.0.0"), "0.0.0.0")
+
+
+class CommandCoreHTTPBoundaryTests(unittest.TestCase):
+    def test_authority_parser_handles_ipv4_ipv6_and_rejects_malformed(self):
+        self.assertEqual(_hostname_from_authority_v1("127.0.0.1:8765"), "127.0.0.1")
+        self.assertEqual(_hostname_from_authority_v1("[::1]:8765"), "::1")
+        self.assertEqual(_hostname_from_authority_v1("localhost:8765"), "localhost")
+        self.assertEqual(_hostname_from_authority_v1("evil.example/path"), "")
+        self.assertEqual(_hostname_from_authority_v1("evil.example\r\nX-Test: 1"), "")
+
+    def test_loopback_host_headers_are_allowed(self):
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("SELMA0_ALLOW_NONLOOPBACK_V1", None)
+            for host in ("127.0.0.1:8765", "localhost:8765", "[::1]:8765"):
+                with self.subTest(host=host):
+                    self.assertTrue(_is_allowed_http_host_v1(host))
+
+    def test_dns_rebinding_host_fails_closed_by_default(self):
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("SELMA0_ALLOW_NONLOOPBACK_V1", None)
+            self.assertFalse(_is_allowed_http_host_v1("attacker.example"))
+            self.assertFalse(_is_allowed_http_host_v1("192.168.1.10:8765"))
+            self.assertFalse(_is_allowed_http_host_v1(""))
+
+    def test_browser_origin_fails_closed_for_nonloopback_origin(self):
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("SELMA0_ALLOW_NONLOOPBACK_V1", None)
+            self.assertTrue(_is_allowed_origin_v1(None))
+            self.assertTrue(_is_allowed_origin_v1("http://127.0.0.1:8765"))
+            self.assertTrue(_is_allowed_origin_v1("http://localhost:8765"))
+            self.assertFalse(_is_allowed_origin_v1("https://attacker.example"))
+            self.assertFalse(_is_allowed_origin_v1("null"))
+
+    def test_explicit_nonloopback_http_host_allowlist_is_required(self):
+        env = {
+            "SELMA0_ALLOW_NONLOOPBACK_V1": "1",
+            "SELMA0_ALLOWED_HTTP_HOSTS_V1": "selma.example,192.168.1.20",
+        }
+        with patch.dict(os.environ, env, clear=False):
+            self.assertTrue(_is_allowed_http_host_v1("selma.example:8765"))
+            self.assertTrue(_is_allowed_origin_v1("https://selma.example"))
+            self.assertFalse(_is_allowed_http_host_v1("attacker.example:8765"))
+            self.assertFalse(_is_allowed_origin_v1("https://attacker.example"))
 
 
 class CommandCoreSafetyPolicyTests(unittest.TestCase):
