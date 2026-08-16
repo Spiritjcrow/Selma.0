@@ -142,6 +142,11 @@ def _is_allowed_origin_v1(origin_header):
     return hostname in _configured_allowed_hosts_v1()
 
 
+def _legacy_api_passthrough_allowed_v1(method, path):
+    """Keep legacy API delegation explicit so new routes cannot bypass command policy."""
+    return str(method or "").upper() == "POST" and str(path or "") == "/api/selma0/chat/v1"
+
+
 def _http_status_for_result(result):
     if result.get("ok") is True:
         return 200
@@ -173,6 +178,9 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
             return
         if self.path == "/api/selma0/tools/audit/v1":
             self.send_json(200, {"events": COMMAND_ROUTER_V1.audit.recent(100)})
+            return
+        if self.path.startswith("/api/selma0/"):
+            self.send_json(404, {"error": "API route not registered in command core"})
             return
         return super().do_GET()
 
@@ -303,6 +311,9 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
                 self.send_json(500, {"error": str(exc)})
             return
 
+        if self.path.startswith("/api/selma0/") and not _legacy_api_passthrough_allowed_v1("POST", self.path):
+            self.send_json(404, {"error": "API route not registered in command core"})
+            return
         return super().do_POST()
 
 
