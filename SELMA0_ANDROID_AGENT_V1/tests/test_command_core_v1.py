@@ -133,6 +133,30 @@ class AuditAndRouterTests(unittest.TestCase):
             self.assertEqual(allowed["result"]["value"], "yes")
             self.assertTrue(audit.verify_chain()["ok"])
 
+    def test_write_request_id_is_idempotent_across_retries(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            audit = Selma0AuditLogAndroidV1(path=os.path.join(tmp, "audit.jsonl"))
+            registry = Selma0ToolRegistryAndroidV1()
+            calls = {"count": 0}
+
+            def mutate(value=""):
+                calls["count"] += 1
+                return {"value": value, "call": calls["count"]}
+
+            registry.register("write.once", mutate, risk="write")
+            router = Selma0CommandRouterAndroidV1(registry=registry, audit_log=audit)
+            request_id = "retry-safe-1"
+
+            first = router.execute("write.once", {"value": "x"}, approved=True, request_id=request_id)
+            second = router.execute("write.once", {"value": "x"}, approved=True, request_id=request_id)
+
+            self.assertTrue(first["ok"])
+            self.assertTrue(second["ok"])
+            self.assertTrue(second["replayed"])
+            self.assertEqual(first["result"], second["result"])
+            self.assertEqual(calls["count"], 1)
+            self.assertTrue(any(e["event_type"] == "tool_replay_suppressed" for e in audit.request_events(request_id)))
+
 
 class ReplikaMigrationTests(unittest.TestCase):
     def _write_archive(self, root):
