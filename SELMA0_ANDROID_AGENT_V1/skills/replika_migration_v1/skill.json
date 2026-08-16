@@ -1,0 +1,28 @@
+{
+  "name": "replika_migration_v1",
+  "version": "1.0.0",
+  "description": "Import user-authorized Replika exports into Selma memory with provenance, deduplication, and no private-endpoint scraping.",
+  "provider": "replika",
+  "capabilities": [
+    "preview_local_archive",
+    "import_local_archive",
+    "preserve_backstory_memories_traits_interests_chat",
+    "record_source_provenance"
+  ],
+  "network_access": false,
+  "private_endpoint_scraping": false,
+  "credential_collection": false,
+  "supported_inputs": ["json", "jsonl", "csv", "txt"],
+  "tools": [
+    {
+      "name": "replika.preview_archive",
+      "risk": "read_local",
+      "requires_approval": false
+    },
+    {
+      "name": "replika.import_archive",
+      "risk": "write_local_data",
+      "requires_approval": true
+    }
+  ]
+}
