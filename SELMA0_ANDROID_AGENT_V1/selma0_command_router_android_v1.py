@@ -67,7 +67,24 @@ class Selma0CommandRouterAndroidV1:
             }
 
         tool_name = str(tool_name or "").strip()
-        arguments = arguments if isinstance(arguments, dict) else {}
+        if arguments is None:
+            arguments = {}
+        elif not isinstance(arguments, dict):
+            self.audit.append(
+                "tool_rejected",
+                {
+                    "tool": tool_name,
+                    "reason": "arguments must be an object",
+                    "argument_type": type(arguments).__name__,
+                },
+                request_id=request_id,
+            )
+            return {
+                "ok": False,
+                "request_id": request_id,
+                "tool": tool_name,
+                "error": "arguments must be an object",
+            }
 
         descriptor = self.registry.describe(tool_name)
         if descriptor is None:
