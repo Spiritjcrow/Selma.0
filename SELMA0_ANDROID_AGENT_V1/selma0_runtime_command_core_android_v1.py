@@ -30,6 +30,12 @@ COMMAND_ROUTER_V1.registry.register(
     description="Return the local Selma runtime status without modifying state.",
 )
 COMMAND_ROUTER_V1.registry.register(
+    "selma.chat",
+    lambda message="": base.SELMA0_V1.chat(message),
+    risk="write",
+    description="Send a user-approved chat turn through Selma.0; this writes conversation memory and may use the configured online fallback.",
+)
+COMMAND_ROUTER_V1.registry.register(
     "safety.record_incident",
     lambda summary="", details=None, source="user_report", confidence=None, include_device_snapshot=False: base.SAFETY_V1.record_incident(
         summary=summary,
@@ -143,8 +149,8 @@ def _is_allowed_origin_v1(origin_header):
 
 
 def _legacy_api_passthrough_allowed_v1(method, path):
-    """Keep legacy API delegation explicit so new routes cannot bypass command policy."""
-    return str(method or "").upper() == "POST" and str(path or "") == "/api/selma0/chat/v1"
+    """Fail closed: command-core API routes must be handled explicitly above."""
+    return False
 
 
 def _http_status_for_result(result):
@@ -197,6 +203,25 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
                     tool_name=body.get("tool", ""),
                     arguments=arguments,
                     approved=body.get("approved") is True,
+                    request_id=body.get("request_id"),
+                )
+                self.send_json(_http_status_for_result(result), result)
+            except ValueError as exc:
+                self.send_json(400, {"error": str(exc)})
+            except Exception as exc:
+                self.send_json(500, {"error": str(exc)})
+            return
+
+        if self.path == "/api/selma0/chat/v1":
+            try:
+                body = self.read_json_body()
+                message = str(body.get("message", "")).strip()
+                if not message:
+                    raise ValueError("message is required")
+                result = COMMAND_ROUTER_V1.execute(
+                    "selma.chat",
+                    {"message": message},
+                    approved=body.get("confirmed") is True,
                     request_id=body.get("request_id"),
                 )
                 self.send_json(_http_status_for_result(result), result)
