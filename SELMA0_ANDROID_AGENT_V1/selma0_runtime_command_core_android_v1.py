@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import ipaddress
 import os
 import signal
 import sys
@@ -27,6 +28,39 @@ COMMAND_ROUTER_V1.registry.register(
     risk="read",
     description="Return the local Selma runtime status without modifying state.",
 )
+
+
+def _allow_nonloopback_bind_v1():
+    return os.getenv("SELMA0_ALLOW_NONLOOPBACK_V1", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
+def _is_loopback_host_v1(host):
+    value = str(host or "").strip()
+    if value.lower() == "localhost":
+        return True
+    if value.startswith("[") and value.endswith("]"):
+        value = value[1:-1]
+    try:
+        return ipaddress.ip_address(value).is_loopback
+    except ValueError:
+        return False
+
+
+def _validate_bind_host_v1(host):
+    if _is_loopback_host_v1(host):
+        return host
+    if _allow_nonloopback_bind_v1():
+        return host
+    raise RuntimeError(
+        "Refusing non-loopback Selma command-core bind. "
+        "Keep SELMA0_HOST_V1 on 127.0.0.1/::1/localhost, or explicitly set "
+        "SELMA0_ALLOW_NONLOOPBACK_V1=1 after applying an authenticated transport boundary."
+    )
 
 
 def _http_status_for_result(result):
@@ -120,13 +154,14 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
 
 
 def main():
+    bind_host = _validate_bind_host_v1(base.SELMA0_HOST_V1)
     server = ThreadingHTTPServer(
-        (base.SELMA0_HOST_V1, base.SELMA0_PORT_V1),
+        (bind_host, base.SELMA0_PORT_V1),
         Selma0CommandCoreHTTPAndroidV1,
     )
     print(
         f"[Selma.0] Command Core active at "
-        f"http://{base.SELMA0_HOST_V1}:{base.SELMA0_PORT_V1}"
+        f"http://{bind_host}:{base.SELMA0_PORT_V1}"
     )
     print(f"[Selma.0] Memory: {base.MEMORY_V1.db_path}")
     print(f"[Selma.0] Command audit: {COMMAND_ROUTER_V1.audit.path}")
