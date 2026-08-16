@@ -5,6 +5,7 @@ import signal
 import sys
 import threading
 from http.server import ThreadingHTTPServer
+from urllib.parse import urlsplit
 
 import selma0_runtime_android_v1 as base
 from selma0_command_router_android_v1 import Selma0CommandRouterAndroidV1
@@ -87,6 +88,60 @@ def _validate_bind_host_v1(host):
     )
 
 
+def _hostname_from_authority_v1(authority):
+    value = str(authority or "").strip()
+    if not value or any(ch in value for ch in "\r\n/\\"):
+        return ""
+    try:
+        parsed = urlsplit("//" + value)
+        return str(parsed.hostname or "").strip().lower()
+    except (TypeError, ValueError):
+        return ""
+
+
+def _configured_allowed_hosts_v1():
+    hosts = {"localhost"}
+    bind_host = str(base.SELMA0_HOST_V1 or "").strip().strip("[]").lower()
+    if bind_host:
+        hosts.add(bind_host)
+    for value in os.getenv("SELMA0_ALLOWED_HTTP_HOSTS_V1", "").split(","):
+        value = value.strip().strip("[]").lower()
+        if value:
+            hosts.add(value)
+    return hosts
+
+
+def _is_allowed_http_host_v1(host_header):
+    hostname = _hostname_from_authority_v1(host_header)
+    if not hostname:
+        return False
+    if _is_loopback_host_v1(hostname):
+        return True
+    if not _allow_nonloopback_bind_v1():
+        return False
+    return hostname in _configured_allowed_hosts_v1()
+
+
+def _is_allowed_origin_v1(origin_header):
+    value = str(origin_header or "").strip()
+    if not value:
+        return True
+    if value.lower() == "null":
+        return False
+    try:
+        parsed = urlsplit(value)
+    except (TypeError, ValueError):
+        return False
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        return False
+    hostname = parsed.hostname.lower()
+    if _is_loopback_host_v1(hostname):
+        return True
+    if not _allow_nonloopback_bind_v1():
+        return False
+    return hostname in _configured_allowed_hosts_v1()
+
+
 def _http_status_for_result(result):
     if result.get("ok") is True:
         return 200
@@ -96,7 +151,18 @@ def _http_status_for_result(result):
 
 
 class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
+    def _enforce_http_boundary_v1(self, require_origin=False):
+        if not _is_allowed_http_host_v1(self.headers.get("Host")):
+            self.send_json(403, {"error": "untrusted Host header"})
+            return False
+        if require_origin and not _is_allowed_origin_v1(self.headers.get("Origin")):
+            self.send_json(403, {"error": "cross-origin request rejected"})
+            return False
+        return True
+
     def do_GET(self):
+        if not self._enforce_http_boundary_v1(require_origin=False):
+            return
         if self.path == "/api/selma0/status/v1":
             status = base.SELMA0_V1.status()
             status["command_core"] = COMMAND_ROUTER_V1.status()
@@ -111,6 +177,8 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
         return super().do_GET()
 
     def do_POST(self):
+        if not self._enforce_http_boundary_v1(require_origin=True):
+            return
         if self.path == "/api/selma0/tools/execute/v1":
             try:
                 body = self.read_json_body()
