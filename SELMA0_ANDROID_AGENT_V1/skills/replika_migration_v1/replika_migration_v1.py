@@ -203,13 +203,13 @@ def register_replika_migration_tools(registry):
     registry.register(
         "replika.preview_archive",
         preview_archive,
-        risk="read_local",
+        risk="read",
         description="Preview a user-authorized local Replika export without modifying Selma memory.",
     )
     registry.register(
         "replika.import_archive",
         import_archive,
-        risk="write_local_data",
+        risk="write",
         description="Import a user-authorized local Replika export into Selma memory with provenance.",
     )
 
