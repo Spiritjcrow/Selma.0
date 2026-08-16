@@ -1,11 +1,12 @@
 from pathlib import Path
 import tempfile, unittest
+from selma_data_compiler.config import ForgeConfig
 from selma_data_compiler.forge import SelmaForge
 from selma_data_compiler.policy import CapabilityBroker, ActionMode
 from selma_data_compiler.sandbox import VirtualSandbox
 
 class ForgeTests(unittest.TestCase):
-    def test_forge_generates_snapshot_and_tasks(self):
+    def test_forge_generates_snapshot_and_resolved_config(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td) / "Selma.0"
             (root / "selma_core").mkdir(parents=True)
@@ -16,7 +17,17 @@ class ForgeTests(unittest.TestCase):
             forge_dir = root / ".selma" / "forge"
             self.assertTrue((forge_dir / "forge_snapshot.json").exists())
             self.assertTrue((forge_dir / "events.jsonl").exists())
-            self.assertGreaterEqual(result["snapshot"]["need_count"], 1)
+            self.assertTrue((forge_dir / "resolved_config.json").exists())
+            self.assertIn("config_sources", result["snapshot"])
+
+    def test_workspace_config_overrides_defaults(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td) / "Selma.0"
+            (root / ".selma").mkdir(parents=True)
+            (root / ".selma" / "forge_config.toml").write_text("[policy]\nmax_questions_before_best_effort = 0\n[sandbox]\ntimeout_seconds = 7\n")
+            config = ForgeConfig.load(root)
+            self.assertEqual(config.max_questions, 0)
+            self.assertEqual(config.sandbox_timeout_seconds, 7)
 
     def test_policy_attempt_first(self):
         broker = CapabilityBroker()
