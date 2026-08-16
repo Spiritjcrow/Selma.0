@@ -133,6 +133,26 @@ class AuditAndRouterTests(unittest.TestCase):
             self.assertEqual(allowed["result"]["value"], "yes")
             self.assertTrue(audit.verify_chain()["ok"])
 
+    def test_router_rejects_non_object_arguments(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            audit = Selma0AuditLogAndroidV1(path=os.path.join(tmp, "audit.jsonl"))
+            registry = Selma0ToolRegistryAndroidV1()
+            calls = {"count": 0}
+
+            def handler(**kwargs):
+                calls["count"] += 1
+                return kwargs
+
+            registry.register("read.echo", handler, risk="read")
+            router = Selma0CommandRouterAndroidV1(registry=registry, audit_log=audit)
+            result = router.execute("read.echo", ["not", "an", "object"])
+
+            self.assertFalse(result["ok"])
+            self.assertEqual(result["error"], "arguments must be an object")
+            self.assertEqual(calls["count"], 0)
+            events = audit.request_events(result["request_id"])
+            self.assertTrue(any(e["event_type"] == "tool_rejected" for e in events))
+
     def test_write_request_id_is_idempotent_across_retries(self):
         with tempfile.TemporaryDirectory() as tmp:
             audit = Selma0AuditLogAndroidV1(path=os.path.join(tmp, "audit.jsonl"))
