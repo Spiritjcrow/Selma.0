@@ -4,6 +4,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 import json
 from .compiler import SelmaDataCompiler
+from .config import ForgeConfig
 from .delegation import delegate_needs
 from .event_bus import EventBus
 from .policy import CapabilityBroker
@@ -18,6 +19,7 @@ class ForgeSnapshot:
     conflict_count: int
     need_count: int
     policy: dict
+    config_sources: list[str]
     phases: list[str]
     def to_dict(self) -> dict: return asdict(self)
 
@@ -28,20 +30,22 @@ class SelmaForge:
         self.workspace = workspace.expanduser().resolve()
         self.output_dir = output_dir or (self.workspace / ".selma" / "forge")
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.config = ForgeConfig.load(self.workspace)
         self.bus = EventBus(self.output_dir / "events.jsonl")
-        self.policy = CapabilityBroker(minimal_questions=True, max_questions=1)
-        self.sandbox = VirtualSandbox()
+        self.policy = CapabilityBroker(minimal_questions=self.config.minimal_questions, max_questions=self.config.max_questions)
+        self.sandbox = VirtualSandbox(self.config.sandbox_timeout_seconds)
 
     def run(self, roots: list[str | Path] | None = None) -> dict:
-        roots = roots or [self.workspace]
+        roots = self.config.resolve_roots(list(roots or [self.workspace]))
         self.bus.publish("forge.start", "selma-forge", {"roots": [str(r) for r in roots]})
+        (self.output_dir / "resolved_config.json").write_text(json.dumps(self.config.to_dict(), indent=2), encoding="utf-8")
         compile_out = self.output_dir / "compiler"
         result = SelmaDataCompiler(compile_out).compile(roots)
         tasks = [t.to_dict() for t in delegate_needs(result["needs"])]
         (self.output_dir / "delegated_tasks.json").write_text(json.dumps(tasks, indent=2), encoding="utf-8")
         upgrade_plan = [{"task_id":t["task_id"],"role":t["role"],"objective":t["objective"],"execution_mode":"propose-or-sandbox-first","completion_evidence":t["evidence_required"]} for t in tasks]
         (self.output_dir / "upgrade_plan.json").write_text(json.dumps(upgrade_plan, indent=2), encoding="utf-8")
-        snapshot = ForgeSnapshot(datetime.now(timezone.utc).isoformat(), str(self.workspace), str(compile_out), len(tasks), len(result["conflicts"]), len(result["needs"]), self.policy.policy_snapshot(), self.PHASES)
+        snapshot = ForgeSnapshot(datetime.now(timezone.utc).isoformat(), str(self.workspace), str(compile_out), len(tasks), len(result["conflicts"]), len(result["needs"]), self.policy.policy_snapshot(), list(self.config.sources), self.PHASES)
         (self.output_dir / "forge_snapshot.json").write_text(json.dumps(snapshot.to_dict(), indent=2), encoding="utf-8")
         self.bus.publish("forge.complete", "selma-forge", snapshot.to_dict())
-        return {"snapshot": snapshot.to_dict(), "tasks": tasks, "upgrade_plan": upgrade_plan, "compiler": result}
+        return {"snapshot": snapshot.to_dict(), "tasks": tasks, "upgrade_plan": upgrade_plan, "compiler": result, "config": self.config.to_dict()}
