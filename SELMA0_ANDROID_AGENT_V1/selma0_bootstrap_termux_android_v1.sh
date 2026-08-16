@@ -17,10 +17,17 @@ for file in \
   selma0_audit_log_android_v1.py \
   selma0_command_router_android_v1.py \
   selma0_permission_engine_android_v1.py \
-  selma0_tool_registry_android_v1.py
+  selma0_tool_registry_android_v1.py \
+  selma0_smoke_test_android_v1.sh
 do
   cp -f "$SOURCE_DIR/$file" "$SELMA0_HOME_V1/$file"
 done
+chmod +x "$SELMA0_HOME_V1/selma0_smoke_test_android_v1.sh"
+
+mkdir -p "$SELMA0_HOME_V1/tests"
+if [ -d "$SOURCE_DIR/tests" ]; then
+  cp -R "$SOURCE_DIR/tests/." "$SELMA0_HOME_V1/tests/"
+fi
 
 mkdir -p "$SELMA0_HOME_V1/skills"
 rm -rf "$SELMA0_HOME_V1/skills/replika_migration_v1"
@@ -36,8 +43,9 @@ EOF
 chmod +x "$SELMA0_HOME_V1/selma0_start_android_v1.sh"
 
 echo "Selma.0 Android Agent V1 installed at: $SELMA0_HOME_V1"
+echo "Validate: $SELMA0_HOME_V1/selma0_smoke_test_android_v1.sh"
 echo "Start: $SELMA0_HOME_V1/selma0_start_android_v1.sh"
 echo "UI: http://127.0.0.1:8765"
 echo "Tools: http://127.0.0.1:8765/api/selma0/tools/v1"
 echo "Offline LLM default endpoint: http://127.0.0.1:8080/v1"
-echo "Command Core, local audit, Replika migration, and Safety Guardian deployed. Termux:API Android companion app permissions are still required for location, notifications, Wi-Fi info, and SMS actions."
+echo "Command Core, local audit, Replika migration, tests, smoke validation, and Safety Guardian deployed. Termux:API Android companion app permissions are still required for location, notifications, Wi-Fi info, and SMS actions."
