@@ -4,13 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "selma-data-compiler"
-version = "1.0.0"
-description = "Canonical discovery, provenance, mapping, deduplication, merge, and needs analysis for Selma workspaces."
+version = "1.1.0"
+description = "Canonical discovery, provenance, mapping, deduplication, merge, needs analysis, delegation, and Selma Forge orchestration."
 requires-python = ">=3.11"
 dependencies = []
 
 [project.scripts]
 selma-compile = "selma_data_compiler.cli:main"
+
+[project.optional-dependencies]
+crypto = ["cryptography>=45"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
