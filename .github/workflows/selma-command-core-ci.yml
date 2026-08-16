@@ -1,0 +1,34 @@
+name: Selma Command Core CI
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - selma-command-core-v1
+    paths:
+      - 'SELMA0_ANDROID_AGENT_V1/**'
+      - '.github/workflows/selma-command-core-ci.yml'
+  pull_request:
+    paths:
+      - 'SELMA0_ANDROID_AGENT_V1/**'
+      - '.github/workflows/selma-command-core-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Validate command core and migration skill
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile agent sources
+        run: python -m compileall -q SELMA0_ANDROID_AGENT_V1
+      - name: Run unit tests
+        run: python -m unittest discover -s SELMA0_ANDROID_AGENT_V1/tests -p 'test_*.py' -v
