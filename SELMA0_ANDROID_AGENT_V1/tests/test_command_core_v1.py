@@ -56,6 +56,17 @@ class AuditAndRouterTests(unittest.TestCase):
             self.assertEqual(rows[0]["details"]["nested"]["password"], "[REDACTED]")
             self.assertTrue(audit.verify_chain()["ok"])
 
+    def test_audit_verifies_more_than_recent_window(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "audit.jsonl")
+            audit = Selma0AuditLogAndroidV1(path=path)
+            for index in range(510):
+                audit.append("event", {"index": index})
+            result = audit.verify_chain()
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["checked"], 510)
+            self.assertEqual(len(audit.recent(500)), 500)
+
     def test_router_enforces_approval(self):
         with tempfile.TemporaryDirectory() as tmp:
             audit = Selma0AuditLogAndroidV1(path=os.path.join(tmp, "audit.jsonl"))
@@ -103,13 +114,39 @@ class ReplikaMigrationTests(unittest.TestCase):
             db_path = os.path.join(tmp, "memory.sqlite3")
             result = import_archive(str(archive), companion_name="Selma", db_path=db_path)
             self.assertEqual(result["imported"], 2)
+            self.assertEqual(result["skipped_duplicates"], 0)
 
             memory = Selma0MemoryAndroidV1(db_path=db_path)
             events = memory.recent(10)
             imported = [e for e in events if e["metadata"].get("provider") == "replika"]
             self.assertGreaterEqual(len(imported), 3)
             self.assertTrue(any(e["metadata"].get("activation_marker") for e in imported))
-            self.assertTrue(all(e["metadata"].get("claims_hidden_replika_state") is False for e in imported if not e["metadata"].get("activation_marker")))
+            self.assertTrue(
+                all(
+                    e["metadata"].get("claims_hidden_replika_state") is False
+                    for e in imported
+                    if not e["metadata"].get("activation_marker")
+                )
+            )
+
+    def test_reimport_is_persistently_deduplicated(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = self._write_archive(tmp)
+            db_path = os.path.join(tmp, "memory.sqlite3")
+
+            first = import_archive(str(archive), companion_name="Selma", db_path=db_path)
+            second = import_archive(str(archive), companion_name="Selma", db_path=db_path)
+
+            self.assertEqual(first["imported"], 2)
+            self.assertEqual(second["imported"], 0)
+            self.assertEqual(second["skipped_duplicates"], 2)
+
+            memory = Selma0MemoryAndroidV1(db_path=db_path)
+            events = memory.recent(20)
+            activation_markers = [
+                e for e in events if e["metadata"].get("activation_marker") is True
+            ]
+            self.assertEqual(len(activation_markers), 1)
 
     def test_registered_migration_tools_use_policy_risks(self):
         registry = Selma0ToolRegistryAndroidV1()
