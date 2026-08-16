@@ -84,37 +84,75 @@ class Selma0AuditLogAndroidV1:
                 handle.write(_compact_json_v1(event) + "\n")
             return event
 
-    def recent(self, limit=100):
-        limit = max(1, min(int(limit), 500))
+    def _all_events_v1(self):
         if not os.path.exists(self.path):
             return []
         rows = []
-        try:
-            with self._lock, open(self.path, "r", encoding="utf-8") as handle:
-                for line in handle:
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        rows.append(json.loads(line))
-                    except ValueError:
-                        continue
-        except OSError:
-            return []
+        with self._lock:
+            try:
+                with open(self.path, "r", encoding="utf-8") as handle:
+                    for line_number, line in enumerate(handle, start=1):
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            rows.append(json.loads(line))
+                        except ValueError as exc:
+                            return None, {
+                                "ok": False,
+                                "checked": len(rows),
+                                "error": "invalid JSON event",
+                                "line": line_number,
+                                "detail": str(exc),
+                            }
+            except OSError as exc:
+                return None, {
+                    "ok": False,
+                    "checked": len(rows),
+                    "error": "audit log read failed",
+                    "detail": str(exc),
+                }
+        return rows, None
+
+    def recent(self, limit=100):
+        limit = max(1, min(int(limit), 500))
+        result = self._all_events_v1()
+        if isinstance(result, tuple):
+            rows, error = result
+            if error:
+                return []
+        else:
+            rows = result
         return rows[-limit:]
 
     def verify_chain(self):
+        result = self._all_events_v1()
+        if isinstance(result, tuple):
+            events, error = result
+            if error:
+                return error
+        else:
+            events = result
+
         previous_hash = "0" * 64
         checked = 0
-        for event in self.recent(500):
+        for event in events:
             stored_hash = str(event.get("event_hash", ""))
             material = dict(event)
             material.pop("event_hash", None)
             if str(material.get("previous_hash")) != previous_hash:
-                return {"ok": False, "checked": checked, "error": "previous hash mismatch"}
+                return {
+                    "ok": False,
+                    "checked": checked,
+                    "error": "previous hash mismatch",
+                }
             computed = hashlib.sha256(_compact_json_v1(material).encode("utf-8")).hexdigest()
             if computed != stored_hash:
-                return {"ok": False, "checked": checked, "error": "event hash mismatch"}
+                return {
+                    "ok": False,
+                    "checked": checked,
+                    "error": "event hash mismatch",
+                }
             previous_hash = stored_hash
             checked += 1
         return {"ok": True, "checked": checked, "tail_hash": previous_hash}
