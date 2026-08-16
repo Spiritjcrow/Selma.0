@@ -19,7 +19,11 @@ from selma0_audit_log_android_v1 import Selma0AuditLogAndroidV1
 from selma0_command_router_android_v1 import Selma0CommandRouterAndroidV1
 from selma0_memory_android_v1 import Selma0MemoryAndroidV1
 from selma0_permission_engine_android_v1 import Selma0PermissionEngineAndroidV1
-from selma0_runtime_command_core_android_v1 import _is_loopback_host_v1, _validate_bind_host_v1
+from selma0_runtime_command_core_android_v1 import (
+    COMMAND_ROUTER_V1,
+    _is_loopback_host_v1,
+    _validate_bind_host_v1,
+)
 from selma0_tool_registry_android_v1 import Selma0ToolRegistryAndroidV1
 from replika_migration_v1 import import_archive, preview_archive, register_replika_migration_tools
 from ssh_stream_bridge_v1 import _stage
@@ -66,6 +70,24 @@ class CommandCoreBindPolicyTests(unittest.TestCase):
     def test_nonloopback_bind_requires_explicit_opt_in(self):
         with patch.dict(os.environ, {"SELMA0_ALLOW_NONLOOPBACK_V1": "1"}, clear=False):
             self.assertEqual(_validate_bind_host_v1("0.0.0.0"), "0.0.0.0")
+
+
+class CommandCoreSafetyPolicyTests(unittest.TestCase):
+    def test_safety_mutations_are_registered_with_fail_closed_risks(self):
+        self.assertEqual(COMMAND_ROUTER_V1.registry.describe("safety.record_incident")["risk"], "write")
+        self.assertEqual(COMMAND_ROUTER_V1.registry.describe("safety.update_profile")["risk"], "write")
+        self.assertEqual(COMMAND_ROUTER_V1.registry.describe("safety.activate_sos")["risk"], "external_effect")
+
+    def test_safety_mutations_require_approval_before_execution(self):
+        for tool_name, arguments in (
+            ("safety.record_incident", {"summary": "test"}),
+            ("safety.update_profile", {"updates": {"send_sms_on_sos": False}}),
+            ("safety.activate_sos", {"reason": "test"}),
+        ):
+            with self.subTest(tool=tool_name):
+                result = COMMAND_ROUTER_V1.execute(tool_name, arguments, approved=False)
+                self.assertFalse(result["ok"])
+                self.assertTrue(result["requires_approval"])
 
 
 class AuditAndRouterTests(unittest.TestCase):
