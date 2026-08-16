@@ -51,5 +51,5 @@ DOMAIN_DEPENDENCIES = {
     "ui": ("core", "config"),
 }
 
-IGNORE_DIRS = {".git", ".gradle", ".idea", ".vscode", "node_modules", "__pycache__", ".pytest_cache", ".mypy_cache", "build", "dist", ".venv", "venv"}
+IGNORE_DIRS = {".git", ".selma", ".gradle", ".idea", ".vscode", "node_modules", "__pycache__", ".pytest_cache", ".mypy_cache", "build", "dist", ".venv", "venv"}
 TEXT_SUFFIXES = {".py", ".kt", ".kts", ".java", ".c", ".cc", ".cpp", ".h", ".hpp", ".js", ".jsx", ".ts", ".tsx", ".json", ".toml", ".yaml", ".yml", ".md", ".txt", ".html", ".css", ".xml", ".gradle", ".properties", ".sh", ".ps1", ".sql", ".ini", ".cfg"}
