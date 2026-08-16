@@ -1,4 +1,5 @@
 name: Selma Android Build
+# Retry after repository Actions permissions update
 "on":
   workflow_dispatch: {}
   push:
