@@ -23,11 +23,13 @@ for file in \
   selma0_crowrf_wifi_scan_android_v1.py \
   selma0_crowrf_measurement_store_android_v1.py \
   selma0_crowrf_derived_metrics_android_v1.py \
-  selma0_smoke_test_android_v1.sh
+  selma0_smoke_test_android_v1.sh \
+  selma0_crowrf_hardware_validate_android_v1.sh
 do
   cp -f "$SOURCE_DIR/$file" "$SELMA0_HOME_V1/$file"
 done
 chmod +x "$SELMA0_HOME_V1/selma0_smoke_test_android_v1.sh"
+chmod +x "$SELMA0_HOME_V1/selma0_crowrf_hardware_validate_android_v1.sh"
 
 mkdir -p "$SELMA0_HOME_V1/tests"
 if [ -d "$SOURCE_DIR/tests" ]; then
@@ -48,7 +50,8 @@ EOF
 chmod +x "$SELMA0_HOME_V1/selma0_start_android_v1.sh"
 
 echo "Selma.0 Android Agent V1 installed at: $SELMA0_HOME_V1"
-echo "Validate: $SELMA0_HOME_V1/selma0_smoke_test_android_v1.sh"
+echo "Validate software stack: $SELMA0_HOME_V1/selma0_smoke_test_android_v1.sh"
+echo "Validate one real CrowRF scan: $SELMA0_HOME_V1/selma0_crowrf_hardware_validate_android_v1.sh --confirmed-sensitive-scan"
 echo "Start: $SELMA0_HOME_V1/selma0_start_android_v1.sh"
 echo "UI: http://127.0.0.1:8765"
 echo "Tools: http://127.0.0.1:8765/api/selma0/tools/v1"
