@@ -22,18 +22,20 @@ cd "$ROOT"
 export SELMA0_BASE_V1="$TMP_ROOT/runtime"
 export SELMA0_HOST_V1="127.0.0.1"
 export SELMA0_PORT_V1="$PORT"
+unset SELMA0_GITHUB_REPO_V1 || true
+unset SELMA0_GITHUB_TOKEN_V1 || true
 
 printf '%s\n' '[1/4] Compiling Selma Android agent sources...'
 python -m compileall -q .
 
-printf '%s\n' '[2/4] Running command-core/device/CrowRF unit tests...'
+printf '%s\n' '[2/4] Running universal-runtime unit tests...'
 python -m unittest discover -s tests -p 'test_*.py' -v
 
-printf '%s\n' '[3/4] Starting isolated stacked device/CrowRF runtime...'
-python selma0_runtime_device_crowrf_android_v1.py >"$LOG_PATH" 2>&1 &
+printf '%s\n' '[3/4] Starting isolated Selma universal runtime...'
+python selma0_runtime_universal_android_v1.py >"$LOG_PATH" 2>&1 &
 PID="$!"
 
-printf '%s\n' '[4/4] Probing runtime status and registered tools without executing device effects...'
+printf '%s\n' '[4/4] Probing runtime status and registered tools without external-service/device effects...'
 python - <<'PY'
 import json
 import os
@@ -76,6 +78,10 @@ required = {
     "crowrf.session_recent",
     "crowrf.session_verify",
     "crowrf.derive_rssi_summary",
+    "plugins.status",
+    "github.repo_summary",
+    "github.list_issues",
+    "github.create_issue",
 }
 missing = sorted(required - names)
 
@@ -94,7 +100,8 @@ print(json.dumps({
     "memory_db": status.get("memory_db"),
     "device_effects_executed": False,
     "sensitive_scans_executed": False,
+    "external_service_calls_executed": False,
 }, indent=2))
 PY
 
-printf '%s\n' 'Selma.0 stacked command-core/device/CrowRF smoke test PASSED.'
+printf '%s\n' 'Selma.0 universal command-core/device/CrowRF/plugin smoke test PASSED.'
