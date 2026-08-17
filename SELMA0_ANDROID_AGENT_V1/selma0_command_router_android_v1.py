@@ -1,3 +1,5 @@
+import hashlib
+import json
 import threading
 import traceback
 import uuid
@@ -33,13 +35,26 @@ class Selma0CommandRouterAndroidV1:
             raise ValueError("request_id exceeds 128 characters")
         return value
 
-    def _completed_replay(self, request_id, tool_name):
+    def _arguments_fingerprint(self, arguments):
+        try:
+            canonical = json.dumps(
+                arguments,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"arguments must be JSON-serializable: {exc}") from exc
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+    def _completed_replay(self, request_id, tool_name, arguments_sha256):
         events = self.audit.request_events(request_id)
         completed = [event for event in events if event.get("event_type") == "tool_completed"]
         if not completed:
             return None
         latest = completed[-1]
-        previous_tool = str(latest.get("details", {}).get("tool", ""))
+        details = latest.get("details", {})
+        previous_tool = str(details.get("tool", ""))
         if previous_tool != tool_name:
             return {
                 "ok": False,
@@ -47,12 +62,28 @@ class Selma0CommandRouterAndroidV1:
                 "tool": tool_name,
                 "error": "request_id already completed for a different tool",
             }
+
+        previous_arguments_sha256 = str(details.get("arguments_sha256", ""))
+        if not previous_arguments_sha256:
+            return {
+                "ok": False,
+                "request_id": request_id,
+                "tool": tool_name,
+                "error": "request_id completed without argument fingerprint; replay cannot be verified safely",
+            }
+        if previous_arguments_sha256 != arguments_sha256:
+            return {
+                "ok": False,
+                "request_id": request_id,
+                "tool": tool_name,
+                "error": "request_id already completed with different arguments",
+            }
         return {
             "ok": True,
             "request_id": request_id,
             "tool": tool_name,
             "replayed": True,
-            "result": latest.get("details", {}).get("result"),
+            "result": details.get("result"),
         }
 
     def execute(self, tool_name, arguments=None, approved=False, request_id=None):
@@ -86,6 +117,21 @@ class Selma0CommandRouterAndroidV1:
                 "error": "arguments must be an object",
             }
 
+        try:
+            arguments_sha256 = self._arguments_fingerprint(arguments)
+        except ValueError as exc:
+            self.audit.append(
+                "tool_rejected",
+                {"tool": tool_name, "reason": str(exc)},
+                request_id=request_id,
+            )
+            return {
+                "ok": False,
+                "request_id": request_id,
+                "tool": tool_name,
+                "error": str(exc),
+            }
+
         descriptor = self.registry.describe(tool_name)
         if descriptor is None:
             self.audit.append(
@@ -110,6 +156,7 @@ class Selma0CommandRouterAndroidV1:
                 "requires_approval": decision.requires_approval,
                 "reason": decision.reason,
                 "arguments": arguments,
+                "arguments_sha256": arguments_sha256,
             },
             request_id=request_id,
         )
@@ -126,11 +173,17 @@ class Selma0CommandRouterAndroidV1:
 
         with self._execute_lock:
             if decision.risk in {"write", "external_effect"}:
-                replay = self._completed_replay(request_id, tool_name)
+                replay = self._completed_replay(request_id, tool_name, arguments_sha256)
                 if replay is not None:
                     self.audit.append(
                         "tool_replay_suppressed",
-                        {"tool": tool_name, "risk": decision.risk},
+                        {
+                            "tool": tool_name,
+                            "risk": decision.risk,
+                            "arguments_sha256": arguments_sha256,
+                            "replay_ok": bool(replay.get("ok")),
+                            "replay_error": replay.get("error"),
+                        },
                         request_id=request_id,
                     )
                     return replay
@@ -169,7 +222,11 @@ class Selma0CommandRouterAndroidV1:
 
             self.audit.append(
                 "tool_completed",
-                {"tool": tool_name, "result": result},
+                {
+                    "tool": tool_name,
+                    "arguments_sha256": arguments_sha256,
+                    "result": result,
+                },
                 request_id=request_id,
             )
             return {
