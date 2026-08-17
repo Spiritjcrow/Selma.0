@@ -159,6 +159,43 @@ class AuditAndRouterTests(unittest.TestCase):
             self.assertEqual(result["checked"], 510)
             self.assertEqual(len(audit.recent(500)), 500)
 
+    def test_corrupt_audit_tail_blocks_new_append(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "audit.jsonl")
+            audit = Selma0AuditLogAndroidV1(path=path)
+            audit.append("good", {"ok": True})
+            with open(path, "a", encoding="utf-8") as handle:
+                handle.write("{broken-json\n")
+
+            with self.assertRaises(RuntimeError):
+                audit.append("must-not-reset-chain", {"ok": False})
+
+            result = audit.verify_chain()
+            self.assertFalse(result["ok"])
+            self.assertEqual(result["error"], "invalid JSON event")
+
+    def test_corrupt_audit_tail_prevents_tool_execution(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "audit.jsonl")
+            audit = Selma0AuditLogAndroidV1(path=path)
+            audit.append("good", {"ok": True})
+            with open(path, "a", encoding="utf-8") as handle:
+                handle.write("{broken-json\n")
+
+            calls = {"count": 0}
+
+            def mutate():
+                calls["count"] += 1
+                return {"ok": True}
+
+            registry = Selma0ToolRegistryAndroidV1()
+            registry.register("write.mutate", mutate, risk="write")
+            router = Selma0CommandRouterAndroidV1(registry=registry, audit_log=audit)
+
+            with self.assertRaises(RuntimeError):
+                router.execute("write.mutate", approved=True, request_id="corrupt-audit-1")
+            self.assertEqual(calls["count"], 0)
+
     def test_router_enforces_approval(self):
         with tempfile.TemporaryDirectory() as tmp:
             audit = Selma0AuditLogAndroidV1(path=os.path.join(tmp, "audit.jsonl"))
