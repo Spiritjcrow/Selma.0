@@ -192,8 +192,10 @@ class AuditAndRouterTests(unittest.TestCase):
             registry.register("write.mutate", mutate, risk="write")
             router = Selma0CommandRouterAndroidV1(registry=registry, audit_log=audit)
 
-            with self.assertRaises(RuntimeError):
-                router.execute("write.mutate", approved=True, request_id="corrupt-audit-1")
+            result = router.execute("write.mutate", approved=True, request_id="corrupt-audit-1")
+            self.assertFalse(result["ok"])
+            self.assertIn("audit chain integrity", result["error"])
+            self.assertFalse(result["audit_chain"]["ok"])
             self.assertEqual(calls["count"], 0)
 
     def test_router_enforces_approval(self):
