@@ -59,13 +59,19 @@ class Selma0AuditLogAndroidV1:
             return "0" * 64
         try:
             with open(self.path, "rb") as handle:
-                lines = handle.readlines()
-            if not lines:
-                return "0" * 64
-            row = json.loads(lines[-1].decode("utf-8"))
-            return str(row.get("event_hash", "0" * 64))
-        except (OSError, ValueError, UnicodeDecodeError):
+                lines = [line for line in handle.readlines() if line.strip()]
+        except OSError as exc:
+            raise RuntimeError(f"audit log tail read failed: {exc}") from exc
+        if not lines:
             return "0" * 64
+        try:
+            row = json.loads(lines[-1].decode("utf-8"))
+        except (ValueError, UnicodeDecodeError) as exc:
+            raise RuntimeError(f"audit log tail is corrupt: {exc}") from exc
+        event_hash = str(row.get("event_hash", "")).strip()
+        if len(event_hash) != 64 or any(ch not in "0123456789abcdef" for ch in event_hash.lower()):
+            raise RuntimeError("audit log tail is missing a valid event_hash")
+        return event_hash
 
     def append(self, event_type, details=None, request_id=None):
         with self._lock:
