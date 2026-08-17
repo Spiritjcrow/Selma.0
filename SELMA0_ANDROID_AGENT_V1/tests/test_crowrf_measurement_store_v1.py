@@ -79,7 +79,8 @@ class CrowRFMeasurementStoreTests(unittest.TestCase):
         self.assertEqual(status["event_count"], 1)
         self.assertEqual(status["observation_count"], 1)
         self.assertNotIn("aa:bb:cc", serialized)
-        self.assertNotIn("lab", serialized)
+        self.assertNotIn('"ssid"', serialized)
+        self.assertNotIn('"bssid"', serialized)
 
     def test_inference_is_rejected_from_measured_store(self):
         scan = measured_scan()
