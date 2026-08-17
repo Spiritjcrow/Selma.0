@@ -1,19 +1,42 @@
 name: Selma Android Build
-# Retry after repository Actions permissions update
 "on":
   workflow_dispatch: {}
   push:
     branches:
       - main
+      - selma-command-core-v1
     paths:
       - .github/workflows/selma-android-build.yml
+      - SELMA0_ANDROID_AGENT_V1/**
+  pull_request:
+    paths:
+      - .github/workflows/selma-android-build.yml
+      - SELMA0_ANDROID_AGENT_V1/**
 
 permissions:
   contents: read
 
 jobs:
+  command-core:
+    name: Validate Selma command core
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/selma-command-core-v1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out current revision
+        uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile command-core sources
+        run: python -m compileall -q SELMA0_ANDROID_AGENT_V1
+      - name: Run command-core unit and regression tests
+        run: python -m unittest discover -s SELMA0_ANDROID_AGENT_V1/tests -p 'test_*.py' -v
+
   build:
     name: Assemble Selma debug APK
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -26,20 +49,15 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Install Android API 35
-        shell: bash
-        run: |
-          yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
-          "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
-      - name: Install Gradle 8.7
-        shell: bash
-        run: |
-          curl --fail --location --retry 3 --output /tmp/gradle.zip https://services.gradle.org/distributions/gradle-8.7-bin.zip
-          unzip -q /tmp/gradle.zip -d /tmp
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Set up Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
       - name: Build debug-signed APK
         working-directory: android
-        shell: bash
-        run: /tmp/gradle-8.7/bin/gradle --no-daemon assembleDebug
+        run: gradle --no-daemon assembleDebug
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
