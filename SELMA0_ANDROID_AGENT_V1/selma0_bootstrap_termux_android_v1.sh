@@ -21,6 +21,7 @@ for file in \
   selma0_tool_registry_android_v1.py \
   selma0_device_bridge_android_v1.py \
   selma0_crowrf_wifi_scan_android_v1.py \
+  selma0_crowrf_measurement_store_android_v1.py \
   selma0_smoke_test_android_v1.sh
 do
   cp -f "$SOURCE_DIR/$file" "$SELMA0_HOME_V1/$file"
@@ -51,5 +52,5 @@ echo "Start: $SELMA0_HOME_V1/selma0_start_android_v1.sh"
 echo "UI: http://127.0.0.1:8765"
 echo "Tools: http://127.0.0.1:8765/api/selma0/tools/v1"
 echo "Offline LLM default endpoint: http://127.0.0.1:8080/v1"
-echo "Command Core, rootless Termux device bridge, measured CrowRF Wi-Fi scan adapter, local audit, Replika migration, tests, smoke validation, and Safety Guardian deployed."
+echo "Command Core, rootless Termux device bridge, measured CrowRF Wi-Fi acquisition, append-only CrowRF session storage, local audit, Replika migration, tests, smoke validation, and Safety Guardian deployed."
 echo "Termux:API Android companion app permissions are still required for Wi-Fi scan, location, notification, vibration, and SMS capabilities."
