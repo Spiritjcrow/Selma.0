@@ -150,8 +150,11 @@ def register_device_tools(registry, bridge=None):
     registry.register(
         "device.wifi_connection",
         lambda: bridge.read_json("wifi_connection"),
-        risk="read",
-        description="Read measured current Wi-Fi connection metadata through Termux:API.",
+        risk="sensitive_read",
+        description=(
+            "Read measured current Wi-Fi identity/connection metadata through "
+            "Termux:API; explicit approval required because SSID/BSSID can expose location context."
+        ),
     )
     registry.register(
         "device.location",
