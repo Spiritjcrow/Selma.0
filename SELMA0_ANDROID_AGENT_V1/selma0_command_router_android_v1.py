@@ -159,6 +159,24 @@ class Selma0CommandRouterAndroidV1:
             }
 
         decision = self.permissions.evaluate(descriptor, approved=approved)
+
+        # A structurally valid tail is not enough for mutating operations: an
+        # interior audit event could have been altered while the final line
+        # still contains a syntactically valid hash. Before recording an
+        # authorization for an allowed mutation, require the complete chain to
+        # verify from genesis to tail. Do not append to a compromised chain.
+        if decision.allowed and decision.risk in {"write", "external_effect"}:
+            integrity = self.audit.verify_chain()
+            if not integrity.get("ok"):
+                return {
+                    "ok": False,
+                    "request_id": request_id,
+                    "tool": tool_name,
+                    "risk": decision.risk,
+                    "error": "audit chain integrity check failed; mutating execution blocked",
+                    "audit_chain": integrity,
+                }
+
         self.audit.append(
             "tool_authorization",
             {
