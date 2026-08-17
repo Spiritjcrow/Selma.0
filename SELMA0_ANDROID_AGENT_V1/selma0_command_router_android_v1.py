@@ -47,6 +47,18 @@ class Selma0CommandRouterAndroidV1:
             raise ValueError(f"arguments must be JSON-serializable: {exc}") from exc
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
+    def _audit_safe_result(self, result):
+        try:
+            json.dumps(result, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+            return result, False
+        except (TypeError, ValueError):
+            safe = {
+                "serialization_warning": "tool result was not JSON-serializable",
+                "result_type": type(result).__name__,
+                "result_repr": repr(result)[:2048],
+            }
+            return safe, True
+
     def _completed_replay(self, request_id, tool_name, arguments_sha256):
         events = self.audit.request_events(request_id)
         completed = [event for event in events if event.get("event_type") == "tool_completed"]
@@ -220,12 +232,14 @@ class Selma0CommandRouterAndroidV1:
                     "error": str(exc),
                 }
 
+            safe_result, serialization_warning = self._audit_safe_result(result)
             self.audit.append(
                 "tool_completed",
                 {
                     "tool": tool_name,
                     "arguments_sha256": arguments_sha256,
-                    "result": result,
+                    "result": safe_result,
+                    "result_serialization_warning": serialization_warning,
                 },
                 request_id=request_id,
             )
@@ -233,5 +247,6 @@ class Selma0CommandRouterAndroidV1:
                 "ok": True,
                 "request_id": request_id,
                 "tool": tool_name,
-                "result": result,
+                "result": safe_result,
+                "result_serialization_warning": serialization_warning,
             }
