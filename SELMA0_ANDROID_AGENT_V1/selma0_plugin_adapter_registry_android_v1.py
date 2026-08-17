@@ -57,7 +57,10 @@ def register_plugin_status_tool(tool_registry, plugin_registry):
     tool_registry.register(
         "plugins.status",
         lambda: plugin_registry.list_status(),
-        risk="read",
-        description="List configured external-service adapters without exposing credentials.",
+        risk="sensitive_read",
+        description=(
+            "List configured external-service adapters without exposing credentials; "
+            "explicit approval required because target/account metadata may be sensitive."
+        ),
     )
     return plugin_registry
