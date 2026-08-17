@@ -152,11 +152,11 @@ class CrowRFTests(unittest.TestCase):
         register_device_tools(registry, bridge=bridge)
         register_crowrf_tools(registry, bridge=bridge)
         self.assertEqual(registry.describe("device.battery_status")["risk"], "read")
-        self.assertEqual(registry.describe("device.wifi_connection")["risk"], "read")
+        self.assertEqual(registry.describe("device.wifi_connection")["risk"], "sensitive_read")
         self.assertEqual(registry.describe("device.location")["risk"], "sensitive_read")
         self.assertEqual(registry.describe("device.notify")["risk"], "external_effect")
         self.assertEqual(registry.describe("device.vibrate")["risk"], "external_effect")
-        self.assertEqual(registry.describe("crowrf.wifi_scan")["risk"], "read")
+        self.assertEqual(registry.describe("crowrf.wifi_scan")["risk"], "sensitive_read")
 
     @staticmethod
     def _bridge_for_registration():
