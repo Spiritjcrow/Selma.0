@@ -74,9 +74,10 @@ def register_crowrf_tools(registry, bridge=None):
     registry.register(
         "crowrf.wifi_scan",
         lambda: collect_crowrf_wifi_scan_v1(bridge=bridge),
-        risk="read",
+        risk="sensitive_read",
         description=(
             "Collect measured rootless Wi-Fi scan telemetry for CrowRF through Termux:API. "
+            "Explicit approval is required because nearby SSID/BSSID data can expose location context. "
             "Returns RSSI/BSSID/frequency metadata only; does not fabricate CSI or geometry."
         ),
     )
