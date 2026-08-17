@@ -12,6 +12,7 @@ for file in \
   selma0_runtime_android_v1.py \
   selma0_runtime_command_core_android_v1.py \
   selma0_runtime_device_crowrf_android_v1.py \
+  selma0_runtime_universal_android_v1.py \
   selma0_llm_router_android_v1.py \
   selma0_memory_android_v1.py \
   selma0_safety_guardian_android_v1.py \
@@ -23,6 +24,8 @@ for file in \
   selma0_crowrf_wifi_scan_android_v1.py \
   selma0_crowrf_measurement_store_android_v1.py \
   selma0_crowrf_derived_metrics_android_v1.py \
+  selma0_plugin_adapter_registry_android_v1.py \
+  selma0_github_adapter_android_v1.py \
   selma0_smoke_test_android_v1.sh \
   selma0_crowrf_hardware_validate_android_v1.sh
 do
@@ -45,7 +48,7 @@ cat > "$SELMA0_HOME_V1/selma0_start_android_v1.sh" <<'EOF'
 set -e
 cd "$HOME/SELMA0_ANDROID_AGENT_V1"
 export SELMA0_BASE_V1="$HOME/SELMA0_ANDROID_AGENT_V1"
-exec python selma0_runtime_device_crowrf_android_v1.py
+exec python selma0_runtime_universal_android_v1.py
 EOF
 chmod +x "$SELMA0_HOME_V1/selma0_start_android_v1.sh"
 
@@ -56,5 +59,6 @@ echo "Start: $SELMA0_HOME_V1/selma0_start_android_v1.sh"
 echo "UI: http://127.0.0.1:8765"
 echo "Tools: http://127.0.0.1:8765/api/selma0/tools/v1"
 echo "Offline LLM default endpoint: http://127.0.0.1:8080/v1"
-echo "Command Core, rootless Termux device bridge, measured CrowRF Wi-Fi acquisition, append-only CrowRF session storage, verified derived RSSI summaries, local audit, Replika migration, tests, smoke validation, and Safety Guardian deployed."
+echo "Optional GitHub adapter: set SELMA0_GITHUB_REPO_V1=owner/repo; set SELMA0_GITHUB_TOKEN_V1 only when approved GitHub writes are needed."
+echo "Universal runtime, Command Core, rootless Termux device bridge, measured CrowRF acquisition/session storage, verified RSSI summaries, external-service adapter registry, GitHub adapter, local audit, Replika migration, tests, smoke validation, and Safety Guardian deployed."
 echo "Termux:API Android companion app permissions are still required for Wi-Fi scan, location, notification, vibration, and SMS capabilities."
