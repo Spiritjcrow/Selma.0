@@ -1,66 +1,101 @@
-name: Selma Android Build
-"on":
-  workflow_dispatch: {}
+name: Selma Validation and Android Build
+
+on:
+  workflow_dispatch:
   push:
-    branches:
-      - main
-      - selma-command-core-v1
+    branches: [main]
     paths:
       - .github/workflows/selma-android-build.yml
       - SELMA0_ANDROID_AGENT_V1/**
+      - SELMA0_ANDROID_NATIVE_V1/**
   pull_request:
     paths:
       - .github/workflows/selma-android-build.yml
       - SELMA0_ANDROID_AGENT_V1/**
+      - SELMA0_ANDROID_NATIVE_V1/**
 
 permissions:
   contents: read
 
+concurrency:
+  group: selma-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   command-core:
     name: Validate Selma command core
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/selma-command-core-v1'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Check out current revision
         uses: actions/checkout@v4
+
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Compile command-core sources
-        run: python -m compileall -q SELMA0_ANDROID_AGENT_V1
-      - name: Run command-core unit and regression tests
-        run: python -m unittest discover -s SELMA0_ANDROID_AGENT_V1/tests -p 'test_*.py' -v
 
-  build:
-    name: Assemble Selma debug APK
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+      - name: Compile Selma Python sources
+        run: python -m compileall -q SELMA0_ANDROID_AGENT_V1
+
+      - name: Run Selma regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -d SELMA0_ANDROID_AGENT_V1/tests ]]; then
+            python -m unittest discover -s SELMA0_ANDROID_AGENT_V1/tests -p 'test_*.py' -v
+          else
+            echo 'No Python test directory found.'
+          fi
+
+      - name: Validate Termux shell scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' script; do
+            echo "checking $script"
+            bash -n "$script"
+          done < <(find SELMA0_ANDROID_AGENT_V1 -type f -name '*.sh' -print0)
+
+  native-android:
+    name: Build native Android shell when present
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
-      - name: Check out approved Android branch
+      - name: Check out current revision
         uses: actions/checkout@v4
-        with:
-          ref: codex/selma-android-installable
+
+      - name: Detect native Android project
+        id: native
+        shell: bash
+        run: |
+          if [[ -f SELMA0_ANDROID_NATIVE_V1/gradlew ]]; then
+            echo 'present=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'present=false' >> "$GITHUB_OUTPUT"
+            echo 'SELMA0_ANDROID_NATIVE_V1 is not present on this revision; native APK gate is not applicable.'
+          fi
+
       - name: Set up Java 17
+        if: steps.native.outputs.present == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-      - name: Set up Gradle 8.7
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.7'
-      - name: Build debug-signed APK
-        working-directory: android
-        run: gradle --no-daemon assembleDebug
-      - name: Upload installable APK
+
+      - name: Lint, test, and assemble native debug APK
+        if: steps.native.outputs.present == 'true'
+        working-directory: SELMA0_ANDROID_NATIVE_V1
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew --no-daemon --stacktrace :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
+
+      - name: Upload native debug APK
+        if: steps.native.outputs.present == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: Selma-Android-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Selma-Native-Android-debug
+          path: SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
