@@ -6,13 +6,14 @@ SOURCE_DIR="$(cd "$(dirname "$0")" && pwd)"
 mkdir -p "$SELMA0_HOME_V1"
 
 pkg update -y
-pkg install -y python git termux-api
+pkg install -y python git cmake make termux-api
 
 for file in \
   selma0_runtime_android_v1.py \
   selma0_runtime_command_core_android_v1.py \
   selma0_runtime_device_crowrf_android_v1.py \
   selma0_llm_router_android_v1.py \
+  selma0_llama_runtime_android_v1.sh \
   selma0_memory_android_v1.py \
   selma0_safety_guardian_android_v1.py \
   selma0_audit_log_android_v1.py \
@@ -28,6 +29,7 @@ for file in \
 do
   cp -f "$SOURCE_DIR/$file" "$SELMA0_HOME_V1/$file"
 done
+chmod +x "$SELMA0_HOME_V1/selma0_llama_runtime_android_v1.sh"
 chmod +x "$SELMA0_HOME_V1/selma0_smoke_test_android_v1.sh"
 chmod +x "$SELMA0_HOME_V1/selma0_crowrf_hardware_validate_android_v1.sh"
 
@@ -51,10 +53,16 @@ chmod +x "$SELMA0_HOME_V1/selma0_start_android_v1.sh"
 
 echo "Selma.0 Android Agent V1 installed at: $SELMA0_HOME_V1"
 echo "Validate software stack: $SELMA0_HOME_V1/selma0_smoke_test_android_v1.sh"
+echo "Validate llama runtime manager: bash $SELMA0_HOME_V1/tests/test_selma0_llama_runtime_android_v1.sh"
+echo "Install/build llama.cpp server: $SELMA0_HOME_V1/selma0_llama_runtime_android_v1.sh install-runtime"
+echo "Inspect conservative model profile: $SELMA0_HOME_V1/selma0_llama_runtime_android_v1.sh profile"
+echo "Start local LLM: $SELMA0_HOME_V1/selma0_llama_runtime_android_v1.sh start"
+echo "Local LLM status: $SELMA0_HOME_V1/selma0_llama_runtime_android_v1.sh status"
 echo "Validate one real CrowRF scan: $SELMA0_HOME_V1/selma0_crowrf_hardware_validate_android_v1.sh --confirmed-sensitive-scan"
-echo "Start: $SELMA0_HOME_V1/selma0_start_android_v1.sh"
+echo "Start Selma: $SELMA0_HOME_V1/selma0_start_android_v1.sh"
 echo "UI: http://127.0.0.1:8765"
 echo "Tools: http://127.0.0.1:8765/api/selma0/tools/v1"
 echo "Offline LLM default endpoint: http://127.0.0.1:8080/v1"
-echo "Command Core, rootless Termux device bridge, measured CrowRF Wi-Fi acquisition, append-only CrowRF session storage, verified derived RSSI summaries, local audit, Replika migration, tests, smoke validation, and Safety Guardian deployed."
+echo "Command Core, rootless Termux device bridge, managed local llama.cpp runtime, measured CrowRF Wi-Fi acquisition, append-only CrowRF session storage, verified derived RSSI summaries, local audit, Replika migration, tests, smoke validation, and Safety Guardian deployed."
+echo "GGUF model weights are intentionally not bundled. Place a compatible model under $SELMA0_HOME_V1/models/ or set SELMA0_MODEL_V1."
 echo "Termux:API Android companion app permissions are still required for Wi-Fi scan, location, notification, vibration, and SMS capabilities."

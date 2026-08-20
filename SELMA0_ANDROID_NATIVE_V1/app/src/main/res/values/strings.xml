@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Selma.0</string>
+    <string name="service_channel_name">Selma active service</string>
+    <string name="service_channel_description">Visible controls for the local Selma assistant and overlay</string>
+</resources>
