@@ -1,0 +1,40 @@
+name: Selma0 Android Native V1
+
+on:
+  pull_request:
+    paths:
+      - "SELMA0_ANDROID_NATIVE_V1/**"
+      - ".github/workflows/selma0-android-native-v1.yml"
+  push:
+    branches:
+      - "agent/selma0-android-native-v1"
+    paths:
+      - "SELMA0_ANDROID_NATIVE_V1/**"
+      - ".github/workflows/selma0-android-native-v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: SELMA0_ANDROID_NATIVE_V1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Prepare verified wrapper
+        run: chmod +x ./gradlew
+      - name: Lint, test, and assemble
+        run: ./gradlew --no-daemon :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: selma0-android-native-v1-debug
+          path: SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
