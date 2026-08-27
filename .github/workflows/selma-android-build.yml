@@ -1,10 +1,11 @@
 name: Selma Validation and Android Cloud Build
 
-# Manual retry: 2026-08-27T00:00:00Z
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches:
+      - main
+      - moto-g-play-2023-support
     paths:
       - .github/workflows/selma-android-build.yml
       - SELMA0_ANDROID_AGENT_V1/**
@@ -46,7 +47,7 @@ jobs:
           while IFS= read -r -d '' script; do bash -n "$script"; done < <(find SELMA0_ANDROID_AGENT_V1 -type f -name '*.sh' -print0)
 
   native-android:
-    name: Build Selma Android APK
+    name: Build Moto G Play 2023 Selma APK
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -65,6 +66,11 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - name: Verify VR/AR is not required
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -RniE 'android\.hardware\.vr|daydream|cardboard|com\.google\.ar\.core|android\.hardware\.camera\.ar' SELMA0_ANDROID_NATIVE_V1/app/src/main SELMA0_ANDROID_NATIVE_V1/app/build.gradle
       - name: Assemble debug APK
         working-directory: SELMA0_ANDROID_NATIVE_V1
         run: gradle --no-daemon --stacktrace :app:assembleDebug
@@ -73,7 +79,7 @@ jobs:
       - name: Upload Selma APK
         uses: actions/upload-artifact@v4
         with:
-          name: Selma-Android-v0.10.0-debug
+          name: Selma-v0.11.2-Moto-G-Play-2023-NoVR-debug
           path: |
             SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk
             SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk.sha256
