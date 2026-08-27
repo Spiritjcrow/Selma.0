@@ -1,0 +1,48 @@
+name: Moto G Play 2023 APK Build
+
+on:
+  push:
+    branches:
+      - moto-g-play-2023-support
+    paths:
+      - .github/workflows/moto-g-play-build.yml
+      - SELMA0_ANDROID_NATIVE_V1/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Verify no VR AR or native ABI dependency
+        run: |
+          set -e
+          ! grep -RniE 'android\.hardware\.vr|daydream|cardboard|com\.google\.ar\.core|android\.hardware\.camera\.ar|abiFilters|jniLibs' SELMA0_ANDROID_NATIVE_V1/app
+      - name: Build APK
+        working-directory: SELMA0_ANDROID_NATIVE_V1
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Rename APK
+        run: |
+          mkdir -p deliverables
+          cp SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk deliverables/Selma-v0.11.3-Moto-G-Play-2023-NoVR.apk
+          sha256sum deliverables/Selma-v0.11.3-Moto-G-Play-2023-NoVR.apk > deliverables/Selma-v0.11.3-Moto-G-Play-2023-NoVR.apk.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Selma-v0.11.3-Moto-G-Play-2023-NoVR
+          path: deliverables/*
+          if-no-files-found: error
+          retention-days: 30
