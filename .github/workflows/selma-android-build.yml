@@ -1,4 +1,4 @@
-name: Selma Validation and Android Build
+name: Selma Validation and Android Cloud Build
 
 on:
   workflow_dispatch:
@@ -27,75 +27,54 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Check out current revision
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
-      - name: Compile Selma Python sources
+      - name: Compile Python sources
         run: python -m compileall -q SELMA0_ANDROID_AGENT_V1
-
-      - name: Run Selma regression tests
+      - name: Run regression tests
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -d SELMA0_ANDROID_AGENT_V1/tests ]]; then
-            python -m unittest discover -s SELMA0_ANDROID_AGENT_V1/tests -p 'test_*.py' -v
-          else
-            echo 'No Python test directory found.'
-          fi
-
-      - name: Validate Termux shell scripts
+          python -m unittest discover -s SELMA0_ANDROID_AGENT_V1/tests -p 'test_*.py' -v
+      - name: Validate Termux scripts
         shell: bash
         run: |
           set -euo pipefail
-          while IFS= read -r -d '' script; do
-            echo "checking $script"
-            bash -n "$script"
-          done < <(find SELMA0_ANDROID_AGENT_V1 -type f -name '*.sh' -print0)
+          while IFS= read -r -d '' script; do bash -n "$script"; done < <(find SELMA0_ANDROID_AGENT_V1 -type f -name '*.sh' -print0)
 
   native-android:
-    name: Build native Android shell when present
+    name: Build Selma Android APK
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
-      - name: Check out current revision
-        uses: actions/checkout@v4
-
-      - name: Detect native Android project
-        id: native
-        shell: bash
-        run: |
-          if [[ -f SELMA0_ANDROID_NATIVE_V1/gradlew ]]; then
-            echo 'present=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'present=false' >> "$GITHUB_OUTPUT"
-            echo 'SELMA0_ANDROID_NATIVE_V1 is not present on this revision; native APK gate is not applicable.'
-          fi
-
+      - uses: actions/checkout@v4
       - name: Set up Java 17
-        if: steps.native.outputs.present == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
-      - name: Lint, test, and assemble native debug APK
-        if: steps.native.outputs.present == 'true'
-        working-directory: SELMA0_ANDROID_NATIVE_V1
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android platform
         shell: bash
-        run: |
-          set -euo pipefail
-          chmod +x ./gradlew
-          ./gradlew --no-daemon --stacktrace :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
-
-      - name: Upload native debug APK
-        if: steps.native.outputs.present == 'true'
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Assemble debug APK
+        working-directory: SELMA0_ANDROID_NATIVE_V1
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Record APK checksum
+        run: sha256sum SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk > SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk.sha256
+      - name: Upload Selma APK
         uses: actions/upload-artifact@v4
         with:
-          name: Selma-Native-Android-debug
-          path: SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk
+          name: Selma-Android-v0.10.0-debug
+          path: |
+            SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk
+            SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk.sha256
           if-no-files-found: error
+          retention-days: 30
