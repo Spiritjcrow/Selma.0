@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "platform_id": "android-native",
+  "platform": "Android native shell (current main)",
+  "display_order": 20,
+  "adapter_version": "0.10.0",
+  "evidence_scope": "Static source inspection only; Gradle, APK, install, foreground service, and overlay evidence are absent.",
+  "capabilities": {
+    "model": {
+      "state": "unavailable",
+      "evidence": "Current MainActivity loads a remote HTTPS WebView and exposes no local-model adapter."
+    },
+    "memory": {
+      "state": "unavailable",
+      "evidence": "Current native source has no connection to the local SQLite memory API."
+    },
+    "voice": {
+      "state": "unavailable",
+      "evidence": "Current WebChromeClient denies every WebView permission request."
+    },
+    "avatar": {
+      "state": "planned",
+      "evidence": "No avatar state engine, asset pack, renderer, or lip-sync code exists on current main."
+    },
+    "device": {
+      "state": "unavailable",
+      "evidence": "Current native source has no audited device-bridge integration."
+    },
+    "notification": {
+      "state": "unavailable",
+      "evidence": "No foreground service or notification channel exists on current main."
+    },
+    "storage": {
+      "state": "unavailable",
+      "evidence": "No native persistence adapter exists on current main."
+    },
+    "process": {
+      "state": "unavailable",
+      "evidence": "No root, shell, or Termux process bridge is present in the current native shell."
+    },
+    "network": {
+      "state": "implemented",
+      "evidence": "The activity loads one hard-coded HTTPS chatgpt.site URL and blocks navigation outside that host suffix."
+    },
+    "presentation": {
+      "state": "implemented",
+      "evidence": "A launcher WebView activity exists; overlay, wallpaper, windowed fallback, and degraded-state UI do not."
+    }
+  }
+}

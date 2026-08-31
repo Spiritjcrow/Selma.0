@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "platform_id": "windows",
+  "platform": "Windows",
+  "display_order": 40,
+  "adapter_version": "0.0.0",
+  "evidence_scope": "Contract manifest only. No Windows adapter source exists on the evidence baseline.",
+  "capabilities": {
+    "model": {"state": "planned", "evidence": "A local llama.cpp-compatible adapter is specified but not implemented."},
+    "memory": {"state": "planned", "evidence": "A user-controlled local memory adapter is specified but not implemented."},
+    "voice": {"state": "planned", "evidence": "Offline voice and barge-in are specified but not implemented."},
+    "avatar": {"state": "planned", "evidence": "Software and supported GPU rendering paths are specified but not implemented."},
+    "device": {"state": "planned", "evidence": "Only public user-authorized Windows capabilities will be exposed; no adapter exists."},
+    "notification": {"state": "planned", "evidence": "Windows notification support is specified but not implemented."},
+    "storage": {"state": "planned", "evidence": "User-scoped local storage is specified but not implemented."},
+    "process": {"state": "planned", "evidence": "Fixed allowlisted process operations through the single control plane are specified but not implemented."},
+    "network": {"state": "planned", "evidence": "Explicit opt-in network support is specified but not implemented."},
+    "presentation": {"state": "planned", "evidence": "Windowed, tray, always-on-top, and supported background modes are specified but not implemented."}
+  }
+}

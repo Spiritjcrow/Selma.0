@@ -18,6 +18,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Repository inventory
         shell: bash
         run: |
@@ -50,6 +53,13 @@ jobs:
           if bad: raise SystemExit('\n'.join(bad))
           print('JSON validation passed')
           PY
+      - name: Run portable regression suites
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s SELMA0_ANDROID_AGENT_V1/tests -p 'test_*.py' -v
+          python3 -m unittest discover -s tests -p 'test_*.py' -v
+          python3 tools/generate_support_matrix.py --check
       - name: Build-entrypoint summary
         shell: bash
         run: |
@@ -59,5 +69,5 @@ jobs:
             echo "- Repository: $GITHUB_REPOSITORY"
             echo "- Ref: $GITHUB_REF"
             for f in package.json pyproject.toml requirements.txt gradlew build.gradle build.gradle.kts settings.gradle settings.gradle.kts '*.sln' '*.csproj' Cargo.toml go.mod; do compgen -G "$f" >/dev/null && echo "- Detected: $f" || true; done
-            echo '- Baseline checks: Python syntax, shell syntax, JSON validity.'
+            echo '- Baseline checks: syntax, JSON, command/device regressions, Gate 1 contracts, and generated support matrix.'
           } >> "$GITHUB_STEP_SUMMARY"

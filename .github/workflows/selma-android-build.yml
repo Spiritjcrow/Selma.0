@@ -39,6 +39,8 @@ jobs:
         run: |
           set -euo pipefail
           python -m unittest discover -s SELMA0_ANDROID_AGENT_V1/tests -p 'test_*.py' -v
+          python -m unittest discover -s tests -p 'test_*.py' -v
+          python tools/generate_support_matrix.py --check
       - name: Validate Termux scripts
         shell: bash
         run: |
@@ -65,9 +67,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Assemble debug APK
+      - name: Lint, test, and assemble debug APK
         working-directory: SELMA0_ANDROID_NATIVE_V1
-        run: gradle --no-daemon --stacktrace :app:assembleDebug
+        run: gradle --no-daemon --stacktrace :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
       - name: Record APK checksum
         run: sha256sum SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk > SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk.sha256
       - name: Upload Selma APK
