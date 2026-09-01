@@ -8,3 +8,7 @@ __pycache__/
 *.bin
 *.onnx
 SELMA0_ANDROID_AGENT_V1/selma0_data_android_v1/
+.gradle/
+**/.gradle/
+**/build/
+local.properties

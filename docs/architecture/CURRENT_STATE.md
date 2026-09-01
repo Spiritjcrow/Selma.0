@@ -104,4 +104,11 @@ This branch implements issue #15's first increment without moving existing imple
 4. generated support matrix;
 5. contract tests for denial, timeout, cancellation, unavailable capability, offline boot, and shutdown.
 
-The 15 contract tests pass locally. Gate 1 remains open until the branch receives usable CI evidence and the contracts are merged to main.
+The 23 contract tests pass locally. Gate 1 remains open until the branch receives usable CI evidence and the contracts are merged to main.
+
+PR #18 also carries a checksum-pinned Gradle 8.9 wrapper so the Android lint,
+unit, and APK tasks no longer depend on an unversioned system Gradle install.
+With Temurin JDK 17.0.20.1 and Android SDK 35, the combined lint, unit-test, and
+debug-APK command passed locally on 2026-09-01 (lint: 0 errors and 2 warnings;
+unit task: no sources). Android SDK availability in CI and owned-device
+installation remain separate gates.

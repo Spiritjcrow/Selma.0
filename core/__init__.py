@@ -6,6 +6,7 @@ flow through the existing audited Android/Termux command control plane.
 
 from .protocols import (
     ALL_CAPABILITIES,
+    CAPABILITY_RISK_FLOORS,
     AdapterDescriptor,
     AdapterResult,
     AvatarState,
@@ -19,6 +20,7 @@ from .protocols import (
 
 __all__ = [
     "ALL_CAPABILITIES",
+    "CAPABILITY_RISK_FLOORS",
     "AdapterDescriptor",
     "AdapterResult",
     "AvatarState",

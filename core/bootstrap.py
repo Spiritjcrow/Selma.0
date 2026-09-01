@@ -47,8 +47,13 @@ class OfflineCore:
         return self._adapters[capability]
 
     def health(self) -> RuntimeHealth:
+        result_status = (
+            ResultStatus.SHUTDOWN
+            if self._state is RuntimeState.STOPPED
+            else ResultStatus.UNAVAILABLE
+        )
         statuses = {
-            capability.value: ResultStatus.UNAVAILABLE.value
+            capability.value: result_status.value
             for capability in ALL_CAPABILITIES
         }
         return RuntimeHealth(
