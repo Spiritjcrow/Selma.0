@@ -1,0 +1,21 @@
+{
+  "mapping_version": "1.0.0",
+  "contract": "selma.personification.v1",
+  "renderer_family": ["android-2d", "web-2d", "desktop-2d"],
+  "states": {
+    "IDLE": {"animation": "idle_breathe", "loop": true},
+    "LISTENING": {"animation": "listen_attentive", "loop": true},
+    "THINKING": {"animation": "think_subtle", "loop": true},
+    "SPEAKING": {"animation": "speak_energy_driven", "loop": true},
+    "INTERRUPTED": {"animation": "interrupt_settle", "loop": false},
+    "SLEEPING": {"animation": "sleep_low_motion", "loop": true},
+    "ERROR": {"animation": "error_calm", "loop": true}
+  },
+  "parameters": {
+    "speech_energy": {"target": "mouth.open", "scale": 1},
+    "attention": {"target": "eyes.focus", "scale": 1},
+    "valence": {"target": "face.valence", "scale": 1},
+    "arousal": {"target": "motion.intensity", "scale": 0.6}
+  },
+  "fallback": {"missing_state": "IDLE", "missing_parameter": "ignore", "reduced_motion_animation": "static_attentive"}
+}
