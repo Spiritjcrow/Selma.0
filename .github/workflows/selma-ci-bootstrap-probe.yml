@@ -1,0 +1,28 @@
+name: Selma CI Bootstrap Probe
+
+on:
+  push:
+    branches:
+      - codex/gate1-contracts-v1
+    paths:
+      - .github/workflows/selma-ci-bootstrap-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    name: Verify GitHub-hosted runner startup
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Record runner bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "repository=${GITHUB_REPOSITORY}"
+          echo "ref=${GITHUB_REF}"
+          echo "sha=${GITHUB_SHA}"
+          uname -a
+          echo "SELMA_CI_BOOTSTRAP_OK"
