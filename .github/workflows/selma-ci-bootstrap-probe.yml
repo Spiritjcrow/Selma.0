@@ -1,5 +1,6 @@
 name: Selma CI Bootstrap Probe
 
+# Isolation probe: only workflow on this branch during this diagnostic commit.
 on:
   push:
     branches:
