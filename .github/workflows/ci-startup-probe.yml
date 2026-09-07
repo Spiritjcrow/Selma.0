@@ -1,0 +1,19 @@
+name: Selma CI Startup Probe
+
+on:
+  push:
+    branches:
+      - codex/agency-composition-v1
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Confirm runner startup
+        run: echo "Selma CI runner started successfully"
