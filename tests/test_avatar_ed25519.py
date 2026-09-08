@@ -5,7 +5,7 @@ from pathlib import Path
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
-from avatar.ed25519 import Ed25519Verifier, TrustStoreError, load_trust_store
+from avatar.ed25519 import MAX_TRUST_STORE_BYTES, Ed25519Verifier, TrustStoreError, load_trust_store
 from avatar.pack import AvatarPack, AvatarPackError, _canonical_unsigned
 from core.protocols import AvatarState
 
@@ -53,6 +53,18 @@ class Ed25519VerifierTests(unittest.TestCase):
             root=Path(d); duplicate=store(); duplicate["keys"].append(dict(duplicate["keys"][0]))
             with self.assertRaisesRegex(TrustStoreError, "duplicate key_id"): load_trust_store(self.write_store(root, duplicate))
             with self.assertRaisesRegex(TrustStoreError, "32 bytes"): load_trust_store(self.write_store(root, store(public=b"short")))
+
+    def test_oversized_or_non_utf8_store_is_rejected_before_parsing(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            oversized = root / "oversized.json"
+            oversized.write_bytes(b" " * (MAX_TRUST_STORE_BYTES + 1))
+            with self.assertRaisesRegex(TrustStoreError, "size limit"):
+                load_trust_store(oversized)
+            utf16 = root / "utf16.json"
+            utf16.write_bytes(json.dumps(store()).encode("utf-16"))
+            with self.assertRaisesRegex(TrustStoreError, "strict UTF-8"):
+                load_trust_store(utf16)
 
     def test_avatar_pack_integration_accepts_valid_signature_only(self):
         with tempfile.TemporaryDirectory() as d:
