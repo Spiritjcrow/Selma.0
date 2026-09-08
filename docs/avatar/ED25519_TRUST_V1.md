@@ -8,6 +8,6 @@ The registry contains public keys only. Private signing keys must never enter th
 
 Tests use the public RFC 8032 test-vector seed solely to generate deterministic signatures. It is globally published test material and is never a production signing key.
 
-Run `python3 -m unittest tests.test_avatar_ed25519 -v`. The tests cover valid/tampered payloads, unknown and revoked keys, algorithm confusion, private-field rejection, duplicate IDs, malformed key length, and end-to-end `AvatarPack.open()` verification.
+Run `python3 -m unittest tests.test_avatar_ed25519 -v`. The tests cover valid/tampered payloads, unknown and revoked keys, algorithm confusion, private-field rejection, duplicate IDs, malformed key length, bounded reads, strict UTF-8, and end-to-end `AvatarPack.open()` verification.
 
 Primary specifications: [RFC 8032](https://www.rfc-editor.org/rfc/rfc8032) and the [`cryptography` Ed25519 API](https://cryptography.io/en/latest/hazmat/primitives/asymmetric/ed25519/).
