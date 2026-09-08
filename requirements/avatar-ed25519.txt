@@ -1,0 +1,2 @@
+# Vetted Ed25519 implementation used by avatar.ed25519; no shell fallback.
+cryptography>=46.0.0,<47
