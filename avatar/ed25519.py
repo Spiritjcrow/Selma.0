@@ -46,11 +46,12 @@ class TrustedKey:
 
 def load_trust_store(path: str | Path) -> Mapping[str, TrustedKey]:
     """Load a strict public-key-only registry; private key fields are rejected."""
-    raw = Path(path).read_bytes()
+    with Path(path).open("rb") as handle:
+        raw = handle.read(MAX_TRUST_STORE_BYTES + 1)
     if len(raw) > MAX_TRUST_STORE_BYTES:
         raise TrustStoreError("trust store exceeds size limit")
     try:
-        document = json.loads(raw, object_pairs_hook=_no_duplicates)
+        document = json.loads(raw.decode("utf-8"), object_pairs_hook=_no_duplicates)
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
         raise TrustStoreError("trust store is not strict UTF-8 JSON") from exc
     if not isinstance(document, dict) or document.get("schema_version") != TRUST_SCHEMA_VERSION:
