@@ -115,7 +115,10 @@ class SelmaControlPlaneBridge:
             fdt_approval_id=receipt.approval_id,
             fdt_receipt_signature=receipt.signature,
         )
-        result = self._dispatcher(invocation)
+        try:
+            result = self._dispatcher(invocation)
+        except Exception as exc:
+            raise SelmaBridgeError("Selma dispatcher failed") from exc
         if not isinstance(result, Mapping):
             raise SelmaBridgeError("Selma dispatcher returned a non-mapping result")
         return dict(result)
