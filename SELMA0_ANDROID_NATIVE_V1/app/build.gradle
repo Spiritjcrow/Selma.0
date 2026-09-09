@@ -8,16 +8,20 @@ android {
         applicationId 'ai.selma.companion'
         minSdk 26
         targetSdk 35
-        versionCode 1000
-        versionName '0.10.0'
+        versionCode 1130
+        versionName '0.11.3-moto-g-play-2023-novr-purejava'
     }
 
     buildTypes {
+        debug {
+            debuggable true
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
