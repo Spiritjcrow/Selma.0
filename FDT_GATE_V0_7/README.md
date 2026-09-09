@@ -26,6 +26,7 @@ verbatim by the lexer and are not decomposed unless explicitly defined in a futu
 - two distinct stack adapters that normalize equivalent calls to the same envelope/action hash
 - filesystem, HTTPS allowlist, and read-only Git reference adapters
 - loopback HTTP middleware with bearer-token-to-principal binding
+- fail-closed Selma control-plane bridge for integrated deployments
 - parser fuzz/property-style invariants and authorization conformance tests
 - offline authorization after dependencies are installed
 
@@ -73,6 +74,16 @@ fdt-gate serve ./gate-state --bind 127.0.0.1 --port 8767
 `POST /v1/authorize` evaluates without executing. `POST /v1/execute` re-authorizes at action time,
 consumes one-time approvals, and only then reaches an adapter. Both require `Authorization: Bearer <token>`;
 the token maps to a trusted principal and the input `actor` must match it.
+
+## Selma/SelmaOS integration
+
+Standalone FDT Gate may use its own bounded reference adapters. **Selma-integrated deployments must not.**
+Use `SelmaIntegratedFDTGate` with `SelmaControlPlaneBridge`: an FDT `ALLOW` is handed to Selma as a
+fully bound registered-tool request, and Selma's canonical permission, replay, audit, cancellation,
+kill-switch, and platform-adapter path remains the final authority for any host effect. Missing routes,
+receipt mismatches, kill-switch activation, bridge failures, and Selma denials fail closed.
+
+See `SELMA_INTEGRATION.md` for the contract and wiring model.
 
 ## Stable policy subset
 
