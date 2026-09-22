@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "platform_id": "android-termux",
+  "platform": "Android / Termux",
+  "display_order": 10,
+  "adapter_version": "0.1.0",
+  "evidence_scope": "Current-main source plus portable Linux tests. No owned-Android result is claimed.",
+  "capabilities": {
+    "model": {
+      "state": "planned",
+      "evidence": "The router targets 127.0.0.1:8080, but the managed llama.cpp runtime remains on draft PR #12 and no real offline answer is verified."
+    },
+    "memory": {
+      "state": "implemented",
+      "evidence": "SQLite conversation memory exists on main; bounded RAG, provenance controls, export/edit/delete, and retention remain in WP-04."
+    },
+    "voice": {
+      "state": "planned",
+      "evidence": "No wake-word, VAD, offline ASR, expressive TTS, or barge-in implementation exists on main."
+    },
+    "avatar": {
+      "state": "planned",
+      "evidence": "No verified state engine, signed pack reader, renderer, or lip-sync runtime exists on main."
+    },
+    "device": {
+      "state": "tested",
+      "evidence": "Fail-closed allowlisted device bridge and measured-only CrowRF paths passed 55 portable tests; physical Termux commands are not claimed."
+    },
+    "notification": {
+      "state": "implemented",
+      "evidence": "An allowlisted device.notify tool is registered; owned-device permission and delivery remain unverified."
+    },
+    "storage": {
+      "state": "tested",
+      "evidence": "SQLite memory and append-only CrowRF measurement storage pass integrity, mutation-blocking, and corruption tests."
+    },
+    "process": {
+      "state": "implemented",
+      "evidence": "Only fixed Termux executable paths run without shell expansion; actual Android command availability is a separate device gate."
+    },
+    "network": {
+      "state": "tested",
+      "evidence": "Loopback bind, Host, Origin, and DNS-rebinding boundaries pass portable tests; no public bind is enabled by default."
+    },
+    "presentation": {
+      "state": "implemented",
+      "evidence": "The Python runtime serves a loopback mobile web UI; overlay and wallpaper presentation are not implemented on main."
+    }
+  }
+}

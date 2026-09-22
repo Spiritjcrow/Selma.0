@@ -132,6 +132,75 @@ class ProcurementGateAndroidV1Tests(unittest.TestCase):
         )
         self.assertTrue(decision.allowed)
 
+    def test_11_truthy_non_boolean_does_not_approve_runtime_effect(self):
+        gate = self.make_gate()
+        self.procure(gate, capabilities=["external_effect"])
+        gate.activate("demo.runtime", "1.0.0")
+        decision = gate.authorize_runtime(
+            "demo.runtime",
+            "external_effect",
+            Selma0PermissionEngineAndroidV1(),
+            approved="false",
+        )
+        self.assertFalse(decision.allowed)
+        self.assertTrue(decision.requires_approval)
+
+    def test_12_reprocurement_cannot_replace_active_generation(self):
+        gate = self.make_gate()
+        self.procure(gate, artifact=b"original", capabilities=["read"])
+        gate.activate("demo.runtime", "1.0.0")
+        decision = self.procure(
+            gate, artifact=b"replacement", capabilities=["external_effect"]
+        )
+        self.assertFalse(decision.allowed)
+        active = gate.activate("demo.runtime", "1.0.0")
+        self.assertEqual(active.artifact, b"original")
+        self.assertEqual(active.capabilities, ("read",))
+
+    def test_13_full_active_cache_rejects_new_generation_without_eviction(self):
+        gate = self.make_gate(cache_capacity=1)
+        self.procure(gate, version="1.0.0", artifact=b"one")
+        gate.activate("demo.runtime", "1.0.0")
+        decision = self.procure(gate, version="2.0.0", artifact=b"two")
+        self.assertFalse(decision.allowed)
+        self.assertEqual(gate.activate("demo.runtime", "1.0.0").artifact, b"one")
+        with self.assertRaises(KeyError):
+            gate.activate("demo.runtime", "2.0.0")
+
+    def test_14_distinct_package_version_pairs_cannot_share_a_cache_key(self):
+        gate = self.make_gate()
+        self.procure(gate, package="a@b", version="c")
+        with self.assertRaises(KeyError):
+            gate.activate("a", "b@c")
+
+    def test_15_rollback_skips_replaced_evicted_artifact(self):
+        gate = self.make_gate(cache_capacity=2)
+        self.procure(gate, version="1.0.0", artifact=b"original")
+        gate.activate("demo.runtime", "1.0.0")
+        self.procure(gate, version="2.0.0", artifact=b"two")
+        gate.activate("demo.runtime", "2.0.0")
+        self.procure(gate, version="3.0.0", artifact=b"three")
+        self.procure(gate, version="1.0.0", artifact=b"replacement")
+        with self.assertRaises(LookupError):
+            gate.rollback("demo.runtime")
+        self.assertEqual(gate.cached()[0]["version"], "2.0.0")
+
+    def test_16_rollback_skips_replaced_evicted_policy(self):
+        gate = self.make_gate(cache_capacity=2)
+        self.procure(gate, version="1.0.0", artifact=b"original")
+        gate.activate("demo.runtime", "1.0.0")
+        self.procure(gate, version="2.0.0", artifact=b"two")
+        gate.activate("demo.runtime", "2.0.0")
+        self.procure(gate, version="3.0.0", artifact=b"three")
+        self.procure(
+            gate,
+            version="1.0.0",
+            artifact=b"original",
+            capabilities=["external_effect"],
+        )
+        with self.assertRaises(LookupError):
+            gate.rollback("demo.runtime")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

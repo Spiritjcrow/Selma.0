@@ -17,9 +17,11 @@ Pipeline:
 5. Network access defaults to `deny` in the procurement record.
 6. Runtime authority is separate from artifact trust and still passes through `Selma0PermissionEngineAndroidV1`.
 7. Only verified cached generations can activate.
-8. Cache capacity is bounded and evicts the least-recently-used inactive generation.
-9. Rollback is limited to configured verified history.
-10. Procurement, activation, eviction, runtime authorization, and rollback can emit events into `Selma0AuditLogAndroidV1`.
+8. Cache capacity is bounded: admission evicts the least-recently-used inactive generation or fails if every cached generation is active.
+9. A cached package/version cannot change artifact or policy; rollback skips an evicted generation if a different record later uses that version.
+10. Rollback is limited to configured verified history.
+11. Runtime approval must be the literal Boolean `True`; other values cannot authorize a sensitive effect.
+12. Procurement, activation, eviction, runtime authorization, and rollback can emit events into `Selma0AuditLogAndroidV1`.
 
 ## Current implementation boundary
 
@@ -33,7 +35,7 @@ Run:
 python3 SELMA0_ANDROID_AGENT_V1/tests/test_procurement_gate_v1.py
 ```
 
-The suite covers trusted procurement, untrusted source rejection, tamper rejection, capability rejection, version drift rejection, bounded cache eviction, rollback, rollback history limits, runtime approval gating, and approved sensitive runtime execution.
+The suite covers trusted procurement, untrusted source rejection, tamper rejection, capability rejection, version drift rejection, bounded cache admission and eviction, immutable generations, rollback identity and history limits, runtime approval gating, and approved sensitive runtime execution.
 
 ## Next prototype slice
 

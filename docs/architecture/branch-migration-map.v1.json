@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "repository": "Spiritjcrow/Selma.0",
+  "baseline": {
+    "branch": "main",
+    "commit": "e429da887eb183981d954a39450886b335a5e9b5",
+    "observed_at": "2026-08-31T23:19:28Z"
+  },
+  "rule": "No branch is deleted in WP-01. Diverged branches are not merged as-is; verified behavior is ported onto current main.",
+  "branches": [
+    {
+      "name": "main",
+      "relationship": "baseline",
+      "ahead_by": 0,
+      "behind_by": 0,
+      "disposition": "baseline",
+      "reason": "Authoritative evidence baseline for all new work."
+    },
+    {
+      "name": "agent/selma0-android-native-port-v1",
+      "relationship": "diverged",
+      "ahead_by": 5,
+      "behind_by": 11,
+      "pull_request": 13,
+      "disposition": "port",
+      "reason": "Contains the fuller Kotlin/Compose shell, llama lifecycle, Gradle wrapper, loopback policy, foreground service, and overlay code. Port after Gate 1; do not merge stale workflow or integration assumptions."
+    },
+    {
+      "name": "agent/selma0-android-native-v1",
+      "relationship": "diverged",
+      "ahead_by": 2,
+      "behind_by": 19,
+      "pull_request": 5,
+      "disposition": "supersede",
+      "reason": "Original native source is preserved by PR #13's newer port branch and remains provenance evidence."
+    },
+    {
+      "name": "agent/selma0-llama-runtime-v1",
+      "relationship": "diverged",
+      "ahead_by": 4,
+      "behind_by": 11,
+      "pull_request": 12,
+      "disposition": "port",
+      "reason": "Contains bounded llama.cpp lifecycle and fake-server tests; port onto the frozen model contract and add real offline evidence."
+    },
+    {
+      "name": "agent/selma0-rag-memory-v1",
+      "relationship": "diverged",
+      "ahead_by": 5,
+      "behind_by": 19,
+      "pull_request": 6,
+      "disposition": "port",
+      "reason": "Contains bounded FTS5/fallback retrieval. Port onto current memory and control-plane contracts with provenance and user controls."
+    },
+    {
+      "name": "codex/selma-android-installable",
+      "relationship": "diverged",
+      "ahead_by": 16,
+      "behind_by": 19,
+      "disposition": "supersede",
+      "reason": "Introduces a second minimal android shell and does not preserve the current audited runtime architecture. Retain Git history as evidence only."
+    },
+    {
+      "name": "moto-g-play-2023-support",
+      "relationship": "ahead",
+      "ahead_by": 7,
+      "behind_by": 0,
+      "pull_request": 14,
+      "disposition": "port",
+      "reason": "Cleanly based on current main and contains useful rootless install/validation profiles. Port after Gate 1 and re-run physical-device gates."
+    },
+    {
+      "name": "selma0/agent-fabric-v2-20260813",
+      "relationship": "behind",
+      "ahead_by": 0,
+      "behind_by": 19,
+      "disposition": "supersede",
+      "reason": "Has no unique changes relative to main."
+    },
+    {
+      "name": "selma-ci-unlock-v1",
+      "relationship": "diverged",
+      "ahead_by": 1,
+      "behind_by": 15,
+      "disposition": "retain-for-evidence",
+      "reason": "One obsolete workflow experiment. Retain until the zero-job GitHub Actions startup failure is resolved, then supersede with evidence."
+    },
+    {
+      "name": "selma-command-core-v1",
+      "relationship": "diverged",
+      "ahead_by": 50,
+      "behind_by": 18,
+      "disposition": "supersede",
+      "reason": "Verified command, permission, audit, replay, and regression content has already been promoted to main through different commit ancestry."
+    },
+    {
+      "name": "selma-data-compiler-v1",
+      "relationship": "diverged",
+      "ahead_by": 33,
+      "behind_by": 16,
+      "pull_request": 8,
+      "disposition": "port",
+      "reason": "Contains provenance/dedup/conflict tooling. Port only after it is constrained to the existing registered-tool control plane."
+    },
+    {
+      "name": "selma-device-crowrf-main-v1",
+      "relationship": "diverged",
+      "ahead_by": 1,
+      "behind_by": 13,
+      "disposition": "supersede",
+      "reason": "Measured CrowRF/device functionality and tests are already present on main."
+    },
+    {
+      "name": "selma-device-crowrf-v1",
+      "relationship": "diverged",
+      "ahead_by": 69,
+      "behind_by": 18,
+      "disposition": "supersede",
+      "reason": "Historical combined command/device branch; verified behavior is already represented on main."
+    },
+    {
+      "name": "selma-plugin-adapters-v1",
+      "relationship": "diverged",
+      "ahead_by": 7,
+      "behind_by": 12,
+      "disposition": "port",
+      "reason": "Contains GitHub/plugin adapter concepts and tests. Port later through Gate 1 network/process/device contracts and the existing audit path."
+    }
+  ]
+}

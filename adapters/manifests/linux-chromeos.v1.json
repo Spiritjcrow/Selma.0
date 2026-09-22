@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "platform_id": "linux-chromeos",
+  "platform": "Linux / ChromeOS",
+  "display_order": 30,
+  "adapter_version": "0.0.0",
+  "evidence_scope": "Contract manifest only. No desktop adapter source exists on the evidence baseline.",
+  "capabilities": {
+    "model": {"state": "planned", "evidence": "A llama.cpp-compatible local adapter is specified but not implemented."},
+    "memory": {"state": "planned", "evidence": "A user-controlled SQLite/RAG adapter is specified but not implemented."},
+    "voice": {"state": "planned", "evidence": "Offline voice components and privacy controls are specified but not implemented."},
+    "avatar": {"state": "planned", "evidence": "A software/OpenGL renderer and compact pack runtime are specified but not implemented."},
+    "device": {"state": "planned", "evidence": "Only public Linux/ChromeOS APIs will be exposed; no adapter exists."},
+    "notification": {"state": "planned", "evidence": "Desktop notification support is specified but not implemented."},
+    "storage": {"state": "planned", "evidence": "Local user-scoped storage is specified but not implemented."},
+    "process": {"state": "planned", "evidence": "Any process support must use fixed allowlists through the single control plane; no adapter exists."},
+    "network": {"state": "planned", "evidence": "Explicit opt-in network support is specified but not implemented."},
+    "presentation": {"state": "planned", "evidence": "Windowed, tray, and supported background modes are specified but not implemented."}
+  }
+}

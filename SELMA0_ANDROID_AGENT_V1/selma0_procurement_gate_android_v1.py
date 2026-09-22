@@ -66,13 +66,13 @@ class Selma0ProcurementGateAndroidV1:
         self.rollback_depth = max(1, int(rollback_depth))
         self.audit_log = audit_log
 
-        self._cache: "OrderedDict[str, Selma0VerifiedArtifactAndroidV1]" = OrderedDict()
-        self._active: Dict[str, str] = {}
-        self._history: Dict[str, deque[str]] = {}
+        self._cache: "OrderedDict[Tuple[str, str], Selma0VerifiedArtifactAndroidV1]" = OrderedDict()
+        self._active: Dict[str, Tuple[str, str]] = {}
+        self._history: Dict[str, deque[Selma0VerifiedArtifactAndroidV1]] = {}
 
     @staticmethod
-    def _key_v1(package: str, version: str) -> str:
-        return f"{package}@{version}"
+    def _key_v1(package: str, version: str) -> Tuple[str, str]:
+        return package, version
 
     def _audit_v1(self, event_type: str, details: Dict[str, Any]) -> None:
         if self.audit_log is None:
@@ -187,6 +187,30 @@ class Selma0ProcurementGateAndroidV1:
             artifact=artifact_bytes,
         )
         key = self._key_v1(package, version)
+        existing = self._cache.get(key)
+        if existing is not None:
+            if existing != record:
+                return self._decision_v1(
+                    False,
+                    "version is already cached with different artifact or policy",
+                    package,
+                    version,
+                    actual_sha256,
+                )
+            self._cache.move_to_end(key)
+            return self._decision_v1(
+                True, "artifact verified and cached", package, version, actual_sha256
+            )
+        if len(self._cache) >= self.cache_capacity:
+            active_keys = set(self._active.values())
+            if all(cached_key in active_keys for cached_key in self._cache):
+                return self._decision_v1(
+                    False,
+                    "verified cache is full of active artifacts",
+                    package,
+                    version,
+                    actual_sha256,
+                )
         self._cache[key] = record
         self._cache.move_to_end(key)
         self._evict_v1()
@@ -230,14 +254,14 @@ class Selma0ProcurementGateAndroidV1:
         key = self._key_v1(package, version)
         record = self._cache.get(key)
         if record is None:
-            raise KeyError(f"artifact is not verified in cache: {key}")
+            raise KeyError(f"artifact is not verified in cache: {package}@{version}")
 
         previous = self._active.get(package)
         if previous and previous != key:
             history = self._history.setdefault(
                 package, deque(maxlen=self.rollback_depth)
             )
-            history.append(previous)
+            history.append(self._cache[previous])
 
         self._active[package] = key
         self._cache.move_to_end(key)
@@ -258,9 +282,10 @@ class Selma0ProcurementGateAndroidV1:
             raise LookupError(f"no rollback generation is available for: {package}")
 
         while history:
-            key = history.pop()
+            previous = history.pop()
+            key = self._key_v1(previous.package, previous.version)
             record = self._cache.get(key)
-            if record is None:
+            if record != previous:
                 continue
             self._active[package] = key
             self._cache.move_to_end(key)
@@ -303,7 +328,7 @@ class Selma0ProcurementGateAndroidV1:
             raise TypeError("permission engine does not expose evaluate()")
         decision = evaluate(
             {"risk": capability, "enabled": True},
-            approved=bool(approved),
+            approved=approved is True,
         )
         self._audit_v1(
             "procurement_runtime_authorization_v1",
@@ -312,7 +337,7 @@ class Selma0ProcurementGateAndroidV1:
                 "version": record.version,
                 "capability": capability,
                 "allowed": bool(getattr(decision, "allowed", False)),
-                "approved": bool(approved),
+                "approved": approved is True,
             },
         )
         return decision
@@ -340,6 +365,9 @@ class Selma0ProcurementGateAndroidV1:
             "cache_capacity": self.cache_capacity,
             "cache_size": len(self._cache),
             "rollback_depth": self.rollback_depth,
-            "active": dict(self._active),
+            "active": {
+                package: f"{key[0]}@{key[1]}"
+                for package, key in self._active.items()
+            },
             "default_network_policy": "deny",
         }

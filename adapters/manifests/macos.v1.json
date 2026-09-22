@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "platform_id": "macos",
+  "platform": "macOS",
+  "display_order": 50,
+  "adapter_version": "0.0.0",
+  "evidence_scope": "Contract manifest only. No macOS adapter source or signed application exists.",
+  "capabilities": {
+    "model": {"state": "planned", "evidence": "A local model adapter is specified but not implemented."},
+    "memory": {"state": "planned", "evidence": "A sandbox-aware local memory adapter is specified but not implemented."},
+    "voice": {"state": "planned", "evidence": "Permission-visible offline voice is specified but not implemented."},
+    "avatar": {"state": "planned", "evidence": "Software and supported Metal rendering paths are specified but not implemented."},
+    "device": {"state": "planned", "evidence": "Only public sandbox-compatible device APIs will be exposed; no adapter exists."},
+    "notification": {"state": "planned", "evidence": "User-authorized notification support is specified but not implemented."},
+    "storage": {"state": "planned", "evidence": "Sandbox-scoped storage is specified but not implemented."},
+    "process": {"state": "planned", "evidence": "Any process support must remain sandbox- and signature-compatible; no adapter exists."},
+    "network": {"state": "planned", "evidence": "Explicit opt-in network support is specified but not implemented."},
+    "presentation": {"state": "planned", "evidence": "Windowed and supported background modes are specified but not implemented."}
+  }
+}
