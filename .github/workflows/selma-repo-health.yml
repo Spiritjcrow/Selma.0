@@ -36,6 +36,11 @@ jobs:
           set -euo pipefail
           mapfile -t files < <(find . -type f -name '*.py' -not -path './.git/*' -not -path '*/.venv/*' -not -path '*/venv/*')
           if ((${#files[@]})); then python3 -m py_compile "${files[@]}"; else echo 'No Python files'; fi
+      - name: Test Hyperlogic procurement gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 SELMA0_ANDROID_AGENT_V1/tests/test_procurement_gate_v1.py
       - name: Validate shell syntax
         shell: bash
         run: |
@@ -71,5 +76,5 @@ jobs:
             echo "- Repository: $GITHUB_REPOSITORY"
             echo "- Ref: $GITHUB_REF"
             for f in package.json pyproject.toml requirements.txt gradlew build.gradle build.gradle.kts settings.gradle settings.gradle.kts '*.sln' '*.csproj' Cargo.toml go.mod; do compgen -G "$f" >/dev/null && echo "- Detected: $f" || true; done
-            echo '- Baseline checks: syntax, JSON, command/device regressions, Gate 1 contracts, and generated support matrix.'
+            echo '- Baseline checks: syntax, JSON, Hyperlogic procurement, command/device regressions, Gate 1 contracts, and generated support matrix.'
           } >> "$GITHUB_STEP_SUMMARY"
