@@ -140,7 +140,7 @@ def upload_generic(base: str, project_id: int, token: str, path: Path, version: 
     url = f"{base}/api/v4/projects/{project_id}/packages/generic/{encoded_name}/{encoded_version}/{encoded_file}"
     req = request.Request(
         url,
-        data=path.open("rb"),
+        data=path.read_bytes(),
         headers={"PRIVATE-TOKEN": token, "Content-Type": "application/octet-stream"},
         method="PUT",
     )
@@ -200,7 +200,7 @@ def main() -> int:
         },
         "timeout_strategy": "pessimistic",
     }
-    _, scheduled = api_json("POST", f"{base}/api/v4/import/github", gl_token, body=payload, header_name="Authorization")
+    _, scheduled = api_json("POST", f"{base}/api/v4/import/github", f"Bearer {gl_token}", body=payload, header_name="Authorization")
     # Authorization header must be Bearer form for this endpoint.
     # Retry using correct header if generic helper produced an invalid header.
     if not isinstance(scheduled, dict) or not scheduled.get("id"):
