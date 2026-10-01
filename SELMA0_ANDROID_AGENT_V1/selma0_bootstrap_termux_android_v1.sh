@@ -13,6 +13,7 @@ for file in \
   selma0_runtime_android_v1.py \
   selma0_runtime_command_core_android_v1.py \
   selma0_runtime_device_crowrf_android_v1.py \
+  selma0_adult_mode_offline_v1.sh \
   selma0_llm_router_android_v1.py \
   selma0_llama_runtime_android_v1.sh \
   selma0_avatar_presence_android_v1.py \
@@ -31,6 +32,7 @@ for file in \
 do
   cp -f "$SOURCE_DIR/$file" "$SELMA0_HOME_V1/$file"
 done
+chmod +x "$SELMA0_HOME_V1/selma0_adult_mode_offline_v1.sh"
 chmod +x "$SELMA0_HOME_V1/selma0_llama_runtime_android_v1.sh"
 chmod +x "$SELMA0_HOME_V1/selma0_smoke_test_android_v1.sh"
 chmod +x "$SELMA0_HOME_V1/selma0_crowrf_hardware_validate_android_v1.sh"
@@ -62,6 +64,7 @@ echo "Validate software stack: $SELMA0_HOME_V1/selma0_smoke_test_android_v1.sh"
 echo "Validate llama runtime manager: bash $SELMA0_HOME_V1/tests/test_selma0_llama_runtime_android_v1.sh"
 echo "Install/build llama.cpp server: $SELMA0_HOME_V1/selma0_llama_runtime_android_v1.sh install-runtime"
 echo "Start local LLM: $SELMA0_HOME_V1/selma0_llama_runtime_android_v1.sh start"
+echo "Adult Mode lifecycle: $SELMA0_HOME_V1/selma0_adult_mode_offline_v1.sh {install-pack|start|launch|status|stop}"
 echo "Adult Mode status: python $SELMA0_HOME_V1/selma0_avatar_presence_android_v1.py status"
 echo "Install signed Adult Mode pack: python $SELMA0_HOME_V1/selma0_avatar_presence_android_v1.py install /path/to/pack.zip --trust-on-first-use"
 echo "Validate one real CrowRF scan: $SELMA0_HOME_V1/selma0_crowrf_hardware_validate_android_v1.sh --confirmed-sensitive-scan"
