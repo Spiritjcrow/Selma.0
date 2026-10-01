@@ -52,6 +52,7 @@ cat > "$SELMA0_HOME_V1/selma0_start_android_v1.sh" <<'EOF'
 set -e
 cd "$HOME/SELMA0_ANDROID_AGENT_V1"
 export SELMA0_BASE_V1="$HOME/SELMA0_ANDROID_AGENT_V1"
+export SELMA0_OFFLINE_ONLY_V1="${SELMA0_OFFLINE_ONLY_V1:-1}"
 exec python selma0_runtime_device_crowrf_android_v1.py
 EOF
 chmod +x "$SELMA0_HOME_V1/selma0_start_android_v1.sh"
