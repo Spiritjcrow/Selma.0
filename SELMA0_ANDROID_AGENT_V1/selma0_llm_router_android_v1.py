@@ -4,6 +4,10 @@ import urllib.error
 import urllib.request
 
 
+def _truthy_v1(value):
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 class Selma0LLMRouterAndroidV1:
     """Offline-first router for OpenAI-compatible chat endpoints.
 
@@ -19,6 +23,7 @@ class Selma0LLMRouterAndroidV1:
         self.online_base = os.getenv("SELMA0_ONLINE_BASE_URL_V1", "").rstrip("/")
         self.online_model = os.getenv("SELMA0_ONLINE_MODEL_V1", "")
         self.online_key = os.getenv("SELMA0_ONLINE_API_KEY_V1", "")
+        self.offline_only = _truthy_v1(os.getenv("SELMA0_OFFLINE_ONLY_V1", "0"))
         self.timeout = float(os.getenv("SELMA0_LLM_TIMEOUT_V1", "45"))
 
     def _chat(self, base, model, messages, api_key=""):
@@ -42,6 +47,13 @@ class Selma0LLMRouterAndroidV1:
             return {"text": text, "route": "offline-local", "error": None}
         except Exception as exc:
             local_error = str(exc)
+
+        if self.offline_only:
+            return {
+                "text": "Selma.0 local inference is not running; offline-only mode blocks cloud fallback.",
+                "route": "unavailable",
+                "error": local_error,
+            }
 
         if self.online_base and self.online_model:
             try:
