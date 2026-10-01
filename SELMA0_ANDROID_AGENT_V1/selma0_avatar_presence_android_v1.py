@@ -235,6 +235,12 @@ class Selma0AvatarPresenceAndroidV1:
         state = AvatarState.IDLE.value if snapshot is None else snapshot.state.value
         mapping = self._state_map.get(state) or self._state_map.get(AvatarState.IDLE.value) or {}
         chunk_id = str(mapping.get("chunk_id", "idle"))
+        if (
+            snapshot is not None
+            and max(abs(snapshot.gaze.x), abs(snapshot.gaze.y)) >= 0.18
+            and any(item.chunk_id == "gaze" for item in self._manifest.chunks)
+        ):
+            chunk_id = "gaze"
         payload = self._reader.read(chunk_id)
         meta = next((item for item in self._manifest.chunks if item.chunk_id == chunk_id), None)
         filename = Path(meta.path).name if meta else chunk_id
@@ -288,6 +294,10 @@ class Selma0AvatarPresenceAndroidV1:
             "expression": None if snapshot is None else snapshot.expression,
             "gesture": None if snapshot is None else snapshot.gesture,
             "sequence": None if snapshot is None else snapshot.sequence,
+            "gaze_x": None if snapshot is None else snapshot.gaze.x,
+            "gaze_y": None if snapshot is None else snapshot.gaze.y,
+            "viseme": None if snapshot is None else snapshot.viseme,
+            "mouth_open": None if snapshot is None else snapshot.mouth_open,
             "killed": bool(self._runtime and self._runtime.killed),
             "offline": True,
             "camera_tracking": False,
