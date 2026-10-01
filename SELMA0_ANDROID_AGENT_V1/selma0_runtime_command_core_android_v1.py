@@ -9,6 +9,8 @@ from urllib.parse import urlsplit
 
 import selma0_runtime_android_v1 as base
 from selma0_command_router_android_v1 import Selma0CommandRouterAndroidV1
+from selma0_avatar_presence_android_v1 import Selma0AvatarPresenceAndroidV1
+from core.protocols import AvatarState
 
 REPLIKA_SKILL_DIR_V1 = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
@@ -22,7 +24,24 @@ from replika_migration_v1 import register_replika_migration_tools
 
 
 COMMAND_ROUTER_V1 = Selma0CommandRouterAndroidV1()
+AVATAR_PRESENCE_V1 = Selma0AvatarPresenceAndroidV1()
 register_replika_migration_tools(COMMAND_ROUTER_V1.registry)
+
+def _chat_with_presence_v1(message=""):
+    if AVATAR_PRESENCE_V1.loaded:
+        AVATAR_PRESENCE_V1.transition(AvatarState.THINKING)
+    try:
+        result = base.SELMA0_V1.chat(message)
+    except Exception:
+        if AVATAR_PRESENCE_V1.loaded:
+            AVATAR_PRESENCE_V1.transition(AvatarState.ERROR, expression="concerned")
+        raise
+    if AVATAR_PRESENCE_V1.loaded:
+        if result.get("route") == "unavailable":
+            AVATAR_PRESENCE_V1.transition(AvatarState.ERROR, expression="concerned")
+        else:
+            AVATAR_PRESENCE_V1.transition(AvatarState.IDLE)
+    return result
 COMMAND_ROUTER_V1.registry.register(
     "selma.status",
     lambda: base.SELMA0_V1.status(),
@@ -31,9 +50,35 @@ COMMAND_ROUTER_V1.registry.register(
 )
 COMMAND_ROUTER_V1.registry.register(
     "selma.chat",
-    lambda message="": base.SELMA0_V1.chat(message),
+    lambda message="": _chat_with_presence_v1(message),
     risk="write",
     description="Send a user-approved chat turn through Selma.0; this writes conversation memory and may use the configured online fallback.",
+)
+COMMAND_ROUTER_V1.registry.register(
+    "avatar.status",
+    lambda: AVATAR_PRESENCE_V1.status(),
+    risk="read",
+    description="Return verified local Adult Mode presence status.",
+)
+COMMAND_ROUTER_V1.registry.register(
+    "avatar.install_pack",
+    lambda source="", trust_on_first_use=False: AVATAR_PRESENCE_V1.install_zip(
+        source, trust_on_first_use=bool(trust_on_first_use)
+    ),
+    risk="write",
+    description="Install and verify a user-approved local signed Adult Mode avatar pack.",
+)
+COMMAND_ROUTER_V1.registry.register(
+    "avatar.kill",
+    lambda: AVATAR_PRESENCE_V1.kill(),
+    risk="write",
+    description="Immediately stop and clear the local Adult Mode avatar presentation runtime.",
+)
+COMMAND_ROUTER_V1.registry.register(
+    "avatar.restart",
+    lambda: AVATAR_PRESENCE_V1.restart(),
+    risk="write",
+    description="Re-verify and restart the local Adult Mode avatar presentation runtime.",
 )
 COMMAND_ROUTER_V1.registry.register(
     "safety.record_incident",
@@ -162,6 +207,17 @@ def _http_status_for_result(result):
 
 
 class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
+    def send_bytes(self, status, content_type, data):
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _adult_mode_page_v1(self):
+        return b"""<!doctype html><meta name='viewport' content='width=device-width,initial-scale=1'><title>Selma Adult Mode</title><style>html,body{height:100%;margin:0;background:#090b10;color:#eef;font:16px system-ui}main{min-height:100%;display:grid;grid-template-rows:1fr auto;max-width:900px;margin:auto}.stage{display:grid;place-items:center;position:relative;overflow:hidden}.stage img{max-height:70vh;max-width:96vw;object-fit:contain}.status{position:absolute;left:12px;top:12px;background:#0009;padding:8px 10px;border-radius:8px}.chat{padding:12px;background:#11151c}.chat textarea{width:100%;box-sizing:border-box;min-height:70px;background:#090b10;color:#eef;border:1px solid #394252;border-radius:8px;padding:10px}.chat button{margin-top:8px;padding:10px 16px}.reply{white-space:pre-wrap;margin-top:10px}</style><main><section class='stage'><img id='avatar' alt='Selma offline avatar'><div class='status' id='status'>Loading Adult Mode...</div></section><section class='chat'><textarea id='message' placeholder='Talk with Selma locally'></textarea><button onclick='chat()'>Send</button><div class='reply' id='reply'></div></section></main><script>let seq=null;async function poll(){try{const s=await fetch('/api/selma0/avatar/status/v1').then(r=>r.json());document.getElementById('status').textContent=s.available?('Selma · '+(s.state||'IDLE')+' · offline'):('Avatar unavailable: '+(s.error||'pack not installed'));if(s.available&&s.sequence!==seq){seq=s.sequence;document.getElementById('avatar').src='/api/selma0/avatar/current/v1?seq='+encodeURIComponent(seq)}}catch(e){document.getElementById('status').textContent=String(e)}}async function chat(){const m=document.getElementById('message').value.trim();if(!m)return;document.getElementById('reply').textContent='Thinking...';const r=await fetch('/api/selma0/chat/v1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m,confirmed:true,request_id:crypto.randomUUID?crypto.randomUUID():String(Date.now())})});const j=await r.json();const d=j.result||j;document.getElementById('reply').textContent=d.text||JSON.stringify(j,null,2);poll()}setInterval(poll,500);poll()</script>"""
+
     def _enforce_http_boundary_v1(self, require_origin=False):
         if not _is_allowed_http_host_v1(self.headers.get("Host")):
             self.send_json(403, {"error": "untrusted Host header"})
@@ -174,7 +230,22 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
     def do_GET(self):
         if not self._enforce_http_boundary_v1(require_origin=False):
             return
-        if self.path == "/api/selma0/status/v1":
+        request_path = urlsplit(self.path).path
+        if request_path == "/adult-mode":
+            page = self._adult_mode_page_v1()
+            self.send_bytes(200, "text/html; charset=utf-8", page)
+            return
+        if request_path == "/api/selma0/avatar/status/v1":
+            self.send_json(200, AVATAR_PRESENCE_V1.status())
+            return
+        if request_path == "/api/selma0/avatar/current/v1":
+            try:
+                payload, mime, _ = AVATAR_PRESENCE_V1.current_asset()
+                self.send_bytes(200, mime, payload)
+            except Exception as exc:
+                self.send_json(503, {"error": str(exc)})
+            return
+        if request_path == "/api/selma0/status/v1":
             status = base.SELMA0_V1.status()
             status["command_core"] = COMMAND_ROUTER_V1.status()
             self.send_json(200, status)
@@ -185,7 +256,7 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
         if self.path == "/api/selma0/tools/audit/v1":
             self.send_json(200, {"events": COMMAND_ROUTER_V1.audit.recent(100)})
             return
-        if self.path.startswith("/api/selma0/"):
+        if request_path.startswith("/api/selma0/"):
             self.send_json(404, {"error": "API route not registered in command core"})
             return
         return super().do_GET()
