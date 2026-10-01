@@ -456,14 +456,9 @@ inspectNativeVoice();
         if request_path == "/api/selma0/avatar/gaze/v1":
             try:
                 body = self.read_json_body()
-                snapshot = AVATAR_PRESENCE_V1._runtime.snapshot if AVATAR_PRESENCE_V1._runtime is not None else None
-                state = AvatarState.IDLE if snapshot is None else snapshot.state
-                result = AVATAR_PRESENCE_V1.transition(
-                    state,
-                    expression=None if snapshot is None else snapshot.expression,
-                    gesture=None if snapshot is None else snapshot.gesture,
-                    gaze_x=float(body.get("gaze_x", 0.0)),
-                    gaze_y=float(body.get("gaze_y", 0.0)),
+                result = AVATAR_PRESENCE_V1.update_gaze(
+                    float(body.get("gaze_x", 0.0)),
+                    float(body.get("gaze_y", 0.0)),
                 )
                 self.send_json(200, result)
             except (TypeError, ValueError) as exc:
