@@ -10,6 +10,7 @@ import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.speech.tts.Voice;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
@@ -53,6 +54,17 @@ public final class SelmaNativeBridge implements TextToSpeech.OnInitListener {
         if (best != null && tts.setVoice(best) != TextToSpeech.ERROR) {
             ttsReady = true;
             ttsVoiceName = best.getName();
+            tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                @Override public void onStart(String utteranceId) {
+                    emit("tts-state", "speaking");
+                }
+                @Override public void onDone(String utteranceId) {
+                    emit("tts-state", "idle");
+                }
+                @Override public void onError(String utteranceId) {
+                    emit("tts-state", "error");
+                }
+            });
         } else {
             ttsReady = false;
             ttsVoiceName = null;
