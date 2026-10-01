@@ -271,6 +271,25 @@ async function setPresentation(state){
     });
   }catch(_){}
 }
+let lastGazeAt=0;
+function sendGaze(clientX,clientY){
+  const now=performance.now();
+  if(now-lastGazeAt<80)return;
+  lastGazeAt=now;
+  const stage=document.querySelector('.stage').getBoundingClientRect();
+  const gx=Math.max(-1,Math.min(1,((clientX-stage.left)/Math.max(1,stage.width))*2-1));
+  const gy=Math.max(-1,Math.min(1,-(((clientY-stage.top)/Math.max(1,stage.height))*2-1)));
+  fetch('/api/selma0/avatar/gaze/v1',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({gaze_x:gx,gaze_y:gy})
+  }).catch(()=>{});
+}
+document.querySelector('.stage').addEventListener('pointermove',e=>sendGaze(e.clientX,e.clientY),{passive:true});
+document.querySelector('.stage').addEventListener('pointerleave',()=>sendGaze(
+  document.querySelector('.stage').getBoundingClientRect().left+document.querySelector('.stage').clientWidth/2,
+  document.querySelector('.stage').getBoundingClientRect().top+document.querySelector('.stage').clientHeight/2
+),{passive:true});
 async function poll(){
   try{
     const s=await fetch('/api/selma0/avatar/status/v1',{cache:'no-store'}).then(r=>r.json());
@@ -433,6 +452,25 @@ inspectNativeVoice();
         if not self._enforce_http_boundary_v1(require_origin=True):
             return
         request_path = urlsplit(self.path).path
+
+        if request_path == "/api/selma0/avatar/gaze/v1":
+            try:
+                body = self.read_json_body()
+                snapshot = AVATAR_PRESENCE_V1._runtime.snapshot if AVATAR_PRESENCE_V1._runtime is not None else None
+                state = AvatarState.IDLE if snapshot is None else snapshot.state
+                result = AVATAR_PRESENCE_V1.transition(
+                    state,
+                    expression=None if snapshot is None else snapshot.expression,
+                    gesture=None if snapshot is None else snapshot.gesture,
+                    gaze_x=float(body.get("gaze_x", 0.0)),
+                    gaze_y=float(body.get("gaze_y", 0.0)),
+                )
+                self.send_json(200, result)
+            except (TypeError, ValueError) as exc:
+                self.send_json(400, {"error": str(exc)})
+            except Exception as exc:
+                self.send_json(500, {"error": str(exc)})
+            return
 
         if request_path == "/api/selma0/avatar/presentation/v1":
             try:
