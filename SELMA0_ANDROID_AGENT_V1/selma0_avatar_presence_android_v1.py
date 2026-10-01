@@ -228,6 +228,19 @@ class Selma0AvatarPresenceAndroidV1:
         )
         return self.status() if snapshot is None else self.status(snapshot=snapshot)
 
+    def update_gaze(self, gaze_x: float, gaze_y: float) -> dict[str, Any]:
+        if not self.loaded:
+            return self.status()
+        snapshot = self._runtime.snapshot
+        state = AvatarState.IDLE if snapshot is None else snapshot.state
+        return self.transition(
+            state,
+            expression=None if snapshot is None else snapshot.expression,
+            gesture=None if snapshot is None else snapshot.gesture,
+            gaze_x=gaze_x,
+            gaze_y=gaze_y,
+        )
+
     def current_asset(self) -> tuple[bytes, str, str]:
         if not self.loaded:
             raise RuntimeError(self._error or "avatar pack unavailable")
