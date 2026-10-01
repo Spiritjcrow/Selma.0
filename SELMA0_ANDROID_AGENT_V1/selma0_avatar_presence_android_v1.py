@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 from hashlib import sha256
 import json
 import mimetypes
@@ -294,3 +295,27 @@ class Selma0AvatarPresenceAndroidV1:
             "renderer": "software/sprite fallback",
             "error": self._error,
         }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Selma Adult Mode local avatar-pack manager")
+    sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("status")
+    install = sub.add_parser("install")
+    install.add_argument("archive")
+    install.add_argument("--trust-on-first-use", action="store_true")
+    args = parser.parse_args()
+    presence = Selma0AvatarPresenceAndroidV1()
+    if args.command == "install":
+        result = presence.install_zip(
+            args.archive,
+            trust_on_first_use=args.trust_on_first_use,
+        )
+    else:
+        result = presence.status()
+    print(json.dumps(result, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
