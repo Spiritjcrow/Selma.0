@@ -216,7 +216,175 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
         self.wfile.write(data)
 
     def _adult_mode_page_v1(self):
-        return b"""<!doctype html><meta name='viewport' content='width=device-width,initial-scale=1'><title>Selma Adult Mode</title><style>html,body{height:100%;margin:0;background:#090b10;color:#eef;font:16px system-ui}main{min-height:100%;display:grid;grid-template-rows:1fr auto;max-width:900px;margin:auto}.stage{display:grid;place-items:center;position:relative;overflow:hidden}.stage img{max-height:70vh;max-width:96vw;object-fit:contain}.status{position:absolute;left:12px;top:12px;background:#0009;padding:8px 10px;border-radius:8px}.chat{padding:12px;background:#11151c}.chat textarea{width:100%;box-sizing:border-box;min-height:70px;background:#090b10;color:#eef;border:1px solid #394252;border-radius:8px;padding:10px}.chat button{margin-top:8px;padding:10px 16px}.reply{white-space:pre-wrap;margin-top:10px}</style><main><section class='stage'><img id='avatar' alt='Selma offline avatar'><div class='status' id='status'>Loading Adult Mode...</div></section><section class='chat'><textarea id='message' placeholder='Talk with Selma locally'></textarea><button onclick='chat()'>Send</button><div class='reply' id='reply'></div></section></main><script>let seq=null;async function poll(){try{const s=await fetch('/api/selma0/avatar/status/v1').then(r=>r.json());document.getElementById('status').textContent=s.available?('Selma · '+(s.state||'IDLE')+' · offline'):('Avatar unavailable: '+(s.error||'pack not installed'));if(s.available&&s.sequence!==seq){seq=s.sequence;document.getElementById('avatar').src='/api/selma0/avatar/current/v1?seq='+encodeURIComponent(seq)}}catch(e){document.getElementById('status').textContent=String(e)}}async function chat(){const m=document.getElementById('message').value.trim();if(!m)return;document.getElementById('reply').textContent='Thinking...';const r=await fetch('/api/selma0/chat/v1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:m,confirmed:true,request_id:crypto.randomUUID?crypto.randomUUID():String(Date.now())})});const j=await r.json();const d=j.result||j;document.getElementById('reply').textContent=d.text||JSON.stringify(j,null,2);poll()}setInterval(poll,500);poll()</script>"""
+        page = """<!doctype html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; connect-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; frame-src 'none'; object-src 'none'">
+<title>Selma Adult Mode</title>
+<style>
+html,body{height:100%;margin:0;background:#090b10;color:#eef;font:16px system-ui}
+main{min-height:100%;display:grid;grid-template-rows:1fr auto;max-width:900px;margin:auto}
+.stage{display:grid;place-items:center;position:relative;overflow:hidden;min-height:52vh}
+.stage img{max-height:70vh;max-width:96vw;object-fit:contain}
+.badges{position:absolute;left:12px;top:12px;display:grid;gap:6px}
+.badge{background:#000b;padding:7px 10px;border-radius:8px;max-width:82vw}
+.chat{padding:12px;background:#11151c}
+.chat textarea{width:100%;box-sizing:border-box;min-height:72px;background:#090b10;color:#eef;border:1px solid #394252;border-radius:8px;padding:10px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+button{padding:10px 16px;border-radius:8px;border:1px solid #48546a;background:#1a2230;color:#eef}
+label{display:flex;gap:6px;align-items:center}
+.reply{white-space:pre-wrap;margin-top:10px;min-height:1.4em}
+</style>
+</head><body><main>
+<section class="stage">
+<img id="avatar" alt="Selma offline avatar">
+<div class="badges">
+<div class="badge" id="status">Loading Adult Mode...</div>
+<div class="badge" id="voiceStatus">Voice: checking local device...</div>
+</div>
+</section>
+<section class="chat">
+<textarea id="message" placeholder="Talk with Selma locally"></textarea>
+<div class="controls">
+<button id="send" onclick="chat()">Send</button>
+<button id="talk" onclick="talk()">Talk</button>
+<button onclick="stopVoice()">Stop voice</button>
+<label><input id="voiceEnabled" type="checkbox" checked> Speak replies</label>
+</div>
+<div class="reply" id="reply"></div>
+</section>
+</main>
+<script>
+let seq=null;
+let speaking=false;
+const $=id=>document.getElementById(id);
+function requestId(){
+  try{return crypto.randomUUID()}catch(_){return String(Date.now())+"-"+Math.random().toString(16).slice(2)}
+}
+async function setPresentation(state){
+  try{
+    await fetch('/api/selma0/avatar/presentation/v1',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({state})
+    });
+  }catch(_){}
+}
+async function poll(){
+  try{
+    const s=await fetch('/api/selma0/avatar/status/v1',{cache:'no-store'}).then(r=>r.json());
+    $('status').textContent=s.available
+      ?('Selma · '+(s.state||'IDLE')+' · offline')
+      :('Avatar unavailable: '+(s.error||'pack not installed'));
+    if(s.available&&s.sequence!==seq){
+      seq=s.sequence;
+      $('avatar').src='/api/selma0/avatar/current/v1?seq='+encodeURIComponent(seq);
+    }
+  }catch(e){$('status').textContent='Local runtime error: '+String(e)}
+}
+function refreshVoiceStatus(payload){
+  let v=payload;
+  try{if(typeof v==='string')v=JSON.parse(v)}catch(_){}
+  if(!v||typeof v!=='object'){
+    $('voiceStatus').textContent='Voice: native offline bridge unavailable';
+    $('talk').disabled=true;
+    return;
+  }
+  const tts=v.offlineTts?'offline TTS ready':'offline TTS unavailable';
+  const asr=v.onDeviceAsr?'on-device speech ready':'on-device speech unavailable';
+  $('voiceStatus').textContent='Voice: '+tts+' · '+asr;
+  $('talk').disabled=!v.onDeviceAsr;
+}
+function inspectNativeVoice(){
+  if(typeof window.SelmaNative==='undefined'){
+    refreshVoiceStatus(null);
+    return;
+  }
+  try{refreshVoiceStatus(window.SelmaNative.voiceStatus())}
+  catch(e){$('voiceStatus').textContent='Voice bridge error: '+String(e)}
+}
+async function chat(){
+  const m=$('message').value.trim();
+  if(!m)return;
+  $('send').disabled=true;
+  $('reply').textContent='Thinking...';
+  setPresentation('THINKING');
+  try{
+    const r=await fetch('/api/selma0/chat/v1',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:m,confirmed:true,request_id:requestId()})
+    });
+    const j=await r.json();
+    const d=j.result||j;
+    const answer=d.text||d.response||d.error||JSON.stringify(j,null,2);
+    $('reply').textContent=answer;
+    if($('voiceEnabled').checked&&typeof window.SelmaNative!=='undefined'&&answer){
+      try{window.SelmaNative.speak(String(answer))}
+      catch(e){$('voiceStatus').textContent='Offline TTS error: '+String(e)}
+    }else{
+      setPresentation('IDLE');
+    }
+  }catch(e){
+    $('reply').textContent='Local chat error: '+String(e);
+    setPresentation('ERROR');
+  }finally{
+    $('send').disabled=false;
+    poll();
+  }
+}
+function talk(){
+  if(typeof window.SelmaNative==='undefined'){
+    $('voiceStatus').textContent='Voice: open this page in the Selma native APK for on-device speech';
+    return;
+  }
+  setPresentation('LISTENING');
+  try{window.SelmaNative.startListening()}
+  catch(e){$('voiceStatus').textContent='On-device speech error: '+String(e)}
+}
+function stopVoice(){
+  if(typeof window.SelmaNative!=='undefined'){
+    try{window.SelmaNative.stopListening();window.SelmaNative.stopSpeaking()}catch(_){}
+  }
+  speaking=false;
+  setPresentation('IDLE');
+}
+window.selmaNativeSpeech=function(kind,value){
+  if(kind==='voice-status'){refreshVoiceStatus(value);return}
+  if(kind==='partial'){
+    $('message').value=value;
+    return;
+  }
+  if(kind==='final'){
+    $('message').value=value;
+    chat();
+    return;
+  }
+  if(kind==='asr-state'){
+    $('voiceStatus').textContent='Voice: '+value;
+    if(value==='listening'||value==='speech')setPresentation('LISTENING');
+    if(value==='processing')setPresentation('THINKING');
+    return;
+  }
+  if(kind==='asr-error'){
+    $('voiceStatus').textContent='On-device speech unavailable: '+value;
+    setPresentation('ERROR');
+    return;
+  }
+  if(kind==='tts-state'){
+    speaking=value==='speaking';
+    if(value==='speaking')setPresentation('SPEAKING');
+    else if(value==='error')setPresentation('ERROR');
+    else setPresentation('IDLE');
+  }
+};
+setInterval(poll,500);
+poll();
+inspectNativeVoice();
+</script>
+</body></html>"""
+        return page.encode("utf-8")
 
     def _enforce_http_boundary_v1(self, require_origin=False):
         if not _is_allowed_http_host_v1(self.headers.get("Host")):
@@ -250,10 +418,10 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
             status["command_core"] = COMMAND_ROUTER_V1.status()
             self.send_json(200, status)
             return
-        if self.path == "/api/selma0/tools/v1":
+        if request_path == "/api/selma0/tools/v1":
             self.send_json(200, COMMAND_ROUTER_V1.status())
             return
-        if self.path == "/api/selma0/tools/audit/v1":
+        if request_path == "/api/selma0/tools/audit/v1":
             self.send_json(200, {"events": COMMAND_ROUTER_V1.audit.recent(100)})
             return
         if request_path.startswith("/api/selma0/"):
@@ -264,7 +432,28 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
     def do_POST(self):
         if not self._enforce_http_boundary_v1(require_origin=True):
             return
-        if self.path == "/api/selma0/tools/execute/v1":
+        request_path = urlsplit(self.path).path
+
+        if request_path == "/api/selma0/avatar/presentation/v1":
+            try:
+                body = self.read_json_body()
+                state = AvatarState(str(body.get("state", "IDLE")).strip().upper())
+                result = AVATAR_PRESENCE_V1.transition(
+                    state,
+                    expression=body.get("expression"),
+                    gesture=body.get("gesture"),
+                    gaze_x=float(body.get("gaze_x", 0.0)),
+                    gaze_y=float(body.get("gaze_y", 0.0)),
+                    user_priority=state is AvatarState.INTERRUPTED,
+                )
+                self.send_json(200, result)
+            except (TypeError, ValueError) as exc:
+                self.send_json(400, {"error": str(exc)})
+            except Exception as exc:
+                self.send_json(500, {"error": str(exc)})
+            return
+
+        if request_path == "/api/selma0/tools/execute/v1":
             try:
                 body = self.read_json_body()
                 arguments = body.get("arguments", {})
@@ -283,7 +472,7 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
                 self.send_json(500, {"error": str(exc)})
             return
 
-        if self.path == "/api/selma0/chat/v1":
+        if request_path == "/api/selma0/chat/v1":
             try:
                 body = self.read_json_body()
                 message = str(body.get("message", "")).strip()
@@ -302,7 +491,7 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
                 self.send_json(500, {"error": str(exc)})
             return
 
-        if self.path == "/api/selma0/replika/preview/v1":
+        if request_path == "/api/selma0/replika/preview/v1":
             try:
                 body = self.read_json_body()
                 source = str(body.get("source", "")).strip()
@@ -324,7 +513,7 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
                 self.send_json(500, {"error": str(exc)})
             return
 
-        if self.path == "/api/selma0/replika/import/v1":
+        if request_path == "/api/selma0/replika/import/v1":
             try:
                 body = self.read_json_body()
                 source = str(body.get("source", "")).strip()
@@ -349,7 +538,7 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
                 self.send_json(500, {"error": str(exc)})
             return
 
-        if self.path == "/api/selma0/safety/incident/v1":
+        if request_path == "/api/selma0/safety/incident/v1":
             try:
                 body = self.read_json_body()
                 result = COMMAND_ROUTER_V1.execute(
@@ -372,7 +561,7 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
                 self.send_json(500, {"error": str(exc)})
             return
 
-        if self.path == "/api/selma0/safety/profile/v1":
+        if request_path == "/api/selma0/safety/profile/v1":
             try:
                 body = self.read_json_body()
                 updates = dict(body)
@@ -391,7 +580,7 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
                 self.send_json(500, {"error": str(exc)})
             return
 
-        if self.path == "/api/selma0/safety/sos/v1":
+        if request_path == "/api/selma0/safety/sos/v1":
             try:
                 body = self.read_json_body()
                 result = COMMAND_ROUTER_V1.execute(
@@ -407,7 +596,7 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
                 self.send_json(500, {"error": str(exc)})
             return
 
-        if self.path.startswith("/api/selma0/") and not _legacy_api_passthrough_allowed_v1("POST", self.path):
+        if request_path.startswith("/api/selma0/") and not _legacy_api_passthrough_allowed_v1("POST", request_path):
             self.send_json(404, {"error": "API route not registered in command core"})
             return
         return super().do_POST()
