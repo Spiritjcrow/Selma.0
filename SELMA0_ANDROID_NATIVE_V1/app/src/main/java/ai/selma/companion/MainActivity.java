@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.net.Uri;
 import android.os.Bundle;
+import android.content.pm.PackageManager;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -17,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 public final class MainActivity extends Activity {
     private static final String SELMA_LOCAL_URL = "http://127.0.0.1:8765/adult-mode";
     private WebView webView;
+    private SelmaNativeBridge nativeBridge;
 
     private static boolean isAllowedLocalUri(Uri uri) {
         if (uri == null) return false;
@@ -51,6 +53,9 @@ public final class MainActivity extends Activity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+
+        nativeBridge = new SelmaNativeBridge(this, webView);
+        webView.addJavascriptInterface(nativeBridge, "SelmaNative");
 
         webView.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -91,12 +96,29 @@ public final class MainActivity extends Activity {
         webView.loadUrl(SELMA_LOCAL_URL);
     }
 
+    @Override public void onRequestPermissionsResult(
+        int requestCode,
+        String[] permissions,
+        int[] grantResults
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == SelmaNativeBridge.RECORD_AUDIO_REQUEST && nativeBridge != null) {
+            boolean granted = grantResults.length > 0
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            nativeBridge.onRecordAudioPermissionResult(granted);
+        }
+    }
+
     @Override public void onBackPressed() {
         if (webView != null && webView.canGoBack()) webView.goBack();
         else super.onBackPressed();
     }
 
     @Override protected void onDestroy() {
+        if (nativeBridge != null) {
+            nativeBridge.destroy();
+            nativeBridge = null;
+        }
         if (webView != null) {
             webView.stopLoading();
             webView.destroy();
