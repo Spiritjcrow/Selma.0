@@ -432,6 +432,26 @@ inspectNativeVoice();
             except Exception as exc:
                 self.send_json(503, {"error": str(exc)})
             return
+        if request_path == "/api/selma0/avatar/model/v1":
+            try:
+                if not AVATAR_PRESENCE_V1.has_chunk("model-glb"):
+                    self.send_json(404, {"error": "verified model-glb chunk is not installed"})
+                    return
+                payload, _ = AVATAR_PRESENCE_V1.asset_by_chunk("model-glb")
+                self.send_bytes(200, "model/gltf-binary", payload)
+            except Exception as exc:
+                self.send_json(503, {"error": str(exc)})
+            return
+        if request_path == "/api/selma0/avatar/rig/v1":
+            try:
+                if not AVATAR_PRESENCE_V1.has_chunk("rig-binding"):
+                    self.send_json(404, {"error": "verified rig-binding chunk is not installed"})
+                    return
+                payload, _ = AVATAR_PRESENCE_V1.asset_by_chunk("rig-binding")
+                self.send_bytes(200, "application/json; charset=utf-8", payload)
+            except Exception as exc:
+                self.send_json(503, {"error": str(exc)})
+            return
         if request_path == "/api/selma0/status/v1":
             status = base.SELMA0_V1.status()
             status["command_core"] = COMMAND_ROUTER_V1.status()
