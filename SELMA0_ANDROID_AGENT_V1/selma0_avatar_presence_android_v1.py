@@ -278,6 +278,12 @@ class Selma0AvatarPresenceAndroidV1:
         result["asset_override"] = str(mapping.get("chunk_id", "greeting"))
         return result
 
+    def has_chunk(self, chunk_id: str) -> bool:
+        return bool(
+            self.loaded
+            and any(item.chunk_id == str(chunk_id) for item in self._manifest.chunks)
+        )
+
     def asset_by_chunk(self, chunk_id: str) -> tuple[bytes, str]:
         if not self.loaded:
             raise RuntimeError(self._error or "avatar pack unavailable")
@@ -316,6 +322,8 @@ class Selma0AvatarPresenceAndroidV1:
             "camera_tracking": False,
             "lip_sync": False,
             "renderer": "software/sprite fallback",
+            "model_3d_available": self.has_chunk("model-glb"),
+            "rig_binding_available": self.has_chunk("rig-binding"),
             "error": self._error,
         }
 
