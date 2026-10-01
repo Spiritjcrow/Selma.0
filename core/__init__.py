@@ -17,6 +17,14 @@ from .protocols import (
     RiskClass,
     SupportState,
 )
+from .embodied_motion import EmbodiedPose, EyesFirstMotionController
+from .rig_binding import (
+    REQUIRED_BLENDSHAPES,
+    REQUIRED_BONES,
+    RECOMMENDED_VISEMES,
+    RigBinding,
+    RigValidationReport,
+)
 from .avatar_runtime import (
     AVATAR_PACK_SCHEMA_VERSION,
     AVATAR_RUNTIME_VERSION,
@@ -50,6 +58,13 @@ __all__ = [
     "ResultStatus",
     "RiskClass",
     "SupportState",
+    "EmbodiedPose",
+    "EyesFirstMotionController",
+    "REQUIRED_BLENDSHAPES",
+    "REQUIRED_BONES",
+    "RECOMMENDED_VISEMES",
+    "RigBinding",
+    "RigValidationReport",
     "AVATAR_PACK_SCHEMA_VERSION",
     "AVATAR_RUNTIME_VERSION",
     "AvatarChunkError",
