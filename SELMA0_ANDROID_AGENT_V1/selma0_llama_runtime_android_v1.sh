@@ -125,6 +125,34 @@ wait_ready() {
   return 1
 }
 
+chat_ready() {
+  python3 - "$HOST" "$PORT" <<'PY'
+import json, sys, urllib.request
+host, port = sys.argv[1], sys.argv[2]
+body = json.dumps({
+    "messages": [{"role": "user", "content": "Reply with OK"}],
+    "max_tokens": 8,
+    "temperature": 0,
+}).encode("utf-8")
+req = urllib.request.Request(
+    "http://%s:%s/v1/chat/completions" % (host, port),
+    data=body,
+    headers={"Content-Type": "application/json"},
+    method="POST",
+)
+try:
+    with urllib.request.urlopen(req, timeout=30) as r:
+        if r.status != 200:
+            raise SystemExit(1)
+        payload = json.loads(r.read().decode("utf-8"))
+    choices = payload.get("choices")
+    content = choices[0].get("message", {}).get("content") if isinstance(choices, list) and choices else None
+    raise SystemExit(0 if isinstance(content, str) and content.strip() else 1)
+except Exception:
+    raise SystemExit(1)
+PY
+}
+
 start_server() {
   is_running && { printf 'already_running pid=%s\n' "$(cat "$PID_FILE")"; return; }
   [ -x "$SERVER_BIN" ] || fail "llama-server not found. Run: $0 install-runtime"
@@ -148,6 +176,13 @@ start_server() {
     [ -n "$failed_pid" ] && kill "$failed_pid" 2>/dev/null || true
     rm -f "$PID_FILE"
     fail "llama-server failed localhost /health readiness. See $LOG_FILE"
+  fi
+  if ! chat_ready; then
+    local failed_pid
+    failed_pid="$(cat "$PID_FILE" 2>/dev/null || true)"
+    [ -n "$failed_pid" ] && kill "$failed_pid" 2>/dev/null || true
+    rm -f "$PID_FILE"
+    fail "llama-server health passed but /v1/chat/completions acceptance failed. See $LOG_FILE"
   fi
   printf 'started pid=%s endpoint=http://%s:%s/v1 model=%s ctx=%s\n' "$(cat "$PID_FILE")" "$HOST" "$PORT" "$model" "$ctx"
 }
