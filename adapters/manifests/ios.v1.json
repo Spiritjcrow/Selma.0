@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "platform_id": "ios",
+  "platform": "iOS / iPadOS",
+  "display_order": 60,
+  "adapter_version": "0.0.0",
+  "evidence_scope": "Contract manifest only. No signed iOS adapter exists; public sandbox and background limits apply.",
+  "capabilities": {
+    "model": {"state": "planned", "evidence": "A hardware-aware on-device model adapter is specified but not implemented."},
+    "memory": {"state": "planned", "evidence": "A sandbox-scoped local memory adapter is specified but not implemented."},
+    "voice": {"state": "planned", "evidence": "Permission-visible offline voice is specified but not implemented."},
+    "avatar": {"state": "planned", "evidence": "A software/Metal renderer is specified but not implemented."},
+    "device": {"state": "planned", "evidence": "Only public, consented iOS device APIs may be exposed; no adapter exists."},
+    "notification": {"state": "planned", "evidence": "User-authorized local notification support is specified but not implemented."},
+    "storage": {"state": "planned", "evidence": "Application-sandbox storage is specified but not implemented."},
+    "process": {"state": "unavailable", "evidence": "Arbitrary external process execution is not exposed by the public iOS application sandbox."},
+    "network": {"state": "planned", "evidence": "Explicit opt-in application network support is specified but not implemented."},
+    "presentation": {"state": "planned", "evidence": "In-app presentation is planned; unrestricted cross-app overlays and permanent background execution are unavailable."}
+  }
+}

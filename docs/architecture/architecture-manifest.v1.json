@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "architecture_version": "gate1-1.0.0",
+  "contract_module": "core.protocols",
+  "evidence_baseline": {
+    "repository": "Spiritjcrow/Selma.0",
+    "branch": "main",
+    "commit": "e429da887eb183981d954a39450886b335a5e9b5",
+    "observed_at": "2026-08-31T23:19:28Z"
+  },
+  "single_control_plane": {
+    "tool_registry": "SELMA0_ANDROID_AGENT_V1/selma0_tool_registry_android_v1.py",
+    "permission_policy": "SELMA0_ANDROID_AGENT_V1/selma0_permission_engine_android_v1.py",
+    "router": "SELMA0_ANDROID_AGENT_V1/selma0_command_router_android_v1.py",
+    "audit": "SELMA0_ANDROID_AGENT_V1/selma0_audit_log_android_v1.py",
+    "rule": "Capability adapters cannot authorize external effects. Device, filesystem mutation, network, process, notification, and presentation effects remain registered tools routed through the existing permission, replay-protection, and audit path."
+  },
+  "core_modules": [
+    {
+      "id": "protocols",
+      "path": "core/protocols.py",
+      "responsibility": "Versioned capability, result, cancellation, deadline, risk, and avatar-state contracts"
+    },
+    {
+      "id": "offline-bootstrap",
+      "path": "core/bootstrap.py",
+      "responsibility": "Side-effect-free offline boot with honest degraded capability reporting"
+    },
+    {
+      "id": "null-adapter",
+      "path": "adapters/null.py",
+      "responsibility": "Fail-closed adapter that cannot report success"
+    },
+    {
+      "id": "support-matrix-generator",
+      "path": "tools/generate_support_matrix.py",
+      "responsibility": "Deterministic matrix generated from versioned adapter manifests"
+    }
+  ],
+  "risk_classes": [
+    "read",
+    "sensitive_read",
+    "approved_write"
+  ],
+  "result_statuses": [
+    "success",
+    "unavailable",
+    "degraded",
+    "denied",
+    "timed_out",
+    "cancelled",
+    "shutdown",
+    "error"
+  ],
+  "support_states": [
+    "implemented",
+    "tested",
+    "unavailable",
+    "planned"
+  ],
+  "capabilities": [
+    {
+      "id": "model",
+      "label": "Model",
+      "protocol": "core.protocols.ModelAdapter",
+      "risk_floor": "read"
+    },
+    {
+      "id": "memory",
+      "label": "Memory",
+      "protocol": "core.protocols.MemoryAdapter",
+      "risk_floor": "sensitive_read"
+    },
+    {
+      "id": "voice",
+      "label": "Voice",
+      "protocol": "core.protocols.VoiceAdapter",
+      "risk_floor": "sensitive_read"
+    },
+    {
+      "id": "avatar",
+      "label": "Avatar",
+      "protocol": "core.protocols.AvatarAdapter",
+      "risk_floor": "read"
+    },
+    {
+      "id": "device",
+      "label": "Device",
+      "protocol": "core.protocols.DeviceAdapter",
+      "risk_floor": "sensitive_read",
+      "mutation_risk": "approved_write"
+    },
+    {
+      "id": "notification",
+      "label": "Notification",
+      "protocol": "core.protocols.NotificationAdapter",
+      "risk_floor": "approved_write"
+    },
+    {
+      "id": "storage",
+      "label": "Storage",
+      "protocol": "core.protocols.StorageAdapter",
+      "risk_floor": "sensitive_read",
+      "mutation_risk": "approved_write"
+    },
+    {
+      "id": "process",
+      "label": "Process",
+      "protocol": "core.protocols.ProcessAdapter",
+      "risk_floor": "approved_write"
+    },
+    {
+      "id": "network",
+      "label": "Network",
+      "protocol": "core.protocols.NetworkAdapter",
+      "risk_floor": "approved_write"
+    },
+    {
+      "id": "presentation",
+      "label": "Presentation",
+      "protocol": "core.protocols.PresentationAdapter",
+      "risk_floor": "approved_write"
+    }
+  ],
+  "avatar_state_contract": {
+    "states": [
+      "IDLE",
+      "LISTENING",
+      "THINKING",
+      "SPEAKING",
+      "INTERRUPTED",
+      "SLEEPING",
+      "ERROR"
+    ],
+    "ordering": "Every event carries a monotonically increasing sequence number.",
+    "cancellation": "Stale generation and render events are rejected after interruption.",
+    "authority": "Avatar events and initiative are data, not permission to invoke tools."
+  },
+  "adapter_manifests": {
+    "directory": "adapters/manifests",
+    "schema_version": 1,
+    "required_capability_coverage": "all"
+  },
+  "production_invariants": [
+    "Offline mode has no silent network fallback.",
+    "Unsupported or absent capabilities fail closed.",
+    "Results cannot fabricate sensor, model, build, deployment, or device evidence.",
+    "No root requirement or unrestricted shell path is introduced.",
+    "Physical-device claims remain separate evidence gates."
+  ]
+}

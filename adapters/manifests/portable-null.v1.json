@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "platform_id": "portable-null",
+  "platform": "Portable null/degraded harness",
+  "display_order": 0,
+  "adapter_version": "1.0.0",
+  "evidence_scope": "Deterministic Python 3.12 contract tests only; this row claims no physical capability.",
+  "capabilities": {
+    "model": {
+      "state": "tested",
+      "evidence": "NullAdapter returns unavailable and never reports a model answer."
+    },
+    "memory": {
+      "state": "tested",
+      "evidence": "NullAdapter returns unavailable and cannot inject retrieved context."
+    },
+    "voice": {
+      "state": "tested",
+      "evidence": "NullAdapter returns unavailable and captures no audio."
+    },
+    "avatar": {
+      "state": "tested",
+      "evidence": "NullAdapter returns unavailable and emits no fabricated render state."
+    },
+    "device": {
+      "state": "tested",
+      "evidence": "NullAdapter returns unavailable and performs no device effect."
+    },
+    "notification": {
+      "state": "tested",
+      "evidence": "NullAdapter returns unavailable and posts no notification."
+    },
+    "storage": {
+      "state": "tested",
+      "evidence": "NullAdapter returns unavailable and performs no read or write."
+    },
+    "process": {
+      "state": "tested",
+      "evidence": "NullAdapter returns unavailable and starts no process."
+    },
+    "network": {
+      "state": "tested",
+      "evidence": "OfflineCore boots without network access and the null adapter opens no connection."
+    },
+    "presentation": {
+      "state": "tested",
+      "evidence": "NullAdapter returns unavailable and creates no window or overlay."
+    }
+  }
+}
