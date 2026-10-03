@@ -39,15 +39,17 @@ export SELMA0_LLAMA_SERVER_V1="$TMP/fake-llama-server"
 export SELMA0_LLAMA_PORT_V1="18080"
 export SELMA0_LLAMA_READY_ATTEMPTS_V1="5"
 
-PROFILE="$($MANAGER profile)"
+PROFILE="$(bash "$MANAGER" profile)"
 grep -q '^context_tokens=' <<<"$PROFILE"
 grep -q "^model=$SELMA0_MODEL_V1$" <<<"$PROFILE"
 
-START="$($MANAGER start)"
+START="$(bash "$MANAGER" start)"
 grep -q '^started pid=' <<<"$START"
-$MANAGER status | grep -q '^status=running$'
-$MANAGER stop | grep -q '^stopped$'
-if $MANAGER status >/dev/null 2>&1; then
+STATUS="$(bash "$MANAGER" status)"
+grep -q '^status=running$' <<<"$STATUS"
+STOP="$(bash "$MANAGER" stop)"
+grep -q '^stopped$' <<<"$STOP"
+if bash "$MANAGER" status >/dev/null 2>&1; then
   echo 'expected stopped status to return nonzero' >&2
   exit 1
 fi
@@ -60,9 +62,9 @@ EOF
 chmod +x "$TMP/fake-no-health"
 export SELMA0_LLAMA_SERVER_V1="$TMP/fake-no-health"
 export SELMA0_LLAMA_READY_ATTEMPTS_V1="2"
-if $MANAGER start >/dev/null 2>&1; then
+if bash "$MANAGER" start >/dev/null 2>&1; then
   echo 'expected PID-only server to fail readiness' >&2
-  $MANAGER stop >/dev/null 2>&1 || true
+  bash "$MANAGER" stop >/dev/null 2>&1 || true
   exit 1
 fi
 
