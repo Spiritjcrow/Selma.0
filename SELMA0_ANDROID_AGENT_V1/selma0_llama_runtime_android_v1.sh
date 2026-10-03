@@ -10,7 +10,7 @@ PID_FILE="$STATE_DIR/server.pid"
 LOG_FILE="$STATE_DIR/server.log"
 MODEL_FILE_STATE="$STATE_DIR/model.path"
 HOST="127.0.0.1"
-PORT="8080"
+PORT="${SELMA0_LLAMA_PORT_V1:-8080}"
 
 mkdir -p "$STATE_DIR" "$MODEL_DIR"
 
@@ -99,6 +99,32 @@ is_running() {
   [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
 }
 
+health_ready() {
+  python3 - "$HOST" "$PORT" <<'PY'
+import json, sys, urllib.request
+host, port = sys.argv[1], sys.argv[2]
+try:
+    with urllib.request.urlopen("http://%s:%s/health" % (host, port), timeout=1.5) as r:
+        if r.status != 200:
+            raise SystemExit(1)
+        payload = json.loads(r.read().decode("utf-8"))
+        raise SystemExit(0 if payload.get("status") == "ok" else 1)
+except Exception:
+    raise SystemExit(1)
+PY
+}
+
+wait_ready() {
+  local attempts="${SELMA0_LLAMA_READY_ATTEMPTS_V1:-30}"
+  local i
+  for ((i=1; i<=attempts; i++)); do
+    is_running || return 1
+    health_ready && return 0
+    sleep 1
+  done
+  return 1
+}
+
 start_server() {
   is_running && { printf 'already_running pid=%s\n' "$(cat "$PID_FILE")"; return; }
   [ -x "$SERVER_BIN" ] || fail "llama-server not found. Run: $0 install-runtime"
@@ -116,8 +142,13 @@ start_server() {
     --n-gpu-layers 0 \
     >"$LOG_FILE" 2>&1 &
   printf '%s\n' "$!" > "$PID_FILE"
-  sleep 1
-  is_running || { rm -f "$PID_FILE"; fail "llama-server exited during startup. See $LOG_FILE"; }
+  if ! wait_ready; then
+    local failed_pid
+    failed_pid="$(cat "$PID_FILE" 2>/dev/null || true)"
+    [ -n "$failed_pid" ] && kill "$failed_pid" 2>/dev/null || true
+    rm -f "$PID_FILE"
+    fail "llama-server failed localhost /health readiness. See $LOG_FILE"
+  fi
   printf 'started pid=%s endpoint=http://%s:%s/v1 model=%s ctx=%s\n' "$(cat "$PID_FILE")" "$HOST" "$PORT" "$model" "$ctx"
 }
 
@@ -161,6 +192,8 @@ Environment overrides:
   SELMA0_LLAMA_SERVER_V1      Existing llama-server executable
   SELMA0_LLAMA_SRC_V1         llama.cpp source checkout
   SELMA0_BUILD_JOBS_V1        Build parallelism (default: 2)
+  SELMA0_LLAMA_PORT_V1        Localhost port (default: 8080)
+  SELMA0_LLAMA_READY_ATTEMPTS_V1  Readiness attempts (default: 30)
 EOF
 }
 
