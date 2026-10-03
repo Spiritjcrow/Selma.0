@@ -82,4 +82,35 @@ if bash "$MANAGER" start >/dev/null 2>&1; then
   exit 1
 fi
 
+
+cat > "$TMP/fake-health-only" <<'EOF'
+#!/usr/bin/env python3
+import json, sys
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+port = 8080
+for i, arg in enumerate(sys.argv[:-1]):
+    if arg == "--port": port = int(sys.argv[i + 1])
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path != "/health":
+            self.send_response(404); self.end_headers(); return
+        body = json.dumps({"status": "ok"}).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers(); self.wfile.write(body)
+    def do_POST(self):
+        self.send_response(503); self.end_headers()
+    def log_message(self, *_): pass
+ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()
+EOF
+chmod +x "$TMP/fake-health-only"
+export SELMA0_LLAMA_SERVER_V1="$TMP/fake-health-only"
+export SELMA0_LLAMA_READY_ATTEMPTS_V1="3"
+if bash "$MANAGER" start >/dev/null 2>&1; then
+  echo 'expected health-only server to fail chat acceptance' >&2
+  bash "$MANAGER" stop >/dev/null 2>&1 || true
+  exit 1
+fi
+
 echo 'SELMA0_LLAMA_RUNTIME_SMOKE_OK'
