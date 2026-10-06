@@ -2,9 +2,9 @@ package ai.selma.companion;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.content.pm.PackageManager;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -16,7 +16,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
 public final class MainActivity extends Activity {
-    private static final String SELMA_LOCAL_URL = "http://127.0.0.1:8765/adult-mode";
+    private static final String SELMA_LOCAL_URL = NativeAuthority.CANONICAL_DOCUMENT;
     private WebView webView;
     private SelmaNativeBridge nativeBridge;
 
@@ -33,11 +33,7 @@ public final class MainActivity extends Activity {
 
     private static WebResourceResponse blockedResponse() {
         byte[] body = "Selma Native blocks non-local network resources.".getBytes(StandardCharsets.UTF_8);
-        return new WebResourceResponse(
-            "text/plain",
-            "UTF-8",
-            new ByteArrayInputStream(body)
-        );
+        return new WebResourceResponse("text/plain", "UTF-8", new ByteArrayInputStream(body));
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -45,7 +41,6 @@ public final class MainActivity extends Activity {
         super.onCreate(state);
         webView = new WebView(this);
         setContentView(webView);
-
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -56,62 +51,57 @@ public final class MainActivity extends Activity {
 
         nativeBridge = new SelmaNativeBridge(this, webView);
         webView.addJavascriptInterface(nativeBridge, "SelmaNative");
-
         webView.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 return !isAllowedLocalUri(request.getUrl());
             }
 
+            @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                nativeBridge.onNavigationStarted();
+            }
+
+            @Override public void onPageFinished(WebView view, String url) {
+                nativeBridge.onNavigationCommitted(url);
+            }
+
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                if (!isAllowedLocalUri(request.getUrl())) {
-                    return blockedResponse();
-                }
+                if (!isAllowedLocalUri(request.getUrl())) return blockedResponse();
                 return super.shouldInterceptRequest(view, request);
             }
 
-            @Override public void onReceivedError(
-                WebView view,
-                WebResourceRequest request,
-                android.webkit.WebResourceError error
-            ) {
+            @Override public void onReceivedError(WebView view, WebResourceRequest request, android.webkit.WebResourceError error) {
                 if (request.isForMainFrame()) {
+                    nativeBridge.revokeAuthority();
                     String html = "<!doctype html><meta name='viewport' content='width=device-width,initial-scale=1'>"
-                        + "<style>body{font:16px system-ui;background:#090b10;color:#eef;padding:24px}"
-                        + "button{padding:12px 18px}</style>"
-                        + "<h1>Selma Adult Mode</h1>"
-                        + "<p>The local Selma runtime is not answering yet.</p>"
+                        + "<style>body{font:16px system-ui;background:#090b10;color:#eef;padding:24px}button{padding:12px 18px}</style>"
+                        + "<h1>Selma Adult Mode</h1><p>The local Selma runtime is not answering yet.</p>"
                         + "<p>Start the Termux Selma runtime, then retry. No cloud fallback is used here.</p>"
                         + "<button onclick=\"location.href='" + SELMA_LOCAL_URL + "'\">Retry local Selma</button>";
                     view.loadDataWithBaseURL("about:blank", html, "text/html", "UTF-8", null);
                 }
             }
         });
-
         webView.setWebChromeClient(new WebChromeClient() {
             @Override public void onPermissionRequest(PermissionRequest request) {
                 runOnUiThread(request::deny);
             }
         });
-
         webView.loadUrl(SELMA_LOCAL_URL);
     }
 
-    @Override public void onRequestPermissionsResult(
-        int requestCode,
-        String[] permissions,
-        int[] grantResults
-    ) {
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == SelmaNativeBridge.RECORD_AUDIO_REQUEST && nativeBridge != null) {
-            boolean granted = grantResults.length > 0
-                && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
             nativeBridge.onRecordAudioPermissionResult(granted);
         }
     }
 
     @Override public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) webView.goBack();
-        else super.onBackPressed();
+        if (webView != null && webView.canGoBack()) {
+            nativeBridge.revokeAuthority();
+            webView.goBack();
+        } else super.onBackPressed();
     }
 
     @Override protected void onDestroy() {
