@@ -29,6 +29,8 @@ public final class SelmaNativeBridge implements TextToSpeech.OnInitListener {
     private SpeechRecognizer recognizer;
     private long recognitionGeneration;
     private long pendingPermissionDocument = -1L;
+    private long pendingNavigationGeneration = -1L;
+    private String pendingNavigationUrl;
 
     public SelmaNativeBridge(Activity activity, WebView webView) {
         this.activity = activity;
@@ -36,17 +38,23 @@ public final class SelmaNativeBridge implements TextToSpeech.OnInitListener {
         tts = new TextToSpeech(activity.getApplicationContext(), this);
     }
 
-    void onNavigationStarted() {
-        authority.navigationStarted();
+    void onNavigationStarted(String url) {
+        pendingNavigationGeneration = authority.navigationStarted();
+        pendingNavigationUrl = url;
         invalidateRecognition();
     }
 
     void onNavigationCommitted(String url) {
-        authority.navigationCommitted(authority.candidateGeneration(), url);
+        if (pendingNavigationUrl == null || !pendingNavigationUrl.equals(url)) return;
+        authority.navigationCommitted(pendingNavigationGeneration, url);
+        pendingNavigationGeneration = -1L;
+        pendingNavigationUrl = null;
         if (authority.activeGeneration() >= 0) emitStatus();
     }
 
     void revokeAuthority() {
+        pendingNavigationGeneration = -1L;
+        pendingNavigationUrl = null;
         authority.revoke();
         invalidateRecognition();
     }
