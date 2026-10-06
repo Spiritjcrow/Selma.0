@@ -57,7 +57,7 @@ public final class MainActivity extends Activity {
             }
 
             @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
-                nativeBridge.onNavigationStarted();
+                nativeBridge.onNavigationStarted(url);
             }
 
             @Override public void onPageFinished(WebView view, String url) {
