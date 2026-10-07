@@ -21,14 +21,7 @@ public final class MainActivity extends Activity {
     private SelmaNativeBridge nativeBridge;
 
     private static boolean isAllowedLocalUri(Uri uri) {
-        if (uri == null) return false;
-        String scheme = uri.getScheme();
-        String host = uri.getHost();
-        if ("about".equalsIgnoreCase(scheme)) return true;
-        if (!"http".equalsIgnoreCase(scheme) || host == null) return false;
-        return "127.0.0.1".equals(host)
-            || "localhost".equalsIgnoreCase(host)
-            || "::1".equals(host);
+        return uri != null && NativeAuthority.isAllowedResource(uri.toString());
     }
 
     private static WebResourceResponse blockedResponse() {
