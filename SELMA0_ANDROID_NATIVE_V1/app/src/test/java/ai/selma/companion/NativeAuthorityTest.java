@@ -27,4 +27,14 @@ public final class NativeAuthorityTest {
         authority.navigationCommitted(second, "about:blank");
         assertFalse(authority.owns(second));
     }
+
+    @Test public void resourcesStayOnCanonicalLoopbackService() {
+        assertTrue(NativeAuthority.isAllowedResource("http://127.0.0.1:8765/avatar/status"));
+        assertTrue(NativeAuthority.isAllowedResource("about:blank"));
+        assertFalse(NativeAuthority.isAllowedResource("http://127.0.0.1:9999/avatar/status"));
+        assertFalse(NativeAuthority.isAllowedResource("http://localhost:8765/avatar/status"));
+        assertFalse(NativeAuthority.isAllowedResource("http://[::1]:8765/avatar/status"));
+        assertFalse(NativeAuthority.isAllowedResource("about:srcdoc"));
+        assertFalse(NativeAuthority.isAllowedResource("http://user@127.0.0.1:8765/avatar/status"));
+    }
 }
