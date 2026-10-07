@@ -2,7 +2,7 @@ package ai.selma.companion;
 
 import java.net.URI;
 
-/** Document-scoped authority for the privileged WebView bridge. */
+/** Document-scoped authority and local resource boundary for the privileged WebView. */
 final class NativeAuthority {
     static final String CANONICAL_DOCUMENT = "http://127.0.0.1:8765/adult-mode";
 
@@ -45,6 +45,22 @@ final class NativeAuthority {
                 && "/adult-mode".equals(uri.getRawPath())
                 && uri.getRawQuery() == null
                 && uri.getRawFragment() == null
+                && uri.getRawUserInfo() == null;
+        } catch (IllegalArgumentException ignored) {
+            return false;
+        }
+    }
+
+    static boolean isAllowedResource(String value) {
+        if (value == null) return false;
+        try {
+            URI uri = URI.create(value);
+            if ("about".equalsIgnoreCase(uri.getScheme())) {
+                return "about:blank".equalsIgnoreCase(value);
+            }
+            return "http".equalsIgnoreCase(uri.getScheme())
+                && "127.0.0.1".equals(uri.getHost())
+                && uri.getPort() == 8765
                 && uri.getRawUserInfo() == null;
         } catch (IllegalArgumentException ignored) {
             return false;
