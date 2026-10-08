@@ -176,7 +176,7 @@ def plan_transport_v1(candidates, policy="balanced"):
         "measurement_source": "caller_supplied",
         "probe_performed": False,
         "switch_performed": False,
-        "offline_mode_supported": True,
+        "offline_candidate_supported": True,
         "limitations": (
             "Advice only: underlying OS manages actual routing and transport changes. "
             "No unstated SSID, carrier, fixed IP, available bandwidth, or continuous "
