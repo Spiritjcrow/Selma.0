@@ -19,10 +19,12 @@ if REPLIKA_SKILL_DIR_V1 not in sys.path:
     sys.path.insert(0, REPLIKA_SKILL_DIR_V1)
 
 from replika_migration_v1 import register_replika_migration_tools
+from selma0_sol_security_android_v1 import register_sol_security_tools
 
 
 COMMAND_ROUTER_V1 = Selma0CommandRouterAndroidV1()
 register_replika_migration_tools(COMMAND_ROUTER_V1.registry)
+register_sol_security_tools(COMMAND_ROUTER_V1.registry)
 COMMAND_ROUTER_V1.registry.register(
     "selma.status",
     lambda: base.SELMA0_V1.status(),
