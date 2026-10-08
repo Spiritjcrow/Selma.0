@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://selma.local/wisdomux/agent-message.schema.json",
+  "title": "Wisdomux Agent Message v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocol_version",
+    "message_id",
+    "project_id",
+    "task_id",
+    "sender_agent",
+    "intent",
+    "truth_state",
+    "created_at"
+  ],
+  "properties": {
+    "protocol_version": { "const": "wisdomux.agent-message.v1" },
+    "message_id": { "type": "string", "minLength": 1 },
+    "correlation_id": { "type": ["string", "null"] },
+    "project_id": { "type": "string", "minLength": 1 },
+    "task_id": { "type": "string", "minLength": 1 },
+    "parent_task_id": { "type": ["string", "null"] },
+    "sender_agent": { "type": "string", "minLength": 1 },
+    "recipient_agent": { "type": ["string", "null"] },
+    "broadcast_scope": { "type": ["string", "null"] },
+    "intent": { "type": "string", "minLength": 1 },
+    "truth_state": {
+      "enum": ["REAL", "PREVIEW", "INFERRED", "UNVERIFIED", "BLOCKED", "DEGRADED"]
+    },
+    "authority_scope": { "type": ["object", "null"], "additionalProperties": true },
+    "required_capability": { "type": ["string", "null"] },
+    "dependencies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "payload": {},
+    "created_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": ["string", "null"], "format": "date-time" },
+    "requested_action": { "type": ["string", "null"] },
+    "approval_state": {
+      "enum": ["NOT_REQUIRED", "PENDING", "APPROVED", "DENIED", "EXPIRED"]
+    },
+    "rollback_ref": { "type": ["string", "null"] }
+  }
+}
