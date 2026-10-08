@@ -70,6 +70,8 @@ required = {
     "device.notify",
     "device.vibrate",
     "crowrf.wifi_scan",
+    "network.audit_router_snapshot",
+    "network.plan_transport",
     "crowrf.session_start",
     "crowrf.capture_wifi_scan",
     "crowrf.session_status",
