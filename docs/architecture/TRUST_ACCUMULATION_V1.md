@@ -28,7 +28,7 @@ without decrementing historical trust.
 
 ## Boundaries and integration
 
-Implementation: \`core/trust_budget.py\`; portable tests: \`tests/test_trust_budget.py\`.
+Implementation: `core/trust_budget.py`; portable tests: `tests/test_trust_budget.py`.
 
 This independent pilot performs **no tool execution**, **no approval issuance**,
 **no user impersonation**, **no access-control decisions**, and **no hardware
@@ -44,9 +44,9 @@ resource budgets, device thermal behavior, and safety gates. Do not confuse
 the nondecreasing model with deployed persistent trust.
 
 Validate with:
-\`\`\`bash
+```bash
 python3 -m unittest tests.test_trust_budget -v
-\`\`\`
+```
 
 No hardware benchmark, security authorization upgrade, or cloud CI pass is
 claimed by the introduction of this feature.
