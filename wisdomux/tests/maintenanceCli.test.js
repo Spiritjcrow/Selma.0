@@ -15,6 +15,12 @@ const migration = fs.readFileSync(
   'utf8',
 );
 const cli = path.join(__dirname, '..', 'bin', 'maintenance.js');
+const termuxLauncher = path.join(
+  __dirname,
+  '..',
+  'bin',
+  'maintenance-termux.sh',
+);
 
 function createFixture(databasePath) {
   const db = new DatabaseSync(databasePath);
@@ -115,6 +121,32 @@ test('refuses a missing database without creating it', () => {
     assert.match(result.stderr, /database does not exist/);
     assert.equal(result.stdout, '');
     assert.equal(fs.existsSync(databasePath), false);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('Termux launcher forwards the maintenance arguments', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'wisdomux-cli-'));
+  const databasePath = path.join(directory, 'coordination.sqlite');
+  try {
+    createFixture(databasePath);
+
+    const result = spawnSync('/bin/sh', [
+      termuxLauncher,
+      '--db', databasePath,
+      '--project', 'wisdomux',
+      '--coordinator', 'coordinator-1',
+      '--cutoff', '2026-10-09T04:30:00Z',
+    ], { encoding: 'utf8' });
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stderr, '');
+    assert.deepEqual(JSON.parse(result.stdout), {
+      cutoff: '2026-10-09T04:30:00.000Z',
+      expiredAgents: ['stale-1'],
+      recoveredTasks: ['task-stale'],
+    });
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }

@@ -228,3 +228,47 @@ UNVERIFIED:
 BLOCKED:
 - none for architecture restoration;
 - exact original source recovery depends on locating any surviving files/repository copies.
+
+## Rootless local maintenance
+
+The maintenance command performs one bounded local cycle: it marks agents
+whose heartbeat predates the supplied cutoff as offline, then releases their
+recoverable task claims. It starts no server and opens no network listener.
+
+Requirements:
+
+- Node.js with the built-in `node:sqlite` module;
+- an existing local SQLite database initialized with the Wisdomux migrations;
+- a registered coordinator with `agent.monitor` and `task.recover_stale`
+  grants.
+
+The command deliberately refuses a missing database instead of silently
+creating an empty one.
+
+Direct Node invocation:
+
+```sh
+node wisdomux/bin/maintenance.js \
+  --db /absolute/path/to/coordination.sqlite \
+  --project wisdomux \
+  --coordinator coordinator-1 \
+  --cutoff "YYYY-MM-DDTHH:MM:SSZ" \
+  --sweep-limit 50
+```
+
+Termux/rootless launcher:
+
+```sh
+chmod +x wisdomux/bin/maintenance-termux.sh
+wisdomux/bin/maintenance-termux.sh \
+  --db "$PREFIX/var/lib/selma/coordination.sqlite" \
+  --project wisdomux \
+  --coordinator coordinator-1 \
+  --cutoff "YYYY-MM-DDTHH:MM:SSZ"
+```
+
+Choose the cutoff deliberately: active agents with an older heartbeat are
+marked offline. Successful output is one JSON object listing the normalized
+cutoff, expired agents, and recovered tasks. Errors go to stderr and return a
+non-zero exit status.
+
