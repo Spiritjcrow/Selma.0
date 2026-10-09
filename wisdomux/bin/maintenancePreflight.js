@@ -16,6 +16,15 @@ const REQUIRED_CAPABILITIES = [
   'task.recover_stale',
 ];
 
+function evaluateIntegrity(rows) {
+  const passed = rows.length > 0
+    && rows.every((row) => row.integrity_check === 'ok');
+  return {
+    status: passed ? 'ok' : 'failed',
+    blocker: passed ? null : 'database integrity check failed',
+  };
+}
+
 function parseArguments(argv) {
   const options = {};
   for (let index = 0; index < argv.length; index += 2) {
@@ -46,6 +55,7 @@ function main(argv = process.argv.slice(2)) {
     ).all().map((row) => row.name));
     const missingTables = REQUIRED_TABLES.filter((name) => !tables.has(name));
     const integrityRows = database.prepare('PRAGMA integrity_check').all();
+    const integrity = evaluateIntegrity(integrityRows);
     const foreignKeyRows = database.prepare('PRAGMA foreign_key_check').all();
     const agent = database.prepare(
       `SELECT agent_id, status, capability_json
@@ -57,6 +67,9 @@ function main(argv = process.argv.slice(2)) {
     }
     const grants = JSON.parse(agent.capability_json || '{}').grants || [];
     const blockers = missingTables.map((name) => `missing table: ${name}`);
+    if (integrity.blocker) {
+      blockers.push(integrity.blocker);
+    }
     if (foreignKeyRows.length > 0) {
       blockers.push(`foreign key violations: ${foreignKeyRows.length}`);
     }
@@ -76,9 +89,7 @@ function main(argv = process.argv.slice(2)) {
       },
       checks: {
         schema: missingTables.length === 0 ? 'ok' : 'failed',
-        integrity: integrityRows.every((row) => row.integrity_check === 'ok')
-          ? 'ok'
-          : 'failed',
+        integrity: integrity.status,
         foreignKeys: foreignKeyRows.length === 0 ? 'ok' : 'failed',
       },
       blockers,
@@ -100,6 +111,7 @@ if (require.main === module) {
 module.exports = {
   REQUIRED_CAPABILITIES,
   REQUIRED_TABLES,
+  evaluateIntegrity,
   main,
   parseArguments,
 };

@@ -7,9 +7,19 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const test = require('node:test');
 const { DatabaseSync } = require('node:sqlite');
+const { evaluateIntegrity } = require('../bin/maintenancePreflight');
 
 const cli = path.join(__dirname, '..', 'bin', 'maintenancePreflight.js');
 const migrationDirectory = path.join(__dirname, '..', 'db', 'migrations');
+
+test('treats every non-ok integrity result as a readiness blocker', () => {
+  assert.deepEqual(evaluateIntegrity([
+    { integrity_check: 'row 17 missing from index task_state_idx' },
+  ]), {
+    status: 'failed',
+    blocker: 'database integrity check failed',
+  });
+});
 
 function createFixture(databasePath, grants = [
   'agent.monitor',
