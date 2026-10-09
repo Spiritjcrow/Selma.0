@@ -229,6 +229,21 @@ BLOCKED:
 - none for architecture restoration;
 - exact original source recovery depends on locating any surviving files/repository copies.
 
+## Initialize a local database
+
+The schema-only initializer creates a new local SQLite database from the
+canonical migrations. It creates no agents, capability grants, tasks, or
+network services. The parent directory must already exist, and an existing
+target is never modified.
+
+```sh
+node wisdomux/bin/initializeDatabase.js \
+  --db "$PREFIX/var/lib/selma/coordination.sqlite"
+```
+
+Successful output lists the absolute database path and applied migrations as
+JSON. Initialization errors go to stderr and return a non-zero exit status.
+
 ## Rootless local maintenance
 
 The maintenance command performs one bounded local cycle: it marks agents
