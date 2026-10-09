@@ -1,23 +1,26 @@
 """Monotonic, evidence-backed workload budgets for SelmaOS.
 
-This module is advisory. It never grants capabilities, credentials,
-authorizations or permissions, and never dispatches external actions.
-All evidence must be checked by a caller-supplied independent verifier.
+This module is advisory: no tool execution, authorization issuance or OS
+permissions. Durable SQLite storage accumulates independently verified
+successes without a trust-decrement or record-deletion API. The caller's
+independent verifier must establish actual proof and collaborator identity.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from threading import RLock
 from typing import Callable
+import sqlite3
 
 from core.protocols import RiskClass
 
 
 @dataclass(frozen=True, slots=True)
 class VerifiedSuccess:
-    """A claimed success that still requires independent verification."""
+    """A success claim; credit requires an independent verifier."""
 
     actor_id: str
     scope: str
@@ -36,7 +39,7 @@ class TrustState:
 
 @dataclass(frozen=True, slots=True)
 class WorkBudget:
-    """Recommendations only; caller must separately authorize every operation."""
+    """Advisory throughput ceilings, never permissions or guaranteed resources."""
 
     trust: TrustState
     max_parallel: int
@@ -44,9 +47,7 @@ class WorkBudget:
     requires_authorization: bool = True
 
 
-# Tier thresholds are intentionally conservative and never time-decay.
-# Independent verifiers and different observation days are necessary at
-# higher tiers; accumulating raw self-reports cannot increase trust.
+# No recency weights and no negative point adjustments.
 _THRESHOLDS = (
     (0, 0, 0),
     (3, 1, 1),
@@ -57,30 +58,53 @@ _LIMITS = ((1, 0), (2, 1), (4, 2), (8, 3))
 
 
 class EvidenceTrustLedger:
-    """In-memory pilot; not a production audit ledger or credential issuer.
+    """Durable proof-gated scoring with monotonic trust under supported operations.
 
-    The verifier MUST independently establish proof authenticity, verifier
-    identity, and ownership of the scoped outcome. Caller-controlled strings
-    alone are not evidence. Accepted successes are never removed or discounted.
+    Proof validation, SQLite access control, file backup and tamper resistance
+    are independent responsibilities of the embedding runtime. The verifier
+    MUST authenticate the proof AND the independent verifier's identity.
+    No authorization decisions should be delegated to this class.
     """
 
     def __init__(
         self,
         verify_proof: Callable[[VerifiedSuccess], bool],
         *,
+        database_path: str | Path,
         clock: Callable[[], datetime] | None = None,
         max_records: int = 8192,
     ) -> None:
         if not callable(verify_proof):
             raise TypeError("independent proof verifier required")
+        if not isinstance(database_path, (str, Path)) or not str(database_path).strip():
+            raise ValueError("database_path required")
         if type(max_records) is not int or max_records < 1:
             raise ValueError("max_records must be a positive integer")
         self._verify = verify_proof
         self._clock = clock or (lambda: datetime.now(timezone.utc))
         self._max_records = max_records
-        self._records: list[VerifiedSuccess] = []
-        self._seen: set[str] = set()
         self._lock = RLock()
+        self._db = sqlite3.connect(str(database_path), timeout=10, check_same_thread=False)
+        try:
+            self._db.execute("PRAGMA journal_mode=WAL")
+            self._db.execute("PRAGMA synchronous=FULL")
+            self._db.execute(
+                """CREATE TABLE IF NOT EXISTS verified_successes_v1 (
+                       proof_id TEXT PRIMARY KEY,
+                       actor_id TEXT NOT NULL,
+                       scope TEXT NOT NULL,
+                       verifier_id TEXT NOT NULL,
+                       observed_utc TEXT NOT NULL
+                   )"""
+            )
+            self._db.execute(
+                "CREATE INDEX IF NOT EXISTS verified_successes_scope_v1 "
+                "ON verified_successes_v1(actor_id, scope)"
+            )
+            self._db.commit()
+        except Exception:
+            self._db.close()
+            raise
 
     @staticmethod
     def _utc(value: datetime) -> datetime:
@@ -89,7 +113,7 @@ class EvidenceTrustLedger:
         return value.astimezone(timezone.utc)
 
     def accept(self, proof: VerifiedSuccess) -> None:
-        """Accrue only independently verified successes, once per proof ID."""
+        """Permanently credit independently verified successes, one per ID."""
         if not isinstance(proof, VerifiedSuccess):
             raise TypeError("VerifiedSuccess required")
         if any(not isinstance(value, str) or not value.strip() for value in (
@@ -98,52 +122,75 @@ class EvidenceTrustLedger:
             raise ValueError("actor, scope, proof and verifier IDs must be nonempty")
         if proof.actor_id == proof.verifier_id:
             raise ValueError("self-verification prohibited")
-        if self._utc(proof.observed_at) > self._utc(self._clock()) + timedelta(minutes=5):
+        observed = self._utc(proof.observed_at)
+        if observed > self._utc(self._clock()) + timedelta(minutes=5):
             raise ValueError("proof timestamp too far in the future")
+
         with self._lock:
-            if proof.proof_id in self._seen:
+            if self._db.execute(
+                "SELECT 1 FROM verified_successes_v1 WHERE proof_id = ?",
+                (proof.proof_id,),
+            ).fetchone():
                 raise ValueError("replayed proof ID")
-            if len(self._records) >= self._max_records:
-                raise RuntimeError("proof store full; preserve earned trust and fail closed")
-            # No exception or false result from the independent verifier can
-            # create trust. Checking inside the lock prevents double credit.
+            count = self._db.execute(
+                "SELECT COUNT(*) FROM verified_successes_v1"
+            ).fetchone()[0]
+            if count >= self._max_records:
+                raise RuntimeError("proof store full: preserve earned credit and fail closed")
+            # Never trust merely asserted task success, including our own output.
             if self._verify(proof) is not True:
                 raise ValueError("proof not independently verified")
-            self._records.append(proof)
-            self._seen.add(proof.proof_id)
+            try:
+                self._db.execute(
+                    "INSERT INTO verified_successes_v1 "
+                    "(proof_id, actor_id, scope, verifier_id, observed_utc) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (
+                        proof.proof_id,
+                        proof.actor_id,
+                        proof.scope,
+                        proof.verifier_id,
+                        observed.isoformat(),
+                    ),
+                )
+                self._db.commit()
+            except sqlite3.IntegrityError as exc:
+                self._db.rollback()
+                raise ValueError("replayed proof ID") from exc
+            except Exception:
+                self._db.rollback()
+                raise
 
     def state(self, actor_id: str, scope: str) -> TrustState:
-        """All-time, nondecreasing score for one actor and operation scope."""
+        """All-time, nondecreasing score for a particular actor and scope."""
         if not isinstance(actor_id, str) or not actor_id.strip():
             raise ValueError("actor_id required")
         if not isinstance(scope, str) or not scope.strip():
             raise ValueError("scope required")
         with self._lock:
-            items = [p for p in self._records if p.actor_id == actor_id and p.scope == scope]
-        successes = len(items)
-        collaborators = len({p.verifier_id for p in items})
-        days = len({self._utc(p.observed_at).date() for p in items})
+            successes, collaborators, days = self._db.execute(
+                """SELECT COUNT(*), COUNT(DISTINCT verifier_id),
+                          COUNT(DISTINCT substr(observed_utc, 1, 10))
+                   FROM verified_successes_v1
+                   WHERE actor_id = ? AND scope = ?""",
+                (actor_id, scope),
+            ).fetchone()
         tier = max(
-            i for i, (need_successes, need_collaborators, need_days)
+            index
+            for index, (need_successes, need_collaborators, need_days)
             in enumerate(_THRESHOLDS)
             if successes >= need_successes
             and collaborators >= need_collaborators
             and days >= need_days
         )
-        return TrustState(
-            tier=tier,
-            successes=successes,
-            collaborators=collaborators,
-            distinct_days=days,
-        )
+        return TrustState(tier, successes, collaborators, days)
 
     def budget(self, actor_id: str, scope: str, risk: RiskClass) -> WorkBudget:
-        """Earned recommendations do NOT override mandatory permission gates.
-
-        Even a high-trust actor receives only baseline work budgets for
-        sensitive reads, writes, and external effects.
-        """
+        """Recommend increased parallel READ work, never increased authority."""
         trust = self.state(actor_id, scope)
-        index = trust.tier if risk is RiskClass.READ else 0
-        parallel, retries = _LIMITS[index]
+        parallel, retries = _LIMITS[trust.tier if risk is RiskClass.READ else 0]
         return WorkBudget(trust, parallel, retries)
+
+    def close(self) -> None:
+        with self._lock:
+            self._db.close()
