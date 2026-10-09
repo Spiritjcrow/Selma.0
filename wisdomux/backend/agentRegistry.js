@@ -110,6 +110,22 @@ class AgentRegistry {
   }
 
   expireStale({ projectId, requestedBy, cutoff }) {
+    this.db.exec('BEGIN IMMEDIATE');
+    try {
+      const expired = this.expireStaleInTransaction({
+        projectId,
+        requestedBy,
+        cutoff,
+      });
+      this.db.exec('COMMIT');
+      return expired;
+    } catch (error) {
+      this.db.exec('ROLLBACK');
+      throw error;
+    }
+  }
+
+  expireStaleInTransaction({ projectId, requestedBy, cutoff }) {
     if (!projectId || !requestedBy || !cutoff) {
       throw new TypeError('projectId, requestedBy, and cutoff are required');
     }
@@ -119,49 +135,42 @@ class AgentRegistry {
     }
     const normalizedCutoff = cutoffDate.toISOString();
 
-    this.db.exec('BEGIN IMMEDIATE');
-    try {
-      this.#requireCapability(requestedBy, 'agent.monitor');
-      const stale = this.db.prepare(
-        `SELECT agent_id, status, last_seen_at
-           FROM wisdomux_agents
-          WHERE status IN ('ONLINE', 'BUSY', 'DEGRADED')
-            AND (last_seen_at IS NULL OR last_seen_at < ?)
-          ORDER BY agent_id`,
-      ).all(normalizedCutoff);
-      const timestamp = this.now();
-      const expired = [];
-      for (const agent of stale) {
-        const updated = this.db.prepare(
-          `UPDATE wisdomux_agents
-              SET status = 'OFFLINE'
-            WHERE agent_id = ?
-              AND status = ?
-              AND (last_seen_at IS NULL OR last_seen_at < ?)`,
-        ).run(agent.agent_id, agent.status, normalizedCutoff);
-        if (Number(updated.changes) !== 1) {
-          throw new Error('stale-agent update lost to another coordinator');
-        }
-        this.#appendEvent({
-          projectId,
-          senderAgent: requestedBy,
-          eventType: 'AGENT_MARKED_STALE',
-          payload: {
-            agent_id: agent.agent_id,
-            previous_status: agent.status,
-            cutoff: normalizedCutoff,
-            last_seen_at: agent.last_seen_at,
-          },
-          createdAt: timestamp,
-        });
-        expired.push(agent.agent_id);
+    this.#requireCapability(requestedBy, 'agent.monitor');
+    const stale = this.db.prepare(
+      `SELECT agent_id, status, last_seen_at
+         FROM wisdomux_agents
+        WHERE status IN ('ONLINE', 'BUSY', 'DEGRADED')
+          AND (last_seen_at IS NULL OR last_seen_at < ?)
+        ORDER BY agent_id`,
+    ).all(normalizedCutoff);
+    const timestamp = this.now();
+    const expired = [];
+    for (const agent of stale) {
+      const updated = this.db.prepare(
+        `UPDATE wisdomux_agents
+            SET status = 'OFFLINE'
+          WHERE agent_id = ?
+            AND status = ?
+            AND (last_seen_at IS NULL OR last_seen_at < ?)`,
+      ).run(agent.agent_id, agent.status, normalizedCutoff);
+      if (Number(updated.changes) !== 1) {
+        throw new Error('stale-agent update lost to another coordinator');
       }
-      this.db.exec('COMMIT');
-      return expired;
-    } catch (error) {
-      this.db.exec('ROLLBACK');
-      throw error;
+      this.#appendEvent({
+        projectId,
+        senderAgent: requestedBy,
+        eventType: 'AGENT_MARKED_STALE',
+        payload: {
+          agent_id: agent.agent_id,
+          previous_status: agent.status,
+          cutoff: normalizedCutoff,
+          last_seen_at: agent.last_seen_at,
+        },
+        createdAt: timestamp,
+      });
+      expired.push(agent.agent_id);
     }
+    return expired;
   }
 
   #agent(agentId) {
