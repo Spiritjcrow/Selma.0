@@ -36,12 +36,15 @@ overclocking**. All sensitive reads, writes, network effects and admin actions
 remain subject to existing Selma command governance and FDT/permission checks.
 
 No system uses this ledger by default: hook-up is a separate reviewed increment.
-The record store is bounded and process-local (it is **not persistent** across
-process restarts). Before production use, add a durable integrity-protected,
-tamper-evident append-only store; implement real trusted proof-verifier adapters,
-reconciliation after restarts, audit and controlled export; test cancellation,
-resource budgets, device thermal behavior, and safety gates. Do not confuse
-the nondecreasing model with deployed persistent trust.
+The bounded SQLite ledger uses WAL and durable commits when initialized with a
+real database path. Accepted evidence is retained through process restarts;
+a database path of `:memory:` is suitable for tests only. This pilot is
+**not tamper-evident**: external modification, deletion, disk loss, or corruption
+can still destroy records. Backups and protected storage are mandatory for
+production. Before production use, add signed and verifiable proof adapters,
+tamper-evident audit anchoring, backup/recovery, reconciliation and exports;
+test cancellation, resource budgets, device thermal behavior, and safety
+gates. Persistent scorekeeping is not proof of deployed scheduler integration.
 
 Validate with:
 ```bash
