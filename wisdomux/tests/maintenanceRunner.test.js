@@ -305,3 +305,84 @@ test('rejects coordinator self-expiry before maintenance changes any rows', () =
     events: db.prepare('SELECT * FROM wisdomux_events').all(),
   }), before);
 });
+
+
+test('rolls back stale-agent expiry when task recovery fails', () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec('PRAGMA foreign_keys = ON');
+  db.exec(migration);
+  const insertAgent = db.prepare(
+    `INSERT INTO wisdomux_agents
+      (agent_id, display_name, role, capability_json, status,
+       last_seen_at, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  );
+  insertAgent.run(
+    'coordinator-1',
+    'Coordinator',
+    'Coordinator',
+    JSON.stringify({ grants: ['agent.monitor', 'task.recover_stale'] }),
+    'ONLINE',
+    '2026-10-09T04:59:00.000Z',
+    '2026-10-09T03:00:00.000Z',
+  );
+  insertAgent.run(
+    'stale-1',
+    'Stale Worker',
+    'Backend',
+    JSON.stringify({ grants: ['task.execute'] }),
+    'BUSY',
+    '2026-10-09T04:00:00.000Z',
+    '2026-10-09T03:00:00.000Z',
+  );
+  db.prepare(
+    `INSERT INTO wisdomux_tasks
+      (task_id, project_id, title, state, truth_state, priority,
+       claimed_by_agent, approval_state, created_at, updated_at)
+     VALUES ('task-stale', 'wisdomux', 'Stale task', 'EXECUTING',
+             'REAL', 80, 'stale-1', 'NOT_REQUIRED',
+             '2026-10-09T04:10:00.000Z', '2026-10-09T04:20:00.000Z')`,
+  ).run();
+  db.exec(
+    `CREATE TRIGGER force_recovery_failure
+       BEFORE INSERT ON wisdomux_events
+       WHEN NEW.event_type = 'TASK_STALE_CLAIM_RELEASED'
+       BEGIN
+         SELECT RAISE(ABORT, 'forced recovery failure');
+       END`,
+  );
+  const runner = new MaintenanceRunner(db, {
+    now: () => '2026-10-09T05:00:00.000Z',
+    newId: (() => {
+      let id = 0;
+      return () => `atomic-${++id}`;
+    })(),
+  });
+
+  assert.throws(() => runner.runOnce({
+    projectId: 'wisdomux',
+    requestedBy: 'coordinator-1',
+    cutoff: '2026-10-09T04:30:00Z',
+  }), /forced recovery failure/);
+
+  assert.equal(
+    db.prepare(
+      "SELECT status FROM wisdomux_agents WHERE agent_id = 'stale-1'",
+    ).get().status,
+    'BUSY',
+  );
+  assert.deepEqual(
+    db.prepare(
+      "SELECT state, truth_state, claimed_by_agent FROM wisdomux_tasks WHERE task_id = 'task-stale'",
+    ).get(),
+    {
+      state: 'EXECUTING',
+      truth_state: 'REAL',
+      claimed_by_agent: 'stale-1',
+    },
+  );
+  assert.equal(
+    Number(db.prepare('SELECT COUNT(*) AS count FROM wisdomux_events').get().count),
+    0,
+  );
+});
