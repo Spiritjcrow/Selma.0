@@ -183,6 +183,23 @@ class TaskRecovery {
   }
 
   sweepStale({ projectId, requestedBy, reason, evidenceRefs }) {
+    this.db.exec('BEGIN IMMEDIATE');
+    try {
+      const recovered = this.sweepStaleInTransaction({
+        projectId,
+        requestedBy,
+        reason,
+        evidenceRefs,
+      });
+      this.db.exec('COMMIT');
+      return recovered;
+    } catch (error) {
+      this.db.exec('ROLLBACK');
+      throw error;
+    }
+  }
+
+  sweepStaleInTransaction({ projectId, requestedBy, reason, evidenceRefs }) {
     if (!projectId || !requestedBy || !reason) {
       throw new TypeError('projectId, requestedBy, and reason are required');
     }
@@ -194,66 +211,59 @@ class TaskRecovery {
       throw new TypeError('at least one evidence reference is required');
     }
 
-    this.db.exec('BEGIN IMMEDIATE');
-    try {
-      this.#requireCapability(requestedBy, 'task.recover_stale');
-      const staleTasks = this.db.prepare(
-        `SELECT task.*, agent.status AS owner_status
-           FROM wisdomux_tasks AS task
-           JOIN wisdomux_agents AS agent
-             ON agent.agent_id = task.claimed_by_agent
-          WHERE task.project_id = ?
-            AND task.state IN ('CLAIMED', 'PLANNED', 'EXECUTING',
-                               'VERIFYING', 'REPORTED')
-            AND agent.status IN ('OFFLINE', 'REVOKED')
-          ORDER BY task.priority DESC, task.updated_at ASC, task.task_id ASC
-          LIMIT ?`,
-      ).all(projectId, this.sweepLimit);
-      const timestamp = this.now();
-      const recovered = [];
-      for (const task of staleTasks) {
-        const updated = this.db.prepare(
-          `UPDATE wisdomux_tasks
-              SET state = 'DEFERRED',
-                  truth_state = 'UNVERIFIED',
-                  claimed_by_agent = NULL,
-                  updated_at = ?
-            WHERE task_id = ?
-              AND claimed_by_agent = ?
-              AND state = ?`,
-        ).run(timestamp, task.task_id, task.claimed_by_agent, task.state);
-        if (Number(updated.changes) !== 1) {
-          throw new Error('stale claim recovery lost to another coordinator');
-        }
-        this.db.prepare(
-          `INSERT INTO wisdomux_events
-            (event_id, project_id, task_id, sender_agent, event_type,
-             truth_state, payload_json, evidence_json, created_at)
-           VALUES (?, ?, ?, ?, 'TASK_STALE_CLAIM_RELEASED',
-                   'UNVERIFIED', ?, ?, ?)`,
-        ).run(
-          this.newId(),
-          task.project_id,
-          task.task_id,
-          requestedBy,
-          JSON.stringify({
-            previous_owner: task.claimed_by_agent,
-            owner_status: task.owner_status,
-            previous_state: task.state,
-            previous_truth_state: task.truth_state,
-            reason,
-          }),
-          JSON.stringify(evidenceRefs),
-          timestamp,
-        );
-        recovered.push(task.task_id);
+    this.#requireCapability(requestedBy, 'task.recover_stale');
+    const staleTasks = this.db.prepare(
+      `SELECT task.*, agent.status AS owner_status
+         FROM wisdomux_tasks AS task
+         JOIN wisdomux_agents AS agent
+           ON agent.agent_id = task.claimed_by_agent
+        WHERE task.project_id = ?
+          AND task.state IN ('CLAIMED', 'PLANNED', 'EXECUTING',
+                             'VERIFYING', 'REPORTED')
+          AND agent.status IN ('OFFLINE', 'REVOKED')
+        ORDER BY task.priority DESC, task.updated_at ASC, task.task_id ASC
+        LIMIT ?`,
+    ).all(projectId, this.sweepLimit);
+    const timestamp = this.now();
+    const recovered = [];
+    for (const task of staleTasks) {
+      const updated = this.db.prepare(
+        `UPDATE wisdomux_tasks
+            SET state = 'DEFERRED',
+                truth_state = 'UNVERIFIED',
+                claimed_by_agent = NULL,
+                updated_at = ?
+          WHERE task_id = ?
+            AND claimed_by_agent = ?
+            AND state = ?`,
+      ).run(timestamp, task.task_id, task.claimed_by_agent, task.state);
+      if (Number(updated.changes) !== 1) {
+        throw new Error('stale claim recovery lost to another coordinator');
       }
-      this.db.exec('COMMIT');
-      return recovered;
-    } catch (error) {
-      this.db.exec('ROLLBACK');
-      throw error;
+      this.db.prepare(
+        `INSERT INTO wisdomux_events
+          (event_id, project_id, task_id, sender_agent, event_type,
+           truth_state, payload_json, evidence_json, created_at)
+         VALUES (?, ?, ?, ?, 'TASK_STALE_CLAIM_RELEASED',
+                 'UNVERIFIED', ?, ?, ?)`,
+      ).run(
+        this.newId(),
+        task.project_id,
+        task.task_id,
+        requestedBy,
+        JSON.stringify({
+          previous_owner: task.claimed_by_agent,
+          owner_status: task.owner_status,
+          previous_state: task.state,
+          previous_truth_state: task.truth_state,
+          reason,
+        }),
+        JSON.stringify(evidenceRefs),
+        timestamp,
+      );
+      recovered.push(task.task_id);
     }
+    return recovered;
   }
 
   #requireCapability(agentId, capability) {
