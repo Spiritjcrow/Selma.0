@@ -3,6 +3,8 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 import unittest
+import tempfile
+from pathlib import Path
 
 from core.protocols import RiskClass
 from core.trust_budget import EvidenceTrustLedger, VerifiedSuccess
@@ -26,6 +28,7 @@ class EvidenceTrustLedgerTests(unittest.TestCase):
         self.now = START + timedelta(days=100)
         self.ledger = EvidenceTrustLedger(
             verify_proof=lambda p: p.proof_id.startswith("sol:"),
+            database_path=":memory:",
             clock=lambda: self.now,
         )
 
@@ -85,20 +88,20 @@ class EvidenceTrustLedgerTests(unittest.TestCase):
         self.assertEqual(self.ledger.state("sol", "validate").successes, 1)
 
     def test_verifier_errors_do_not_issue_credit(self):
-        ledger = EvidenceTrustLedger(lambda _: (_ for _ in ()).throw(RuntimeError("bad proof")))
+        ledger = EvidenceTrustLedger(lambda _: (_ for _ in ()).throw(RuntimeError("bad proof")), database_path=":memory:")
         with self.assertRaises(RuntimeError):
             ledger.accept(proof(1))
         self.assertEqual(ledger.state("sol", "validate").successes, 0)
 
     def test_saturated_ledger_preserves_existing_credit(self):
-        ledger = EvidenceTrustLedger(lambda _: True, clock=lambda: self.now, max_records=1)
+        ledger = EvidenceTrustLedger(lambda _: True, database_path=":memory:", clock=lambda: self.now, max_records=1)
         ledger.accept(proof(1))
         with self.assertRaises(RuntimeError):
             ledger.accept(proof(2))
         self.assertEqual(ledger.state("sol", "validate").successes, 1)
 
     def test_parallel_duplicate_submission_counts_once(self):
-        ledger = EvidenceTrustLedger(lambda _: True, clock=lambda: self.now)
+        ledger = EvidenceTrustLedger(lambda _: True, database_path=":memory:", clock=lambda: self.now)
         def submit(_):
             try:
                 ledger.accept(proof(1))
@@ -109,6 +112,25 @@ class EvidenceTrustLedgerTests(unittest.TestCase):
             results = list(pool.map(submit, range(20)))
         self.assertEqual(sum(results), 1)
         self.assertEqual(ledger.state("sol", "validate").successes, 1)
+
+
+    def test_credit_survives_process_restarts_and_replay_is_blocked(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "verified_trust.sqlite3"
+            first = EvidenceTrustLedger(
+                lambda _: True, database_path=path, clock=lambda: self.now,
+            )
+            first.accept(proof(1))
+            first.close()
+            reopened = EvidenceTrustLedger(
+                lambda _: True, database_path=path, clock=lambda: self.now,
+            )
+            self.assertEqual(reopened.state("sol", "validate").successes, 1)
+            with self.assertRaises(ValueError):
+                reopened.accept(proof(1))
+            reopened.accept(proof(2))
+            self.assertEqual(reopened.state("sol", "validate").successes, 2)
+            reopened.close()
 
 
 if __name__ == "__main__":
