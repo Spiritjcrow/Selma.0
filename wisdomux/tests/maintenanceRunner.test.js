@@ -273,3 +273,35 @@ test('blocks a run whose cutoff would expire its coordinator', () => {
     'coordinator would be marked offline before task recovery',
   ]);
 });
+
+test('rejects coordinator self-expiry before maintenance changes any rows', () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec(migration);
+  db.prepare(
+    `INSERT INTO wisdomux_agents
+      (agent_id, display_name, role, capability_json, status,
+       last_seen_at, created_at)
+     VALUES ('coordinator-1', 'Coordinator', 'Coordinator', ?, 'ONLINE', ?, ?)`,
+  ).run(
+    JSON.stringify({ grants: ['agent.monitor', 'task.recover_stale'] }),
+    '2026-10-09T04:00:00.000Z',
+    '2026-10-09T03:00:00.000Z',
+  );
+  const before = JSON.stringify({
+    agents: db.prepare('SELECT * FROM wisdomux_agents').all(),
+    tasks: db.prepare('SELECT * FROM wisdomux_tasks').all(),
+    events: db.prepare('SELECT * FROM wisdomux_events').all(),
+  });
+  const runner = new MaintenanceRunner(db);
+
+  assert.throws(() => runner.runOnce({
+    projectId: 'wisdomux',
+    requestedBy: 'coordinator-1',
+    cutoff: '2026-10-09T04:30:00Z',
+  }), /coordinator would be marked offline before task recovery/);
+  assert.equal(JSON.stringify({
+    agents: db.prepare('SELECT * FROM wisdomux_agents').all(),
+    tasks: db.prepare('SELECT * FROM wisdomux_tasks').all(),
+    events: db.prepare('SELECT * FROM wisdomux_events').all(),
+  }), before);
+});

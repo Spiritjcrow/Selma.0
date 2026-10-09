@@ -30,6 +30,14 @@ class MaintenanceRunner {
       throw new TypeError('cutoff must be a valid timestamp');
     }
     const normalizedCutoff = cutoffDate.toISOString();
+    const preview = this.previewOnce({
+      projectId,
+      requestedBy,
+      cutoff: normalizedCutoff,
+    });
+    if (!preview.ready) {
+      throw new Error(preview.blockers.join('; '));
+    }
     const expiredAgents = this.registry.expireStale({
       projectId,
       requestedBy,

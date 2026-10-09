@@ -320,7 +320,9 @@ wisdomux/bin/maintenance-termux.sh \
 ```
 
 Choose the cutoff deliberately: active agents with an older heartbeat are
-marked offline. Successful output is one JSON object listing the normalized
-cutoff, expired agents, and recovered tasks. Errors go to stderr and return a
-non-zero exit status.
+marked offline. Before any write, maintenance applies the preview guard and
+refuses a cutoff that would mark its own coordinator offline before task
+recovery. Successful output is one JSON object listing the normalized cutoff,
+expired agents, and recovered tasks. Errors go to stderr and return a non-zero
+exit status.
 
