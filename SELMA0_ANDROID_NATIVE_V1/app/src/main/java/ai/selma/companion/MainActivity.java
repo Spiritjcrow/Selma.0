@@ -23,7 +23,7 @@ public final class MainActivity extends Activity {
         webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
         webView.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return !request.getUrl().getHost().endsWith("chatgpt.site");
+                return !CompanionOriginPolicy.isTrusted(request.getUrl().toString());
             }
         });
         webView.setWebChromeClient(new WebChromeClient() {
