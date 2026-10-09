@@ -260,6 +260,27 @@ node wisdomux/bin/maintenancePreflight.js \
 It emits a JSON readiness report. Exit status `0` means ready, `2` means the
 report contains blockers, and `1` means the preflight itself could not run.
 
+## Preview maintenance impact
+
+The maintenance preview opens the database read-only and reports the agents
+that the cutoff would mark offline plus the project tasks whose stale claims
+would be released. It uses the same recovery states, priority ordering, and
+sweep limit as maintenance while preserving current truth and approval data.
+
+```sh
+node wisdomux/bin/maintenancePreview.js \
+  --db "$PREFIX/var/lib/selma/coordination.sqlite" \
+  --project wisdomux \
+  --coordinator coordinator-1 \
+  --cutoff "YYYY-MM-DDTHH:MM:SSZ" \
+  --sweep-limit 50
+```
+
+The JSON report is explicitly labeled `PREVIEW`. Exit status `0` means the
+preview is ready, `2` means it found a blocker, and `1` means it could not run.
+In particular, it blocks a cutoff that would mark the coordinator offline
+before stale-task recovery could finish.
+
 ## Rootless local maintenance
 
 The maintenance command performs one bounded local cycle: it marks agents
