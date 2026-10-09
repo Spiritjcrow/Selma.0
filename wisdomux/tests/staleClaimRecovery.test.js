@@ -71,6 +71,7 @@ function fixture(options = {}) {
   const recovery = new TaskRecovery(db, {
     now: () => '2026-10-09T03:02:00.000Z',
     newId: options.newId || (() => `recovery-${++id}`),
+    sweepLimit: options.sweepLimit,
   });
   return { db, queue, recovery };
 }
@@ -168,4 +169,89 @@ test('rolls back release when recovery evidence cannot be recorded', () => {
   assert.equal(task.state, 'EXECUTING');
   assert.equal(task.truth_state, 'INFERRED');
   assert.equal(task.claimed_by_agent, 'worker-1');
+});
+
+test('sweeps stale claims in one project without taking live work', () => {
+  const { db, queue, recovery } = fixture();
+  db.prepare(
+    `INSERT INTO wisdomux_agents
+      (agent_id, display_name, role, capability_json, status, created_at)
+     VALUES ('worker-2', 'Worker Two', 'Backend', ?, 'REVOKED', ?)`,
+  ).run(
+    JSON.stringify({ grants: ['task.execute'] }),
+    '2026-10-09T03:00:00.000Z',
+  );
+  for (const task of [
+    { taskId: 'task-2', projectId: 'wisdomux', owner: 'worker-2' },
+    { taskId: 'task-live', projectId: 'wisdomux', owner: 'backup-1' },
+    { taskId: 'task-other', projectId: 'other', owner: 'worker-1' },
+  ]) {
+    queue.enqueue({
+      taskId: task.taskId,
+      projectId: task.projectId,
+      title: task.taskId,
+      requiredCapability: 'task.execute',
+    });
+    db.prepare(
+      `UPDATE wisdomux_tasks
+          SET state = 'CLAIMED', claimed_by_agent = ?
+        WHERE task_id = ?`,
+    ).run(task.owner, task.taskId);
+  }
+
+  const recovered = recovery.sweepStale({
+    projectId: 'wisdomux',
+    requestedBy: 'coordinator-1',
+    reason: 'scheduled liveness sweep',
+    evidenceRefs: ['sweep://2026-10-09T03:02:00Z'],
+  });
+
+  assert.deepEqual(recovered, ['task-1', 'task-2']);
+  const untouched = db.prepare(
+      `SELECT task_id, state, claimed_by_agent
+         FROM wisdomux_tasks
+        WHERE task_id IN ('task-live', 'task-other')
+        ORDER BY task_id`,
+    ).all().map((row) => ({ ...row }));
+  assert.deepEqual(
+    untouched,
+    [
+      { task_id: 'task-live', state: 'CLAIMED', claimed_by_agent: 'backup-1' },
+      { task_id: 'task-other', state: 'CLAIMED', claimed_by_agent: 'worker-1' },
+    ],
+  );
+  assert.equal(
+    db.prepare(
+      "SELECT COUNT(*) AS count FROM wisdomux_events WHERE event_type = 'TASK_STALE_CLAIM_RELEASED'",
+    ).get().count,
+    2,
+  );
+});
+
+test('bounds each stale recovery sweep', () => {
+  const { db, queue, recovery } = fixture({ sweepLimit: 1 });
+  queue.enqueue({
+    taskId: 'task-2',
+    projectId: 'wisdomux',
+    title: 'Second abandoned task',
+    requiredCapability: 'task.execute',
+  });
+  db.prepare(
+    `UPDATE wisdomux_tasks
+        SET state = 'CLAIMED', claimed_by_agent = 'worker-1'
+      WHERE task_id = 'task-2'`,
+  ).run();
+
+  const recovered = recovery.sweepStale({
+    projectId: 'wisdomux',
+    requestedBy: 'coordinator-1',
+    reason: 'bounded sweep',
+    evidenceRefs: ['sweep://bounded'],
+  });
+
+  assert.deepEqual(recovered, ['task-1']);
+  assert.equal(
+    db.prepare("SELECT claimed_by_agent FROM wisdomux_tasks WHERE task_id = 'task-2'").get().claimed_by_agent,
+    'worker-1',
+  );
 });
