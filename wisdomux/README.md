@@ -244,6 +244,22 @@ node wisdomux/bin/initializeDatabase.js \
 Successful output lists the absolute database path and applied migrations as
 JSON. Initialization errors go to stderr and return a non-zero exit status.
 
+## Verify maintenance readiness
+
+The preflight command opens an existing coordination database read-only and
+checks the canonical schema, SQLite integrity, foreign keys, coordinator
+availability, and required capability grants. It does not mutate the database
+or start a server.
+
+```sh
+node wisdomux/bin/maintenancePreflight.js \
+  --db "$PREFIX/var/lib/selma/coordination.sqlite" \
+  --coordinator coordinator-1
+```
+
+It emits a JSON readiness report. Exit status `0` means ready, `2` means the
+report contains blockers, and `1` means the preflight itself could not run.
+
 ## Rootless local maintenance
 
 The maintenance command performs one bounded local cycle: it marks agents
