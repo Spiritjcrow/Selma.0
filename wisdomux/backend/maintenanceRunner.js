@@ -38,24 +38,31 @@ class MaintenanceRunner {
     if (!preview.ready) {
       throw new Error(preview.blockers.join('; '));
     }
-    const expiredAgents = this.registry.expireStale({
-      projectId,
-      requestedBy,
-      cutoff: normalizedCutoff,
-    });
-    const recoveredTasks = this.recovery.sweepStale({
-      projectId,
-      requestedBy,
-      reason: `owner heartbeat expired before ${normalizedCutoff}`,
-      evidenceRefs: [
-        `maintenance://stale-agent-sweep/${normalizedCutoff}`,
-      ],
-    });
-    return {
-      cutoff: normalizedCutoff,
-      expiredAgents,
-      recoveredTasks,
-    };
+    this.db.exec('BEGIN IMMEDIATE');
+    try {
+      const expiredAgents = this.registry.expireStaleInTransaction({
+        projectId,
+        requestedBy,
+        cutoff: normalizedCutoff,
+      });
+      const recoveredTasks = this.recovery.sweepStaleInTransaction({
+        projectId,
+        requestedBy,
+        reason: `owner heartbeat expired before ${normalizedCutoff}`,
+        evidenceRefs: [
+          `maintenance://stale-agent-sweep/${normalizedCutoff}`,
+        ],
+      });
+      this.db.exec('COMMIT');
+      return {
+        cutoff: normalizedCutoff,
+        expiredAgents,
+        recoveredTasks,
+      };
+    } catch (error) {
+      this.db.exec('ROLLBACK');
+      throw error;
+    }
   }
 
   previewOnce({ projectId, requestedBy, cutoff }) {
