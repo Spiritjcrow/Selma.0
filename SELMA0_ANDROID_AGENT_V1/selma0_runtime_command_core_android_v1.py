@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import ipaddress
+import re
 import os
 import signal
 import sys
@@ -10,6 +11,7 @@ from urllib.parse import urlsplit
 import selma0_runtime_android_v1 as base
 from selma0_command_router_android_v1 import Selma0CommandRouterAndroidV1
 from selma0_collaboration_intelligence_v1 import register_collaboration_tools
+from selma0_context_bridge_v1 import BridgeError, LocalHandoffBridge, MAX_BODY, ROUTE as HANDOFF_ROUTE_V1
 
 REPLIKA_SKILL_DIR_V1 = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
@@ -23,6 +25,7 @@ from replika_migration_v1 import register_replika_migration_tools
 
 
 COMMAND_ROUTER_V1 = Selma0CommandRouterAndroidV1()
+BRIDGE_V1 = LocalHandoffBridge()
 register_collaboration_tools(COMMAND_ROUTER_V1.registry)
 register_replika_migration_tools(COMMAND_ROUTER_V1.registry)
 COMMAND_ROUTER_V1.registry.register(
@@ -194,6 +197,47 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
 
     def do_POST(self):
         if not self._enforce_http_boundary_v1(require_origin=True):
+            return
+
+        if self.path == HANDOFF_ROUTE_V1:
+            # Local signing over HTTP is not a substitute for encrypted transport.
+            # Refuse this route if the server was bound to any network interface.
+            if not _is_loopback_host_v1(self.server.server_address[0]):
+                self.send_json(403, {"error": "bridge is loopback-only"})
+                return
+            # A browser origin is always untrusted unless specifically allowlisted.
+            origin = self.headers.get("Origin", "").strip()
+            permitted = {item.strip() for item in os.getenv(
+                "SELMA0_BRIDGE_ALLOWED_ORIGINS_V1", "").split(",") if item.strip()}
+            if origin and origin not in permitted:
+                self.send_json(403, {"error": "bridge origin not allowed"})
+                return
+            if self.headers.get("Transfer-Encoding"):
+                self.send_json(403, {"error": "bridge request rejected"})
+                return
+            size_header = self.headers.get("Content-Length", "")
+            if not re.fullmatch(r"[1-9][0-9]{0,5}", size_header) or int(size_header) > MAX_BODY:
+                self.send_json(413, {"error": "invalid bridge message size"})
+                return
+            if self.headers.get("Content-Type", "").split(";")[0].strip().lower() != "application/json":
+                self.send_json(415, {"error": "bridge expects application/json"})
+                return
+            try:
+                raw = self.rfile.read(int(size_header))
+                BRIDGE_V1.verify(self.headers, raw)
+                def evaluate_collaboration(turns):
+                    executed = COMMAND_ROUTER_V1.execute(
+                        "collab.assess", {"turns": turns}, approved=False
+                    )
+                    if not executed.get("ok"):
+                        raise BridgeError("assessment unavailable")
+                    return executed["result"]
+                result = BRIDGE_V1.process(raw, evaluate_collaboration)
+                self.send_json(200, result)
+            except BridgeError:
+                self.send_json(403, {"error": "bridge request rejected"})
+            except Exception:
+                self.send_json(500, {"error": "bridge unavailable"})
             return
         if self.path == "/api/selma0/tools/execute/v1":
             try:
