@@ -40,7 +40,7 @@ def validate_turns(turns):
         action = turn.get("action_kind")
         evidence = turn.get("evidence", "none")
         source = turn.get("source_kind", "human")
-        confidence = turn.get("speaker_confidence", 0.0 if speaker == "unknown" else 1.0)
+        confidence = turn.get("speaker_confidence", 0.0 if speaker == "unknown" or source == "voice_transcript" else 1.0)
         artifact = turn.get("artifact_produced", False)
         if (not isinstance(speaker, str) or not 1 <= len(speaker) <= 40
                 or not all(c.isalnum() or c in "_-" for c in speaker)):
