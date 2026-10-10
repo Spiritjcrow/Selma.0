@@ -9,6 +9,7 @@ from urllib.parse import urlsplit
 
 import selma0_runtime_android_v1 as base
 from selma0_command_router_android_v1 import Selma0CommandRouterAndroidV1
+from selma0_collaboration_intelligence_v1 import register_collaboration_tools
 
 REPLIKA_SKILL_DIR_V1 = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
@@ -22,6 +23,7 @@ from replika_migration_v1 import register_replika_migration_tools
 
 
 COMMAND_ROUTER_V1 = Selma0CommandRouterAndroidV1()
+register_collaboration_tools(COMMAND_ROUTER_V1.registry)
 register_replika_migration_tools(COMMAND_ROUTER_V1.registry)
 COMMAND_ROUTER_V1.registry.register(
     "selma.status",
