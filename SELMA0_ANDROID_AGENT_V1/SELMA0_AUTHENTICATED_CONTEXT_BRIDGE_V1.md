@@ -108,3 +108,40 @@ Unit tests validate signed/tampered messages, expired timestamps, restart-persis
 3. Build an optional Gemini API/authorized user-account adapter. Keep provider credentials in private runtime configuration, not GitHub, chat, or voice.
 4. Only after explicit network authorization, add TLS with device-specific identities and scoped relay transport for mobile/network-agnostic multi-device use.
 5. Threat model the Chrome extension separately, especially permissions, phishing, origin bypasses, and extension message authentication.
+
+## Optional direct Gemini API collaboration
+
+The separate `selma0_gemini_adapter_v1.py` adapter creates a **new** Gemini
+API conversation request and relays the generated text to Selma's authenticated
+local bridge. It does not recover, sync, or take over existing Gemini app chats,
+voice sessions, or hidden model memory. Google documents `generateContent`
+over HTTPS with the `x-goog-api-key` header; the model ID defaults to
+`gemini-3.8-flash` but can be configured.
+
+This is disabled unless the user configures the Google-issued
+`GEMINI_API_KEY`, explicitly enables
+`SELMA0_GEMINI_API_ENABLED_V1=1`, and runs a **single** request with
+`--authorize-external`. Provider usage may incur charges; review terms and
+data handling before transmitting any material. Inputs are never read
+automatically from local memory or project files.
+
+```sh
+# Only when you intentionally want to send a reviewed message externally:
+export SELMA0_BRIDGE_HMAC_KEY_V1="$(cat "$HOME/.selma0/bridge-key.hex")"
+export GEMINI_API_KEY="YOUR_KEY_SET_SECURELY_OUTSIDE_VERSION_CONTROL"
+export SELMA0_GEMINI_API_ENABLED_V1=1
+printf '%s\n' 'Review this SelmaOS bridge schema and recommend one verifiable improvement.' |
+  python3 SELMA0_ANDROID_AGENT_V1/selma0_gemini_adapter_v1.py --authorize-external
+```
+
+Never paste live secrets into shell commands or commit example credentials.
+Prefer a trusted secret manager or a protected session environment for the
+provider key, and disable `SELMA0_GEMINI_API_ENABLED_V1` after use.
+A real Gemini response/transport still requires runtime credentials, internet,
+provider access, and integration smoke evidence.
+
+Test the mock-only provider guard without contacting Google:
+
+```sh
+python3 -m unittest SELMA0_ANDROID_AGENT_V1/tests/test_gemini_adapter_v1.py -v
+```
