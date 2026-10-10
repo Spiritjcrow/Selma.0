@@ -36,6 +36,10 @@ class CollaborationTests(unittest.TestCase):
         flags = self.engine.assess([turn("unknown", "ask", confidence=0.4)])["flags"]
         self.assertIn("speaker_identity_uncertain", flags)
 
+    def test_voice_speaker_labels_default_to_uncertain(self):
+        event = {"speaker_id": "gemini", "action_kind": "ask", "source_kind": "voice_transcript"}
+        self.assertTrue(self.engine.assess([event])["speaker_ambiguity"])
+
     def test_rejects_freeform_text_and_credentials(self):
         with self.assertRaises(ValueError):
             validate_turns([{**turn("user", "ask"), "transcript": "here is my secret"}])
