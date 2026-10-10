@@ -38,7 +38,9 @@ def send(text, speaker="gemini", conversation_id=None):
         headers=make_signed_headers(body),
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=8) as response:
+    # Never let local signed payloads escape through configured HTTP proxies.
+    direct = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    with direct.open(req, timeout=8) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
