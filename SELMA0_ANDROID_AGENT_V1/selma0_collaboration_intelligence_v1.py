@@ -62,6 +62,8 @@ class Selma0CollaborationIntelligenceV1:
         self.data_dir = Path(data_dir or os.getenv("SELMA0_COLLAB_DATA_DIR_V1", "~/.selma0/collaboration_v1")).expanduser()
         self._lock = threading.RLock()
         self._initialized = False
+        self.policy_path = self.data_dir / "policy.v1.json"
+        self.db_path = self.data_dir / "observations.v1.sqlite3"
 
     def _prepare(self):
         if self._initialized:
@@ -102,7 +104,8 @@ class Selma0CollaborationIntelligenceV1:
                 os.unlink(name)
 
     def _policy(self):
-        self._prepare()
+        if not self.policy_path.is_file():
+            return dict(DEFAULT_POLICY)
         with self.policy_path.open(encoding="utf-8") as f:
             policy = json.load(f)
         if not isinstance(policy, dict) or set(policy) != set(DEFAULT_POLICY) or policy.get("version") != 1:
@@ -169,6 +172,7 @@ class Selma0CollaborationIntelligenceV1:
             raise ValueError("feedback must be useful, unproductive, or needs_review")
         normalized = validate_turns(turns)
         with self._lock:
+            self._prepare()
             policy = self._policy()
             result = self._evaluate(normalized, policy)
             fingerprint = hashlib.sha256(json.dumps(normalized, sort_keys=True,
@@ -184,9 +188,12 @@ class Selma0CollaborationIntelligenceV1:
     def suggest_policy(self):
         with self._lock:
             p = self._policy()
-            with sqlite3.connect(self.db_path) as con:
-                rows = con.execute("SELECT feedback,loop_detected FROM observations WHERE policy_revision=?",
-                                   (p["revision"],)).fetchall()
+            if self.db_path.is_file():
+                with sqlite3.connect(self.db_path) as con:
+                    rows = con.execute("SELECT feedback,loop_detected FROM observations WHERE policy_revision=?",
+                                       (p["revision"],)).fetchall()
+            else:
+                rows = []
             misses = sum(f == "unproductive" and not loop for f, loop in rows)
             false_alarms = sum(f == "useful" and loop for f, loop in rows)
             update = {}
@@ -202,6 +209,7 @@ class Selma0CollaborationIntelligenceV1:
     def apply_policy(self, updates, expected_revision):
         self._validate_updates(updates)
         with self._lock:
+            self._prepare()
             policy = self._policy()
             if isinstance(expected_revision, bool) or not isinstance(expected_revision, int) or expected_revision != policy["revision"]:
                 raise ValueError("policy revision mismatch")
