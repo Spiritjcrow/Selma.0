@@ -40,6 +40,14 @@ class CollaborationTests(unittest.TestCase):
         event = {"speaker_id": "gemini", "action_kind": "ask", "source_kind": "voice_transcript"}
         self.assertTrue(self.engine.assess([event])["speaker_ambiguity"])
 
+    def test_imported_speaker_claim_defaults_to_untrusted(self):
+        event = {"speaker_id": "gemini", "action_kind": "handoff", "source_kind": "import"}
+        self.assertTrue(self.engine.assess([event])["speaker_ambiguity"])
+
+    def test_questions_are_not_treated_as_reciprocity_loops(self):
+        turns = [turn("gemini", "ask"), turn("chatgpt", "ask"), turn("gemini", "ask")]
+        self.assertFalse(self.engine.assess(turns)["loop_detected"])
+
     def test_rejects_freeform_text_and_credentials(self):
         with self.assertRaises(ValueError):
             validate_turns([{**turn("user", "ask"), "transcript": "here is my secret"}])
