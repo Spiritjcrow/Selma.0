@@ -81,7 +81,7 @@ def _validate_handoff(raw):
         except (ValueError, AttributeError) as exc:
             raise BridgeError(f"invalid {k}") from exc
     sender = raw.get("sender_claim")
-    if sender not in SUPPORTED_SENDERS:
+    if not isinstance(sender, str) or sender not in SUPPORTED_SENDERS:
         raise BridgeError("sender_claim not supported")
     body = _str(raw.get("text"), "text", MAX_TEXT).strip()
     if not body:
