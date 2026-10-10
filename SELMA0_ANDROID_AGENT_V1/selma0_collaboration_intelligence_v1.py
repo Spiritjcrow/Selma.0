@@ -40,7 +40,7 @@ def validate_turns(turns):
         action = turn.get("action_kind")
         evidence = turn.get("evidence", "none")
         source = turn.get("source_kind", "human")
-        confidence = turn.get("speaker_confidence", 0.0 if speaker == "unknown" or source == "voice_transcript" else 1.0)
+        confidence = turn.get("speaker_confidence", 0.0 if speaker == "unknown" or source in {"voice_transcript", "import"} else 1.0)
         artifact = turn.get("artifact_produced", False)
         if (not isinstance(speaker, str) or not 1 <= len(speaker) <= 40
                 or not all(c.isalnum() or c in "_-" for c in speaker)):
@@ -69,14 +69,20 @@ class Selma0CollaborationIntelligenceV1:
         if self._initialized:
             return
         self.data_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+        if self.data_dir.is_symlink():
+            raise ValueError("collaboration data directory cannot be a symlink")
         os.chmod(self.data_dir, 0o700)
         self.policy_path = self.data_dir / "policy.v1.json"
         self.db_path = self.data_dir / "observations.v1.sqlite3"
         if not self.policy_path.exists():
             self._write_policy(DEFAULT_POLICY)
         if not self.db_path.exists():
-            fd = os.open(self.db_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            os.close(fd)
+            try:
+                fd = os.open(self.db_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+            except FileExistsError:
+                pass  # Another process initialized it concurrently.
+            else:
+                os.close(fd)
         os.chmod(self.db_path, 0o600)
         with sqlite3.connect(self.db_path) as con:
             con.execute("""CREATE TABLE IF NOT EXISTS observations (
@@ -127,7 +133,7 @@ class Selma0CollaborationIntelligenceV1:
     def _evaluate(turns, policy):
         streak = []
         for turn in reversed(turns):
-            if turn["action_kind"] in {"ack", "ask", "handoff"} and not turn["artifact_produced"]:
+            if turn["action_kind"] in {"ack", "handoff"} and not turn["artifact_produced"]:
                 streak.append(turn)
             else:
                 break
