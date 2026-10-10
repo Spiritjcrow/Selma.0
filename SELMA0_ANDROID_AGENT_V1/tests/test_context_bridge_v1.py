@@ -5,6 +5,7 @@ import tempfile
 import unittest
 import uuid
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -121,6 +122,20 @@ class ContextBridgeTests(unittest.TestCase):
                                                      data, path="/other")
         with self.assertRaisesRegex(BridgeError, "signature"):
             self.bridge.verify(headers, data)
+
+    def test_13_network_bound_bridge_route_refuses_requests(self):
+        from selma0_runtime_command_core_android_v1 import (
+            HANDOFF_ROUTE_V1, Selma0CommandCoreHTTPAndroidV1,
+        )
+        handler = object.__new__(Selma0CommandCoreHTTPAndroidV1)
+        handler.path = HANDOFF_ROUTE_V1
+        handler.headers = {"Host": "127.0.0.1:8765"}
+        handler.server = SimpleNamespace(server_address=("0.0.0.0", 8765))
+        responses = []
+        handler.send_json = lambda status, body: responses.append((status, body))
+        handler.do_POST()
+        self.assertEqual(responses[0][0], 403)
+        self.assertIn("loopback", responses[0][1]["error"])
 
     def test_12_acknowledgment_vs_action(self):
         self.assertEqual(infer_context("Thank you!")["action_kind"], "ack")
