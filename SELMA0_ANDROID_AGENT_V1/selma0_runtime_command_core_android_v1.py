@@ -200,6 +200,11 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
             return
 
         if self.path == HANDOFF_ROUTE_V1:
+            # Local signing over HTTP is not a substitute for encrypted transport.
+            # Refuse this route if the server was bound to any network interface.
+            if not _is_loopback_host_v1(self.server.server_address[0]):
+                self.send_json(403, {"error": "bridge is loopback-only"})
+                return
             # A browser origin is always untrusted unless specifically allowlisted.
             origin = self.headers.get("Origin", "").strip()
             permitted = {item.strip() for item in os.getenv(
