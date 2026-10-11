@@ -237,6 +237,7 @@ public final class LauncherActivity extends Activity {
 
     private void title(String title, String subtitle) {
         TextView h = text(title, 26, foreground(), true);
+        h.setAccessibilityHeading(true);
         main.addView(h, full(18));
         TextView s = text(subtitle, 13, muted(), false);
         main.addView(s, full(5));

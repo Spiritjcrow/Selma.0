@@ -127,5 +127,9 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
         )
 
 
+    def test_screen_titles_are_accessibility_headings(self):
+        self.assertIn("h.setAccessibilityHeading(true)", self.source)
+
+
 if __name__ == "__main__":
     unittest.main()
