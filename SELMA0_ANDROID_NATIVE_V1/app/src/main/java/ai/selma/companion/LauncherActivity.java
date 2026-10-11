@@ -371,8 +371,9 @@ public final class LauncherActivity extends Activity {
         LinearLayout texts = vertical();
         texts.setPadding(dp(12), 0, 0, 0);
         texts.addView(text(label, 15, foreground(), true));
-        texts.addView(text(pinned.contains(pkg) ? "Pinned to Home" : "Tap ★ to pin to Home",
-                11, muted(), false));
+        TextView pinState = text(pinned.contains(pkg) ? "Pinned to Home" : "Tap ★ to pin to Home",
+                11, muted(), false);
+        texts.addView(pinState);
         cell.addView(texts, new LinearLayout.LayoutParams(0, -2, 1f));
         cell.setContentDescription(label + ", " + (pinned.contains(pkg) ? "pinned" : "not pinned"));
         cell.setOnClickListener(v -> launch(info));
@@ -388,8 +389,11 @@ public final class LauncherActivity extends Activity {
         pin.setContentDescription((pinned.contains(pkg) ? "Unpin " : "Pin ") + label);
         pin.setOnClickListener(v -> {
             togglePinned(pkg, label);
-            pin.setTextColor(pinned.contains(pkg) ? MINT : muted());
-            pin.setContentDescription((pinned.contains(pkg) ? "Unpin " : "Pin ") + label);
+            boolean isPinned = pinned.contains(pkg);
+            pin.setTextColor(isPinned ? MINT : muted());
+            pin.setContentDescription((isPinned ? "Unpin " : "Pin ") + label);
+            pinState.setText(isPinned ? "Pinned to Home" : "Tap ★ to pin to Home");
+            cell.setContentDescription(label + ", " + (isPinned ? "pinned" : "not pinned"));
         });
         cell.addView(pin, new LinearLayout.LayoutParams(dp(48), dp(48)));
         TextView organize = text("⇄", 20, MINT, true);

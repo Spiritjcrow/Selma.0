@@ -108,5 +108,17 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
 
 
 
+    def test_pin_action_synchronizes_row_visible_and_accessible_state(self):
+        for marker in (
+            'TextView pinState = text(',
+            'boolean isPinned = pinned.contains(pkg)',
+            'pinState.setText(isPinned ?',
+            'cell.setContentDescription(label + ", " + (isPinned ?',
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.source)
+
+
+
 if __name__ == "__main__":
     unittest.main()
