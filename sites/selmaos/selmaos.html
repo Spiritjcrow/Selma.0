@@ -84,7 +84,7 @@ function renderTasks(){
   const check=document.createElement('input');check.type='checkbox';check.checked=task.done;check.setAttribute('aria-label','Complete '+task.text);
   check.addEventListener('change',()=>{task.done=check.checked;save();renderTasks()});
   const span=document.createElement('span');span.textContent=task.text;
-  const del=document.createElement('button');del.textContent='Delete';del.addEventListener('click',()=>{state.tasks=state.tasks.filter(t=>t.id!==task.id);save();renderTasks()});
+  const del=document.createElement('button');del.textContent='Delete';del.setAttribute('aria-label','Delete '+task.text);del.addEventListener('click',()=>{state.tasks=state.tasks.filter(t=>t.id!==task.id);save();renderTasks()});
   li.append(check,span,del);list.append(li)
  }
 }

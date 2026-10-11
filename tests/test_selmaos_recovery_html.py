@@ -33,5 +33,12 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
 
 
 
+    def test_reminder_delete_action_has_contextual_accessible_name(self):
+        self.assertIn(
+            "del.setAttribute('aria-label','Delete '+task.text)", self.html
+        )
+
+
+
 if __name__ == "__main__":
     unittest.main()
