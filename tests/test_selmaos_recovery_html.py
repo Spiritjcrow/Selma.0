@@ -51,5 +51,12 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
         self.assertIn("img.alt='Preview of '+f.name", self.html)
 
 
+    def test_reminder_updates_are_announced_politely(self):
+        self.assertIn(
+            '<ul id="taskList" aria-live="polite" aria-label="Reminders"></ul>',
+            self.html,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
