@@ -102,5 +102,11 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
                 self.assertIn(marker, self.source)
 
 
+    def test_navigation_and_workspace_tabs_expose_selected_state(self):
+        self.assertIn('item.setSelected(section.equals(target))', self.source)
+        self.assertIn('select.setSelected(group.equals(activeWorkspace))', self.source)
+
+
+
 if __name__ == "__main__":
     unittest.main()

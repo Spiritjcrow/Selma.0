@@ -211,6 +211,7 @@ public final class LauncherActivity extends Activity {
         TextView item = text(label, 14, section.equals(target) ? MINT : muted(), true);
         item.setGravity(Gravity.CENTER);
         item.setMinHeight(dp(52));
+        item.setSelected(section.equals(target));
         item.setContentDescription(label + " tab");
         item.setOnClickListener(v -> {
             section = target;
@@ -440,6 +441,7 @@ public final class LauncherActivity extends Activity {
             select.setGravity(Gravity.CENTER);
             select.setMinHeight(dp(48));
             select.setBackground(shape(group.equals(activeWorkspace) ? MINT : surface(), 14));
+            select.setSelected(group.equals(activeWorkspace));
             select.setContentDescription(group + " workspace");
             select.setOnClickListener(v -> {
                 activeWorkspace = group;
