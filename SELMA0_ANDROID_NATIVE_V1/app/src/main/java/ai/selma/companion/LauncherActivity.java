@@ -1,6 +1,7 @@
 package ai.selma.companion;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -33,9 +34,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -46,6 +49,8 @@ public final class LauncherActivity extends Activity {
     private static final String PREFS = "selma_launcher_v1";
     private static final String PINNED = "pinned_packages";
     private static final String LIGHT = "light_mode";
+    private static final String WORKSPACE_PREF = "workspace_assignments";
+    private static final String[] WORKSPACE_NAMES = {"Build", "Connect", "Secure", "Daily"};
     private static final int MINT = Color.rgb(79, 232, 195);
     private static final int VIOLET = Color.rgb(167, 144, 253);
     private static final String LOCAL_ASSISTANT = "http://127.0.0.1:8765/";
@@ -56,6 +61,8 @@ public final class LauncherActivity extends Activity {
     private LinearLayout navigation;
     private SharedPreferences preferences;
     private Set<String> pinned;
+    private final Map<String, String> assignments = new HashMap<>();
+    private String activeWorkspace = "Build";
     private String section = "HOME";
     private String filter = "";
     private boolean light;
@@ -65,10 +72,43 @@ public final class LauncherActivity extends Activity {
         preferences = getSharedPreferences(PREFS, MODE_PRIVATE);
         pinned = new HashSet<>(preferences.getStringSet(PINNED, Collections.emptySet()));
         light = preferences.getBoolean(LIGHT, false);
-        getWindow().setStatusBarColor(background());
-        getWindow().setNavigationBarColor(background());
+        for (String value : preferences.getStringSet(WORKSPACE_PREF, Collections.emptySet())) {
+            int split = value.indexOf('|');
+            if (split <= 0) continue;
+            String category = value.substring(split + 1);
+            for (String allowed : WORKSPACE_NAMES) {
+                if (allowed.equals(category)) assignments.put(value.substring(0, split), category);
+            }
+        }
+        if (savedInstanceState != null) {
+            String restored = savedInstanceState.getString("section", "HOME");
+            if ("HOME".equals(restored) || "APPS".equals(restored)
+                    || "WORKSPACES".equals(restored) || "SYSTEM".equals(restored)) section = restored;
+            filter = savedInstanceState.getString("filter", "");
+            String workspace = savedInstanceState.getString("workspace", "Build");
+            for (String allowed : WORKSPACE_NAMES) {
+                if (allowed.equals(workspace)) activeWorkspace = workspace;
+            }
+        }
         loadApps();
         createShell();
+    }
+
+    @Override protected void onSaveInstanceState(Bundle state) {
+        state.putString("section", section);
+        state.putString("filter", filter);
+        state.putString("workspace", activeWorkspace);
+        super.onSaveInstanceState(state);
+    }
+
+    @Override public void onBackPressed() {
+        if (!"HOME".equals(section)) {
+            section = "HOME";
+            filter = "";
+            showSection();
+        } else {
+            // A HOME activity should not disappear on a Back gesture.
+        }
     }
 
     @Override protected void onResume() {
@@ -131,6 +171,8 @@ public final class LauncherActivity extends Activity {
     }
 
     private void createShell() {
+        getWindow().setStatusBarColor(background());
+        getWindow().setNavigationBarColor(background());
         screen = vertical();
         screen.setBackgroundColor(background());
 
@@ -183,10 +225,12 @@ public final class LauncherActivity extends Activity {
         main.removeAllViews();
         navigation.removeAllViews();
         if ("APPS".equals(section)) renderApps();
+        else if ("WORKSPACES".equals(section)) renderWorkspaces();
         else if ("SYSTEM".equals(section)) renderSystem();
         else renderHome();
         navItem("Home", "HOME");
         navItem("Apps", "APPS");
+        navItem("Work", "WORKSPACES");
         navItem("System", "SYSTEM");
     }
 
@@ -236,6 +280,10 @@ public final class LauncherActivity extends Activity {
             section = "APPS";
             showSection();
         });
+        action("▦  Workspaces", "Organize installed apps into Build, Connect, Secure and Daily", () -> {
+            section = "WORKSPACES";
+            showSection();
+        });
         sectionTitle("Pinned workspace");
         List<ResolveInfo> favorites = new ArrayList<>();
         for (ResolveInfo item : installed) {
@@ -269,7 +317,7 @@ public final class LauncherActivity extends Activity {
     }
 
     private void renderApps() {
-        title("Applications", installed.size() + " discoverable app entries · long-press to pin");
+        title("Applications", installed.size() + " discoverable entries · use ★ to pin or ⇄ to organize");
         EditText search = new EditText(this);
         search.setSingleLine(true);
         search.setTextSize(16);
@@ -322,20 +370,103 @@ public final class LauncherActivity extends Activity {
         LinearLayout texts = vertical();
         texts.setPadding(dp(12), 0, 0, 0);
         texts.addView(text(label, 15, foreground(), true));
-        texts.addView(text(pinned.contains(pkg) ? "Pinned · hold to unpin" : "Hold to pin to Home",
+        texts.addView(text(pinned.contains(pkg) ? "Pinned to Home" : "Tap ★ to pin to Home",
                 11, muted(), false));
         cell.addView(texts, new LinearLayout.LayoutParams(0, -2, 1f));
         cell.setContentDescription(label + ", " + (pinned.contains(pkg) ? "pinned" : "not pinned"));
         cell.setOnClickListener(v -> launch(info));
         cell.setOnLongClickListener(v -> {
-            if (!pinned.add(pkg)) pinned.remove(pkg);
-            preferences.edit().putStringSet(PINNED, new HashSet<>(pinned)).apply();
-            Toast.makeText(this, label + (pinned.contains(pkg) ? " pinned" : " unpinned"),
-                    Toast.LENGTH_SHORT).show();
+            togglePinned(pkg, label);
             showSection();
             return true;
         });
+        TextView pin = text("★", 21, pinned.contains(pkg) ? MINT : muted(), true);
+        pin.setGravity(Gravity.CENTER);
+        pin.setMinWidth(dp(44));
+        pin.setMinHeight(dp(48));
+        pin.setContentDescription((pinned.contains(pkg) ? "Unpin " : "Pin ") + label);
+        pin.setOnClickListener(v -> {
+            togglePinned(pkg, label);
+            pin.setTextColor(pinned.contains(pkg) ? MINT : muted());
+            pin.setContentDescription((pinned.contains(pkg) ? "Unpin " : "Pin ") + label);
+        });
+        cell.addView(pin, new LinearLayout.LayoutParams(dp(44), dp(48)));
+        TextView organize = text("⇄", 20, MINT, true);
+        organize.setGravity(Gravity.CENTER);
+        organize.setMinWidth(dp(44));
+        organize.setMinHeight(dp(48));
+        organize.setContentDescription("Choose workspace for " + label);
+        organize.setOnClickListener(v -> chooseWorkspace(pkg, label));
+        cell.addView(organize, new LinearLayout.LayoutParams(dp(44), dp(48)));
         destination.addView(cell, full(8));
+    }
+
+    private void togglePinned(String pkg, String label) {
+        if (!pinned.add(pkg)) pinned.remove(pkg);
+        preferences.edit().putStringSet(PINNED, new HashSet<>(pinned)).apply();
+        Toast.makeText(this, label + (pinned.contains(pkg) ? " pinned" : " unpinned"),
+                Toast.LENGTH_SHORT).show();
+    }
+
+    private void chooseWorkspace(String pkg, String label) {
+        String[] choices = {"None", "Build", "Connect", "Secure", "Daily"};
+        String current = assignments.get(pkg);
+        int selected = 0;
+        for (int i = 1; i < choices.length; i++) {
+            if (choices[i].equals(current)) selected = i;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Workspace for " + label)
+                .setSingleChoiceItems(choices, selected, (dialog, which) -> {
+                    if (which == 0) assignments.remove(pkg);
+                    else assignments.put(pkg, choices[which]);
+                    Set<String> values = new HashSet<>();
+                    for (Map.Entry<String, String> entry : assignments.entrySet()) {
+                        values.add(entry.getKey() + "|" + entry.getValue());
+                    }
+                    preferences.edit().putStringSet(WORKSPACE_PREF, values).apply();
+                    dialog.dismiss();
+                    showSection();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void renderWorkspaces() {
+        title("Workspaces", "Local app collections; nothing is installed or connected automatically");
+        LinearLayout choices = row();
+        for (String group : WORKSPACE_NAMES) {
+            TextView select = text(group, 12, group.equals(activeWorkspace) ? background() : foreground(), true);
+            select.setGravity(Gravity.CENTER);
+            select.setMinHeight(dp(48));
+            select.setBackground(shape(group.equals(activeWorkspace) ? MINT : surface(), 14));
+            select.setContentDescription(group + " workspace");
+            select.setOnClickListener(v -> {
+                activeWorkspace = group;
+                showSection();
+            });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(48), 1f);
+            lp.setMargins(dp(2), 0, dp(2), 0);
+            choices.addView(select, lp);
+        }
+        main.addView(choices, full(20));
+        sectionTitle(activeWorkspace);
+        int count = 0;
+        for (ResolveInfo info : installed) {
+            if (activeWorkspace.equals(assignments.get(info.activityInfo.packageName))) {
+                addAppRow(info, main);
+                count++;
+            }
+        }
+        if (count == 0) {
+            TextView message = text("No apps assigned. Open Apps, tap ⇄ next to an installed app, and choose "
+                    + activeWorkspace + ".", 14, muted(), false);
+            main.addView(message, full(14));
+            action("Find apps", "Choose from the apps already on this device", () -> {
+                section = "APPS";
+                showSection();
+            });
+        }
     }
 
     private void launch(ResolveInfo info) {
