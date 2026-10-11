@@ -120,5 +120,12 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
 
 
 
+    def test_decorative_app_icon_is_hidden_from_accessibility(self):
+        self.assertIn(
+            "icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO)",
+            self.source,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

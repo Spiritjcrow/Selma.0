@@ -365,6 +365,7 @@ public final class LauncherActivity extends Activity {
         cell.setPadding(dp(14), dp(10), dp(14), dp(10));
         cell.setBackground(shape(surface(), 16));
         ImageView icon = new ImageView(this);
+        icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         try { icon.setImageDrawable(info.loadIcon(pm)); }
         catch (RuntimeException ignored) { icon.setImageResource(android.R.drawable.sym_def_app_icon); }
         cell.addView(icon, new LinearLayout.LayoutParams(dp(42), dp(42)));
