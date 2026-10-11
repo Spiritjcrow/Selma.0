@@ -1,58 +1,44 @@
-"""SelmaOS first-run bounded readiness and child cleanup (candidate, not yet wired)."""
+"""Bounded PID-bound loopback readiness check for SelmaOS first-run.
+
+No network discovery, privileges, or third-party dependencies. A service already
+listening on the port is not proof that *our* newly spawned child is ready.
+"""
 import http.client
 import json
-import os
-import select
 import subprocess
 import time
 
 
-def wait_for_runtime_ready(process, read_fd, timeout=8.0):
+def wait_for_runtime_ready(process, timeout=15.0, port=8765):
+    """Return True only while this child serves the expected command-core API."""
     deadline = time.monotonic() + timeout
-    message = b""
     while time.monotonic() < deadline:
         if process.poll() is not None:
             return False
         remaining = max(0.0, deadline - time.monotonic())
-        ready, _, _ = select.select([read_fd], [], [], min(0.2, remaining))
-        if not ready:
-            continue
-        part = os.read(read_fd, 64)
-        if not part:
-            return False
-        message += part
-        if len(message) > 64:
-            return False
-        if b"\n" in message:
-            if message.split(b"\n", 1)[0] != b"SELMA0_READY_V1":
-                return False
-            break
-    else:
-        return False
-    while time.monotonic() < deadline:
-        if process.poll() is not None:
-            return False
-        connection = http.client.HTTPConnection("127.0.0.1", 8765, timeout=0.5)
+        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=min(0.5, remaining))
         try:
             connection.request("GET", "/api/selma0/status/v1")
             response = connection.getresponse()
-            body = response.read(8192)
-            data = json.loads(body)
-            if (response.status == 200 and isinstance(data, dict)
+            body = response.read(8193)
+            if response.status == 200 and len(body) <= 8192:
+                data = json.loads(body)
+                if (isinstance(data, dict)
                     and data.get("name") == "Selma.0"
                     and type(data.get("runtime_pid_v1")) is int
                     and data["runtime_pid_v1"] == process.pid
                     and isinstance(data.get("command_core"), dict)):
-                return process.poll() is None
+                    return process.poll() is None
         except (OSError, ValueError, http.client.HTTPException):
             pass
         finally:
             connection.close()
-        time.sleep(0.1)
+        time.sleep(min(0.1, max(0.0, deadline - time.monotonic())))
     return False
 
 
 def stop_runtime_child(process):
+    """Stop only the child we spawned; never kill an unrelated listener."""
     try:
         if process.poll() is not None:
             return
@@ -61,7 +47,6 @@ def stop_runtime_child(process):
             process.wait(timeout=2)
         except subprocess.TimeoutExpired:
             process.kill()
-            # Reap the killed child before allowing a new startup attempt.
             process.wait(timeout=2)
     except (OSError, subprocess.TimeoutExpired):
         pass
