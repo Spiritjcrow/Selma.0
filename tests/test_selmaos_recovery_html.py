@@ -40,5 +40,12 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
 
 
 
+    def test_reminder_checkbox_action_matches_current_state(self):
+        self.assertIn(
+            "check.setAttribute('aria-label',(task.done?'Mark incomplete ':'Mark complete ')+task.text)",
+            self.html,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
