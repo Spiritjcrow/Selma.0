@@ -68,5 +68,35 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
                 self.assertNotIn(forbidden, self.source)
 
 
+    def test_workspaces_are_local_and_user_assigned(self):
+        for marker in (
+            'private static final String WORKSPACE_PREF = "workspace_assignments"',
+            'private static final String[] WORKSPACE_NAMES',
+            '"Build", "Connect", "Secure", "Daily"',
+            'void renderWorkspaces()',
+            'void chooseWorkspace(String pkg, String label)',
+            'putStringSet(WORKSPACE_PREF, values)',
+            'new AlertDialog.Builder(this)',
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.source)
+        self.assertIn('navItem("Work", "WORKSPACES")', self.source)
+        self.assertNotIn("android.permission.QUERY_ALL_PACKAGES", self.source)
+
+    def test_pin_and_workspace_controls_are_visible_accessible_actions(self):
+        for marker in (
+            'pin.setMinWidth(dp(44))',
+            'pin.setMinHeight(dp(48))',
+            'pin.setContentDescription',
+            'organize.setContentDescription',
+            'togglePinned(pkg, label)',
+            'chooseWorkspace(pkg, label)',
+            'state.putString("workspace", activeWorkspace)',
+            'state.putString("section", section)',
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.source)
+
+
 if __name__ == "__main__":
     unittest.main()
