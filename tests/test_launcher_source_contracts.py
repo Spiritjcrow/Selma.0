@@ -85,8 +85,12 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
 
     def test_pin_and_workspace_controls_are_visible_accessible_actions(self):
         for marker in (
-            'pin.setMinWidth(dp(44))',
+            'pin.setMinWidth(dp(48))',
             'pin.setMinHeight(dp(48))',
+            'organize.setMinWidth(dp(48))',
+            'organize.setMinHeight(dp(48))',
+            'cell.addView(pin, new LinearLayout.LayoutParams(dp(48), dp(48)))',
+            'cell.addView(organize, new LinearLayout.LayoutParams(dp(48), dp(48)))',
             'pin.setContentDescription',
             'organize.setContentDescription',
             'togglePinned(pkg, label)',

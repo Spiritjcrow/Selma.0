@@ -382,7 +382,7 @@ public final class LauncherActivity extends Activity {
         });
         TextView pin = text("★", 21, pinned.contains(pkg) ? MINT : muted(), true);
         pin.setGravity(Gravity.CENTER);
-        pin.setMinWidth(dp(44));
+        pin.setMinWidth(dp(48));
         pin.setMinHeight(dp(48));
         pin.setContentDescription((pinned.contains(pkg) ? "Unpin " : "Pin ") + label);
         pin.setOnClickListener(v -> {
@@ -390,14 +390,14 @@ public final class LauncherActivity extends Activity {
             pin.setTextColor(pinned.contains(pkg) ? MINT : muted());
             pin.setContentDescription((pinned.contains(pkg) ? "Unpin " : "Pin ") + label);
         });
-        cell.addView(pin, new LinearLayout.LayoutParams(dp(44), dp(48)));
+        cell.addView(pin, new LinearLayout.LayoutParams(dp(48), dp(48)));
         TextView organize = text("⇄", 20, MINT, true);
         organize.setGravity(Gravity.CENTER);
-        organize.setMinWidth(dp(44));
+        organize.setMinWidth(dp(48));
         organize.setMinHeight(dp(48));
         organize.setContentDescription("Choose workspace for " + label);
         organize.setOnClickListener(v -> chooseWorkspace(pkg, label));
-        cell.addView(organize, new LinearLayout.LayoutParams(dp(44), dp(48)));
+        cell.addView(organize, new LinearLayout.LayoutParams(dp(48), dp(48)));
         destination.addView(cell, full(8));
     }
 
