@@ -26,5 +26,12 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
         self.assertNotIn('new Function(', self.html)
 
 
+    def test_view_changes_move_focus_to_active_heading(self):
+        for value in ("const target=$(id)", "target.querySelector('h1')",
+                      "heading.tabIndex=-1", "heading.focus()"):
+            self.assertIn(value, self.html)
+
+
+
 if __name__ == "__main__":
     unittest.main()

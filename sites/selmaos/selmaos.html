@@ -70,7 +70,10 @@ function validate(raw){
 }
 try{const saved=localStorage.getItem(KEY);if(saved)state=validate(JSON.parse(saved))}catch(e){writable=false;say('Saved data unavailable. Use export to preserve new notes.')}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state));writable=true;say('Saved on this device.')}catch(e){writable=false;say('Storage blocked: please export your data.')}}
-function view(id){document.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el.id===id));document.querySelectorAll('#drawer button').forEach(b=>{if(b.dataset.view===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
+function view(id){const target=$(id);if(!target)return;
+ document.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el.id===id));
+ document.querySelectorAll('#drawer button').forEach(b=>{if(b.dataset.view===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
+ const heading=target.querySelector('h1');if(heading){heading.tabIndex=-1;heading.focus()}}
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>view(b.dataset.view)));
 $('noteText').value=state.notes;
 $('noteText').addEventListener('input',e=>{state.notes=e.target.value;save();$('noteState').textContent=writable?'Saved locally':'Storage unavailable. Export data.'});
