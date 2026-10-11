@@ -120,7 +120,7 @@ $('previewFile').addEventListener('change',async e=>{
  const f=e.target.files?.[0],out=$('filePreview'),img=$('previewImage');out.textContent='';img.classList.add('hidden');
  if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null}if(!f)return;
  if(f.size>256*1024){out.textContent='File exceeds preview limit.';return}
- if(/^image\/(png|jpeg|gif|webp)$/.test(f.type)){previewUrl=URL.createObjectURL(f);img.src=previewUrl;img.classList.remove('hidden');return}
+ if(/^image\/(png|jpeg|gif|webp)$/.test(f.type)){previewUrl=URL.createObjectURL(f);img.src=previewUrl;img.alt='Preview of '+f.name;img.classList.remove('hidden');return}
  if(f.type==='text/plain'||/\.(txt|md|json|csv)$/.test(f.name.toLowerCase())){out.textContent=await f.text();return}
  out.textContent='Unsupported format.'
 });

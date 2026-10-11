@@ -47,5 +47,9 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
         )
 
 
+    def test_image_preview_identifies_selected_file(self):
+        self.assertIn("img.alt='Preview of '+f.name", self.html)
+
+
 if __name__ == "__main__":
     unittest.main()
