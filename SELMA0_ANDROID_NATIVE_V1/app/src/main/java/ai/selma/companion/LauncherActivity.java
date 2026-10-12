@@ -343,6 +343,7 @@ public final class LauncherActivity extends Activity {
         search.setText(filter);
         search.setSelection(search.length());
         displayApps(results, filter);
+        results.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
     }
 
     private void displayApps(LinearLayout destination, String query) {

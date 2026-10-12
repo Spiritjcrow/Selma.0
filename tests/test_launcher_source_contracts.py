@@ -131,5 +131,12 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
         self.assertIn("h.setAccessibilityHeading(true)", self.source)
 
 
+    def test_app_search_results_are_announced_after_initial_render(self):
+        initial = self.source.index("displayApps(results, filter);", self.source.index("search.setSelection"))
+        marker = "results.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE)"
+        self.assertIn(marker, self.source)
+        self.assertGreater(self.source.index(marker), initial)
+
+
 if __name__ == "__main__":
     unittest.main()
