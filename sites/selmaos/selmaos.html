@@ -41,7 +41,7 @@ footer{text-align:center;color:#b5c4e0;font-size:.78rem;padding:1rem}
 <header><div><div class="brand">SELMA<span>OS</span></div><div id="runtime" class="hint">Offline-first browser desktop</div></div>
 <div class="controls"><button id="secondary">↗ Second window</button><button id="backup">↓ Export</button><button id="restore">↑ Import</button><input id="restoreFile" class="hidden" type="file" accept=".json,application/json" aria-label="Backup file"></div></header>
 <div class="layout"><aside class="panel">
-<div class="portrait"><div class="orb" aria-label="Animated abstract assistant placeholder">✦</div></div>
+<div class="portrait"><div class="orb" role="img" aria-label="Animated abstract assistant placeholder">✦</div></div>
 <h2>Selma Assistant</h2><p class="hint">Abstract portrait placeholder. 3D rig and conversational AI are not connected.</p>
 <nav aria-label="App drawer" id="drawer">
 <button data-view="home" aria-current="page">⌂ Home</button><button data-view="notes">▤ Notes</button>
@@ -144,4 +144,5 @@ $('runtime').textContent='Local storage: '+(writable?'available':'unavailable')+
 setTimeout(()=>{$('boot').classList.add('hidden');$('desktop').classList.remove('hidden');view('home');if(new URL(location.href).searchParams.get('window')==='secondary')say('Secondary workspace ready.')},650);
 })();
 </script></body></html>
+
 

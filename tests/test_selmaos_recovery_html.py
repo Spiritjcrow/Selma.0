@@ -94,8 +94,15 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
             self.html,
         )
 
+    def test_abstract_assistant_placeholder_exposes_image_semantics(self):
+        self.assertIn(
+            'class="orb" role="img" aria-label="Animated abstract assistant placeholder"',
+            self.html,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 
