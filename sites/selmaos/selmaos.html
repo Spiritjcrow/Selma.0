@@ -141,6 +141,7 @@ $('secondary').addEventListener('click',()=>{
  const win=window.open(url.href,'_blank');if(win)win.opener=null;else say('Popup blocked. Open this page in a new tab.')
 });
 $('runtime').textContent='Local storage: '+(writable?'available':'unavailable')+' • No network required';
-setTimeout(()=>{$('boot').classList.add('hidden');$('desktop').classList.remove('hidden');if(new URL(location.href).searchParams.get('window')==='secondary')say('Secondary workspace ready.')},650);
+setTimeout(()=>{$('boot').classList.add('hidden');$('desktop').classList.remove('hidden');view('home');if(new URL(location.href).searchParams.get('window')==='secondary')say('Secondary workspace ready.')},650);
 })();
 </script></body></html>
+

@@ -88,7 +88,14 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
             self.html,
         )
 
+    def test_boot_completion_focuses_active_home_heading(self):
+        self.assertIn(
+            "$('desktop').classList.remove('hidden');view('home');",
+            self.html,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
