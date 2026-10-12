@@ -155,6 +155,21 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             self.source,
         )
 
+    def test_section_changes_expose_accessibility_pane_title(self):
+        marker = "main.setAccessibilityPaneTitle(sectionLabel())"
+        self.assertIn(marker, self.source)
+        render = self.source.index("else renderHome();")
+        self.assertGreater(self.source.index(marker), render)
+        for label in (
+            '"SelmaOS Home"',
+            '"SelmaOS Applications"',
+            '"SelmaOS Workspaces"',
+            '"SelmaOS System"',
+        ):
+            with self.subTest(label=label):
+                self.assertIn(label, self.source)
+
 
 if __name__ == "__main__":
     unittest.main()
+

@@ -221,6 +221,13 @@ public final class LauncherActivity extends Activity {
         navigation.addView(item, new LinearLayout.LayoutParams(0, dp(54), 1f));
     }
 
+    private String sectionLabel() {
+        if ("APPS".equals(section)) return "SelmaOS Applications";
+        if ("WORKSPACES".equals(section)) return "SelmaOS Workspaces";
+        if ("SYSTEM".equals(section)) return "SelmaOS System";
+        return "SelmaOS Home";
+    }
+
     private void showSection() {
         if (main == null) return;
         main.removeAllViews();
@@ -229,6 +236,7 @@ public final class LauncherActivity extends Activity {
         else if ("WORKSPACES".equals(section)) renderWorkspaces();
         else if ("SYSTEM".equals(section)) renderSystem();
         else renderHome();
+        main.setAccessibilityPaneTitle(sectionLabel());
         navItem("Home", "HOME");
         navItem("Apps", "APPS");
         navItem("Work", "WORKSPACES");
@@ -544,3 +552,4 @@ public final class LauncherActivity extends Activity {
         main.addView(note, full(20));
     }
 }
+
