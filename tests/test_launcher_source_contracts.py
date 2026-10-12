@@ -169,7 +169,19 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             with self.subTest(label=label):
                 self.assertIn(label, self.source)
 
+    def test_navigation_change_restores_focus_to_selected_tab(self):
+        for marker in (
+            "item.setFocusable(true)",
+            "showSection();\n            focusSelectedNavigationItem();",
+            "private void focusSelectedNavigationItem()",
+            "if (child.isSelected())",
+            "child.requestFocus()",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.source)
+
 
 if __name__ == "__main__":
     unittest.main()
+
 

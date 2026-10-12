@@ -211,14 +211,26 @@ public final class LauncherActivity extends Activity {
         TextView item = text(label, 14, section.equals(target) ? MINT : muted(), true);
         item.setGravity(Gravity.CENTER);
         item.setMinHeight(dp(52));
+        item.setFocusable(true);
         item.setSelected(section.equals(target));
         item.setContentDescription(label + " tab");
         item.setOnClickListener(v -> {
             section = target;
             filter = "";
             showSection();
+            focusSelectedNavigationItem();
         });
         navigation.addView(item, new LinearLayout.LayoutParams(0, dp(54), 1f));
+    }
+
+    private void focusSelectedNavigationItem() {
+        for (int i = 0; i < navigation.getChildCount(); i++) {
+            View child = navigation.getChildAt(i);
+            if (child.isSelected()) {
+                child.requestFocus();
+                return;
+            }
+        }
     }
 
     private String sectionLabel() {
@@ -552,4 +564,5 @@ public final class LauncherActivity extends Activity {
         main.addView(note, full(20));
     }
 }
+
 
