@@ -244,7 +244,9 @@ public final class LauncherActivity extends Activity {
     }
 
     private void sectionTitle(String value) {
-        main.addView(text(value, 17, foreground(), true), full(24));
+        TextView h = text(value, 17, foreground(), true);
+        h.setAccessibilityHeading(true);
+        main.addView(h, full(24));
     }
 
     private TextView action(String title, String description, Runnable run) {

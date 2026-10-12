@@ -137,6 +137,18 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
         self.assertIn(marker, self.source)
         self.assertGreater(self.source.index(marker), initial)
 
+    def test_section_titles_are_accessibility_headings(self):
+        start = self.source.index("private void sectionTitle")
+        end = self.source.index("private TextView action", start)
+        method = self.source[start:end]
+        for marker in (
+            "TextView h = text(value, 17, foreground(), true)",
+            "h.setAccessibilityHeading(true)",
+            "main.addView(h, full(24))",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, method)
+
 
 if __name__ == "__main__":
     unittest.main()
