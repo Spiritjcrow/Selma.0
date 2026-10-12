@@ -72,6 +72,16 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
             self.html,
         )
 
+    def test_file_preview_outcomes_use_polite_status(self):
+        for marker in (
+            "say('File exceeds preview limit.')",
+            "say('Image preview ready: '+f.name)",
+            "say('Text preview ready: '+f.name)",
+            "say('Unsupported preview format.')",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.html)
+
 
 if __name__ == "__main__":
     unittest.main()
