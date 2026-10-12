@@ -57,6 +57,15 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
             self.html,
         )
 
+    def test_reminder_toggle_preserves_checkbox_focus(self):
+        marker = (
+            "check.addEventListener('change',()=>{task.done=check.checked;"
+            "li.classList.toggle('done',task.done);"
+            "check.setAttribute('aria-label',(task.done?'Mark incomplete ':'Mark complete ')+task.text);"
+            "save()})"
+        )
+        self.assertIn(marker, self.html)
+
 
 if __name__ == "__main__":
     unittest.main()
