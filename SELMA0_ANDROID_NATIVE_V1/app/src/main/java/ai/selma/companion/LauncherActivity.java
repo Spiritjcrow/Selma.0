@@ -59,6 +59,7 @@ public final class LauncherActivity extends Activity {
     private LinearLayout screen;
     private LinearLayout main;
     private LinearLayout navigation;
+    private LinearLayout workspaceNavigation;
     private SharedPreferences preferences;
     private Set<String> pinned;
     private final Map<String, String> assignments = new HashMap<>();
@@ -244,6 +245,7 @@ public final class LauncherActivity extends Activity {
         if (main == null) return;
         main.removeAllViews();
         navigation.removeAllViews();
+        workspaceNavigation = null;
         if ("APPS".equals(section)) renderApps();
         else if ("WORKSPACES".equals(section)) renderWorkspaces();
         else if ("SYSTEM".equals(section)) renderSystem();
@@ -464,16 +466,19 @@ public final class LauncherActivity extends Activity {
     private void renderWorkspaces() {
         title("Workspaces", "Local app collections; nothing is installed or connected automatically");
         LinearLayout choices = row();
+        workspaceNavigation = choices;
         for (String group : WORKSPACE_NAMES) {
             TextView select = text(group, 12, group.equals(activeWorkspace) ? background() : foreground(), true);
             select.setGravity(Gravity.CENTER);
             select.setMinHeight(dp(48));
+            select.setFocusable(true);
             select.setBackground(shape(group.equals(activeWorkspace) ? MINT : surface(), 14));
             select.setSelected(group.equals(activeWorkspace));
             select.setContentDescription(group + " workspace");
             select.setOnClickListener(v -> {
                 activeWorkspace = group;
                 showSection();
+                focusSelectedWorkspaceItem();
             });
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(48), 1f);
             lp.setMargins(dp(2), 0, dp(2), 0);
@@ -496,6 +501,17 @@ public final class LauncherActivity extends Activity {
                 section = "APPS";
                 showSection();
             });
+        }
+    }
+
+    private void focusSelectedWorkspaceItem() {
+        if (workspaceNavigation == null) return;
+        for (int i = 0; i < workspaceNavigation.getChildCount(); i++) {
+            View child = workspaceNavigation.getChildAt(i);
+            if (child.isSelected()) {
+                child.requestFocus();
+                return;
+            }
         }
     }
 
@@ -564,5 +580,6 @@ public final class LauncherActivity extends Activity {
         main.addView(note, full(20));
     }
 }
+
 
 

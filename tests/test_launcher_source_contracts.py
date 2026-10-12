@@ -180,8 +180,22 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.source)
 
+    def test_workspace_change_restores_focus_to_selected_tab(self):
+        for marker in (
+            "private LinearLayout workspaceNavigation;",
+            "workspaceNavigation = choices;",
+            "select.setFocusable(true)",
+            "showSection();\n                focusSelectedWorkspaceItem();",
+            "private void focusSelectedWorkspaceItem()",
+            "if (child.isSelected())",
+            "child.requestFocus()",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.source)
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 
