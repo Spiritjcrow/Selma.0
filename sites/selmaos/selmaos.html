@@ -134,7 +134,7 @@ $('restoreFile').addEventListener('change',async e=>{
  try{if(f.size>256*1024)throw Error('Backup exceeds limit');const next=validate(JSON.parse(await f.text()));
  if(!confirm('Replace local notes and reminders with imported backup?'))return;
  state=next;$('noteText').value=state.notes;renderTasks();save();say('Backup restored')
- }catch(err){say('Import failed: '+err.message)}finally{e.target.value=''}
+ }catch(err){say('Import failed: '+err.message)}finally{e.target.value='';$('restore').focus()}
 });
 $('secondary').addEventListener('click',()=>{
  const url=new URL(location.href);url.searchParams.set('window','secondary');

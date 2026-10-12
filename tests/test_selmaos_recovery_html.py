@@ -82,6 +82,13 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.html)
 
+    def test_backup_import_returns_focus_to_import_button(self):
+        self.assertIn(
+            "finally{e.target.value='';$('restore').focus()}",
+            self.html,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
+
