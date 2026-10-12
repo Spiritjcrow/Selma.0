@@ -382,11 +382,6 @@ public final class LauncherActivity extends Activity {
         cell.addView(texts, new LinearLayout.LayoutParams(0, -2, 1f));
         cell.setContentDescription(label + ", " + (pinned.contains(pkg) ? "pinned" : "not pinned"));
         cell.setOnClickListener(v -> launch(info));
-        cell.setOnLongClickListener(v -> {
-            togglePinned(pkg, label);
-            showSection();
-            return true;
-        });
         TextView pin = text("★", 21, pinned.contains(pkg) ? MINT : muted(), true);
         pin.setGravity(Gravity.CENTER);
         pin.setMinWidth(dp(48));
@@ -399,6 +394,10 @@ public final class LauncherActivity extends Activity {
             pin.setContentDescription((isPinned ? "Unpin " : "Pin ") + label);
             pinState.setText(isPinned ? "Pinned to Home" : "Tap ★ to pin to Home");
             cell.setContentDescription(label + ", " + (isPinned ? "pinned" : "not pinned"));
+        });
+        cell.setOnLongClickListener(v -> {
+            pin.performClick();
+            return true;
         });
         cell.addView(pin, new LinearLayout.LayoutParams(dp(48), dp(48)));
         TextView organize = text("⇄", 20, MINT, true);

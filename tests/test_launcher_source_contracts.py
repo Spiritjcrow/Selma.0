@@ -149,6 +149,12 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, method)
 
+    def test_long_press_pin_reuses_in_place_state_update(self):
+        self.assertIn(
+            "cell.setOnLongClickListener(v -> {\n            pin.performClick();\n            return true;",
+            self.source,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
