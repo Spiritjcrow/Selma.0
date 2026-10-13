@@ -23,6 +23,8 @@ ALLOWED_STATUSES = {
 def _required_text(value: Any, field: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{field} must be a non-empty string")
+    if any(0xD800 <= ord(char) <= 0xDFFF for char in value):
+        raise ValueError(f"{field} contains unpaired Unicode surrogate")
     if len(value) > 4096:
         raise ValueError(f"{field} is too long")
     return value.strip()
