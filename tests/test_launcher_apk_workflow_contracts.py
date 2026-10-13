@@ -31,6 +31,14 @@ class LauncherApkWorkflowContracts(unittest.TestCase):
             self.workflow,
         )
 
+    def test_checksum_is_verified_before_artifact_upload(self):
+        checksum = "sha256sum app-debug.apk > app-debug.apk.sha256"
+        verify = "sha256sum --check app-debug.apk.sha256"
+        upload = "- name: Upload Selma APK"
+        self.assertIn(verify, self.workflow)
+        self.assertLess(self.workflow.index(checksum), self.workflow.index(verify))
+        self.assertLess(self.workflow.index(verify), self.workflow.index(upload))
+
     def test_compiled_icon_checks_use_exact_package_qualified_names(self):
         self.assertIn(
             "grep -Fq 'ai.selma.companion:drawable/ic_selma:'",
