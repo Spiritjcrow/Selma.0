@@ -110,9 +110,21 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
             self.html,
         )
 
+    def test_focus_timer_buttons_expose_available_actions(self):
+        for marker in (
+            "function syncTimerControls()",
+            "$('startTimer').disabled=interval!==null||!remain",
+            "$('pauseTimer').disabled=interval===null",
+            "interval=setInterval(tick,250);syncTimerControls();tick()",
+            "remain=1500;$('clock').textContent=format(remain);syncTimerControls()",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.html)
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 
 
