@@ -100,9 +100,20 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
             self.html,
         )
 
+    def test_focus_countdown_exposes_non_intrusive_timer_semantics(self):
+        self.assertIn(
+            'id="clock" role="timer" aria-label="Remaining focus time"',
+            self.html,
+        )
+        self.assertNotIn(
+            'id="clock" role="timer" aria-live=',
+            self.html,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 
 
