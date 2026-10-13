@@ -10,9 +10,12 @@ class ApprovalGate:
     def __init__(self, ttl=45):
         self.ttl = min(max(int(ttl), 1), 120)
         self.sessions = {}
+        self._owner_proof = secrets.token_urlsafe(32)
         self.approvals = {}
 
-    def new_session(self):
+    def new_session(self, owner_proof=None):
+        if not hmac.compare_digest(str(owner_proof), self._owner_proof):
+            raise PermissionError('owner pairing required')
         token = secrets.token_urlsafe(32)
         self.sessions[hashlib.sha256(token.encode()).digest()] = time.monotonic() + 900
         return token
@@ -24,9 +27,9 @@ class ApprovalGate:
                 return known
         return None
 
-    def approve(self, token, operation, arguments, trusted_gesture=False):
+    def approve(self, token, operation, arguments, owner_proof=None):
         identity = self._identity(token)
-        if identity is None or trusted_gesture is not True:
+        if identity is None or not hmac.compare_digest(str(owner_proof), self._owner_proof):
             raise PermissionError("trusted local approval required")
         ticket = secrets.token_urlsafe(32)
         payload = json.dumps([operation, arguments], sort_keys=True, separators=(",", ":"))
