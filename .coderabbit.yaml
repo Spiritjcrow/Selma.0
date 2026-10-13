@@ -1,0 +1,71 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# SelmaOS: automatic PR review, including drafts. No automatic merge/deploy.
+language: "en-US"
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: false
+  high_level_summary: true
+  changed_files_summary: true
+  review_status: true
+  commit_status: true
+  fail_commit_status: false
+  related_issues: true
+  related_prs: true
+  assess_linked_issues: true
+  suggested_labels: true
+  auto_apply_labels: false
+  suggested_reviewers: true
+  poem: false
+  in_progress_fortune: false
+
+  auto_review:
+    enabled: true
+    drafts: true
+    auto_incremental_review: true
+    auto_pause_after_reviewed_commits: 5
+
+  path_instructions:
+    - path: "core/**"
+      instructions: |
+        Review capability boundaries, input validation, cancellation, deadlines,
+        offline behavior, and fail-closed authorization. Flag any operation that
+        skips user approval, weakens isolation, or lacks audit evidence.
+    - path: "adapters/**"
+      instructions: |
+        Verify opt-in external access, least privilege, scoped credentials,
+        redaction of private data and secrets, safe defaults, and offline fallback.
+        Flag unauthenticated writes, unintended network access, and hardcoded
+        network identifiers or provider dependencies.
+    - path: "SELMA0_ANDROID_AGENT_V1/**"
+      instructions: |
+        Check Android 13+ rootless compatibility, graceful degradation without
+        ADB/root/AR, user-visible permissions, offline-local routing, and
+        sensitive information in logs. Distinguish tested hardware behavior
+        from assumptions or mocked tests.
+    - path: ".github/workflows/**"
+      instructions: |
+        Audit action permissions, unpinned third-party actions, secret exposure,
+        unsafe pull_request_target usage, and reproducibility. A workflow
+        failing before jobs start is NOT passing CI; require real job evidence.
+    - path: "**/*.py"
+      instructions: |
+        Identify broken imports, unsafe subprocess/serialization, unchecked
+        exceptions, resource leaks, race conditions and missing regression tests.
+        Do not treat unit tests as proof of device/runtime behavior.
+    - path: "tests/**"
+      instructions: |
+        Require deterministic positive and negative tests, denied/unauthorized
+        paths, offline recovery, and reproducible assertions. Flag tests that
+        merely restate implementation assumptions without exercising behavior.
+    - path: "docs/**"
+      instructions: |
+        Flag unsupported claims of successful builds, deployed integrations,
+        real-world testing, or completed issue resolution. Separate implemented,
+        locally verified, CI verified, device verified, and planned states.
+
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
