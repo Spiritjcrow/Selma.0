@@ -93,6 +93,73 @@ Unknown/free-text fields are rejected rather than stored.
 - No network calls or automatic reports; status remains unverified until an
   independent authorized investigator confirms the case.
 
+## Community-wide protection policy (owner directive, 2026-10-13)
+
+**Purpose:** continuous availability of defensive protection to all Selma users,
+not centralized observation of their devices, chats, wallets or identities.
+"Overwatch" means distributing reviewed public threat indicators and running
+protective checks on each participating device, not indiscriminate monitoring.
+
+- Every participating member can receive vetted, case-free hardware-wallet
+  threat advisories; no individual reports are embedded in notifications.
+- Private device analysis is local-first. User consent is required before
+  optional sensors, individual telemetry, uploads, support access or sharing.
+  Declining telemetry must not disable local protective advisories.
+- **Default telemetry is OFF** as are remote investigator access, member tracking,
+  message interception, secret collection, and automatic authority reports.
+- Member-to-member surveillance is never a supported operation.
+- The incident/recovery UI should offer transparent "What is being checked?",
+  "What leaves this device?", "Stop monitoring", "Revoke access",
+  "Export my evidence" and "Delete locally retained case data" controls,
+  consistent with preservation obligations and verified legal holds.
+- Community trend reports require separately engineered opt-in, privacy-
+  preserving aggregation and robust anti-reidentification controls.
+  This is a **future feature** and not a deployed capability. Never harvest
+  per-user communications, RF records, wallet secrets or device identities.
+
+### Scoped escalation
+
+**Sol Blue / community:** publish reviewed public defensive advisories and
+process owner-entered local risk indicators without central collection.
+
+**Specialists on demand:** a verified professional needs explicit victim
+permission, verified case assignment, time-limited purpose-specific access,
+and independent action-level authorization. A claimed specialty/login is
+insufficient. Use approved, non-destructive or owner-authorized methods.
+
+**Legal authorities:** require BOTH a verified case-specific judicial
+authorization/warrant and the victim's explicit, scoped consent as Selma
+policy for *voluntary* disclosure. Verify authority identity, order
+authenticity, scope/data categories, independent reviewer, expiry and notice
+restrictions. Never give authorities global/backdoor access. Requests beyond
+this voluntary release policy require independent qualified legal review
+under applicable law: product policy does not override legal obligations.
+
+**Victim recovery:** non-custodial safety guidance, official vendor contacts,
+safe movement of remaining funds to a new hardware wallet/new recovery phrase
+and integrity-protected evidence packaging. Specialists and authorities do
+not need and must never request seed phrases or private keys. Selma does not
+move funds or take custody of assets.
+
+### Code boundary, current truth
+
+core/wallet_shield_access.py provides a default-deny policy preflight and
+explicit community privacy defaults. check_access denies unknown verifiers,
+missing or unverified attestations, expired sessions and cross-role calls.
+Specialist reviews require verified professional role, assignment and victim
+consent. Legal evidence requests require authority role, court order, judge
+authorization, victim consent, case scope, and independent reviewer.
+Public advisories cannot identify individual cases.
+
+**Not implemented:** production signed-credential verification, real warrant
+authentication, legal analysis, actual case access, revocation service,
+trusted clock, monitoring UI, privacy-preserving community aggregation,
+public-advisory publishing, audit server, identity validation, court-compliant
+retention or secure evidence delivery. A positive preflight outcome never
+releases data. Its test-time verifier is NOT a substitute for a trusted
+production verifier. Future effects must route through Selma's existing
+scoped permission controller, with checks repeated at execution time.
+
 ## Incident response
 
 If a wallet may have displayed its recovery phrase to an implant, stop using
