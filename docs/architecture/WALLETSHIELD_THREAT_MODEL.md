@@ -52,7 +52,7 @@ Run tests: python3 -m unittest tests.test_wallet_shield -v
 | supply_chain | documented_receipt | provenance concern, not evidence of crime |
 | vendor_attestation | official_vendor_client | official-client test outcome as reported |
 | physical_inspection | qualified_inspector | external inspection metadata only |
-| rf_survey | calibrated_external_receiver | externally collected RF finding, requires baseline |
+| rf_survey | calibrated_external_receiver | externally collected RF finding, baseline to be checked by a human |
 | chain_activity | public_chain_review | reported chain anomaly, not evidence of implant |
 
 Each observation takes a result: pass, fail, or unknown. Optional evidence_sha256
@@ -72,7 +72,7 @@ Unknown/free-text fields are rejected rather than stored.
   users to run official vendor genuineness checks, and assign review status.
 - **Sol Red**: controlled validation on *owned lab reference hardware only*.
   Independent physical imagery and RF measurements must be made using
-  calibrated external equipment and a known-good baseline. No cloning,
+  calibrated external equipment and a known-good baseline (not yet enforced by software). No cloning,
   implants, traffic interception, or unauthorized RF transmitting.
 - **Sol UltraViolet**: check provenance, audit-chain validation, second-person
   review, explicit permission and legal handling. Owner must approve each
