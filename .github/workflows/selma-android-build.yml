@@ -91,8 +91,8 @@ jobs:
           unzip -tq "$APK"
           "$AAPT2" dump badging "$APK" | grep -F "package: name='ai.selma.companion'"
           "$AAPT2" dump resources "$APK" > "$RUNNER_TEMP/selma-apk-resources.txt"
-          grep -Fq 'drawable/ic_selma' "$RUNNER_TEMP/selma-apk-resources.txt"
-          grep -Fq 'drawable/ic_selma_home' "$RUNNER_TEMP/selma-apk-resources.txt"
+          grep -Fq 'ai.selma.companion:drawable/ic_selma:' "$RUNNER_TEMP/selma-apk-resources.txt"
+          grep -Fq 'ai.selma.companion:drawable/ic_selma_home:' "$RUNNER_TEMP/selma-apk-resources.txt"
 
       - name: Record APK checksum
         working-directory: SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug

@@ -31,6 +31,17 @@ class LauncherApkWorkflowContracts(unittest.TestCase):
             self.workflow,
         )
 
+    def test_compiled_icon_checks_use_exact_package_qualified_names(self):
+        self.assertIn(
+            "grep -Fq 'ai.selma.companion:drawable/ic_selma:'",
+            self.workflow,
+        )
+        self.assertIn(
+            "grep -Fq 'ai.selma.companion:drawable/ic_selma_home:'",
+            self.workflow,
+        )
+        self.assertNotIn("grep -Fq 'drawable/ic_selma'", self.workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
