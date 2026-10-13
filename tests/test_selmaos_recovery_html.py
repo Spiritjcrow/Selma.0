@@ -72,6 +72,12 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
             self.html,
         )
 
+    def test_reminder_add_returns_focus_to_task_input(self):
+        self.assertIn(
+            "$('taskText').value='';save();renderTasks();$('taskText').focus()",
+            self.html,
+        )
+
     def test_file_preview_outcomes_use_polite_status(self):
         for marker in (
             "say('File exceeds preview limit.')",
@@ -124,6 +130,7 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
 
 
 
