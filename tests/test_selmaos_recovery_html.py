@@ -133,6 +133,12 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
             self.html,
         )
 
+    def test_focus_timer_pause_is_announced_politely(self):
+        self.assertIn(
+            "tick();if(remain){stop();say('Focus timer paused')}",
+            self.html,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
