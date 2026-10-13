@@ -199,6 +199,19 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.source)
 
+    def test_workspace_change_is_announced_after_focus_restoration(self):
+        start = self.source.index("private void focusSelectedWorkspaceItem()")
+        end = self.source.index("private void launch(", start)
+        method = self.source[start:end]
+        self.assertIn(
+            'child.announceForAccessibility(activeWorkspace + " workspace selected")',
+            method,
+        )
+        self.assertGreater(
+            method.index('child.announceForAccessibility(activeWorkspace + " workspace selected")'),
+            method.index("child.requestFocus()"),
+        )
+
     def test_workspace_assignment_restores_focus_to_apps_tab(self):
         start = self.source.index("private void chooseWorkspace(")
         end = self.source.index("private void renderWorkspaces()", start)
