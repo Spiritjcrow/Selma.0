@@ -3,15 +3,19 @@ import os
 import sqlite3
 import time
 
+from selma0_private_storage_v1 import private_directory, private_file
+
 SELMA0_BASE_V1 = os.path.expanduser(os.getenv("SELMA0_BASE_V1", "~/SELMA0_ANDROID_AGENT_V1"))
 SELMA0_DATA_V1 = os.path.join(SELMA0_BASE_V1, "selma0_data_android_v1")
 SELMA0_DB_V1 = os.path.join(SELMA0_DATA_V1, "selma0_memory_android_v1.sqlite3")
-os.makedirs(SELMA0_DATA_V1, exist_ok=True)
+private_directory(SELMA0_DATA_V1)
 
 
 class Selma0MemoryAndroidV1:
     def __init__(self, db_path=SELMA0_DB_V1):
-        self.db_path = db_path
+        self.db_path = os.path.abspath(os.path.expanduser(db_path))
+        private_directory(os.path.dirname(self.db_path))
+        private_file(self.db_path)
         self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self.conn.execute("PRAGMA journal_mode=WAL")
         self.conn.execute("PRAGMA synchronous=NORMAL")
