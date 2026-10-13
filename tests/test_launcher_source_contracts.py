@@ -155,6 +155,12 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             self.source,
         )
 
+    def test_pin_changes_are_announced_to_assistive_technology(self):
+        self.assertIn(
+            'pin.announceForAccessibility(label + (isPinned ? " pinned" : " unpinned"))',
+            self.source,
+        )
+
     def test_section_changes_expose_accessibility_pane_title(self):
         marker = "main.setAccessibilityPaneTitle(sectionLabel())"
         self.assertIn(marker, self.source)
@@ -224,6 +230,7 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
 
 
 

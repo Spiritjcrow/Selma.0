@@ -420,6 +420,7 @@ public final class LauncherActivity extends Activity {
             pin.setContentDescription((isPinned ? "Unpin " : "Pin ") + label);
             pinState.setText(isPinned ? "Pinned to Home" : "Tap ★ to pin to Home");
             cell.setContentDescription(label + ", " + (isPinned ? "pinned" : "not pinned"));
+            pin.announceForAccessibility(label + (isPinned ? " pinned" : " unpinned"));
         });
         cell.setOnLongClickListener(v -> {
             pin.performClick();
@@ -585,6 +586,7 @@ public final class LauncherActivity extends Activity {
         main.addView(note, full(20));
     }
 }
+
 
 
 
