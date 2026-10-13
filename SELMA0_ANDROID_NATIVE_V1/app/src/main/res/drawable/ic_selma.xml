@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Standalone vector icon: no external image, font, or network dependency. -->
+    <path android:fillColor="#0E1428" android:pathData="M0,0h108v108h-108z"/>
+    <path android:fillColor="#1E2C45" android:pathData="M54,8a46,46 0,1 1,0 92a46,46 0,1 1,0 -92z"/>
+    <path android:fillColor="#0E1428" android:pathData="M54,15a39,39 0,1 1,0 78a39,39 0,1 1,0 -78z"/>
+    <path android:fillColor="#00000000" android:strokeColor="#73F0D2"
+        android:strokeWidth="8" android:strokeLineCap="round"
+        android:pathData="M74,32 C63,24 42,26 37,40 C30,58 79,49 72,69 C67,84 45,84 34,75"/>
+    <path android:fillColor="#B89AFF" android:pathData="M24,54a4,4 0,1 1,0 8a4,4 0,1 1,0 -8z"/>
+    <path android:fillColor="#B89AFF" android:pathData="M84,47a4,4 0,1 1,0 8a4,4 0,1 1,0 -8z"/>
+</vector>
