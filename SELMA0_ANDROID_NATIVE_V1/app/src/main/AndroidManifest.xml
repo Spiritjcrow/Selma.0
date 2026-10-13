@@ -13,6 +13,8 @@
     <application
         android:allowBackup="true"
         android:label="Selma"
+        android:icon="@drawable/ic_selma"
+        android:roundIcon="@drawable/ic_selma"
         android:theme="@style/Theme.Selma"
         android:usesCleartextTraffic="false">
         <!-- Existing remote companion remains available as before. -->
@@ -25,7 +27,8 @@
 
         <!-- Explicit opt-in HOME, no automatic default-laucher enrollment. -->
         <activity android:name=".LauncherActivity" android:exported="true"
-                  android:label="SelmaOS Home">
+                  android:label="SelmaOS Home"
+                  android:icon="@drawable/ic_selma_home">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
