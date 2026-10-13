@@ -7,10 +7,12 @@ import secrets
 import time
 
 class ApprovalGate:
-    def __init__(self, ttl=45):
+    def __init__(self, owner_proof, ttl=45):
+        if not isinstance(owner_proof, str) or len(owner_proof) < 32:
+            raise ValueError('trusted host must provision a strong owner proof')
         self.ttl = min(max(int(ttl), 1), 120)
         self.sessions = {}
-        self._owner_proof = secrets.token_urlsafe(32)
+        self._owner_proof = owner_proof
         self.approvals = {}
 
     def new_session(self, owner_proof=None):
