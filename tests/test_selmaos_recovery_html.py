@@ -127,9 +127,16 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.html)
 
+    def test_focus_timer_reset_is_announced_politely(self):
+        self.assertIn(
+            "syncTimerControls();say('Focus timer reset to 25 minutes')",
+            self.html,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 
 

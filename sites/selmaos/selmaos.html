@@ -101,7 +101,7 @@ function stop(){if(interval!==null){clearInterval(interval);interval=null}syncTi
 function tick(){remain=Math.max(0,Math.ceil((deadline-Date.now())/1000));$('clock').textContent=format(remain);if(!remain){stop();say('Focus session complete')}}
 $('startTimer').addEventListener('click',()=>{if(interval!==null||!remain)return;deadline=Date.now()+remain*1000;interval=setInterval(tick,250);syncTimerControls();tick()});
 $('pauseTimer').addEventListener('click',()=>{if(interval!==null){tick();stop()}});
-$('resetTimer').addEventListener('click',()=>{stop();remain=1500;$('clock').textContent=format(remain);syncTimerControls()});
+$('resetTimer').addEventListener('click',()=>{stop();remain=1500;$('clock').textContent=format(remain);syncTimerControls();say('Focus timer reset to 25 minutes')});
 syncTimerControls();
 // Restricted arithmetic parser, not arbitrary JavaScript execution.
 function calc(expr){
@@ -147,6 +147,7 @@ $('runtime').textContent='Local storage: '+(writable?'available':'unavailable')+
 setTimeout(()=>{$('boot').classList.add('hidden');$('desktop').classList.remove('hidden');view('home');if(new URL(location.href).searchParams.get('window')==='secondary')say('Secondary workspace ready.')},650);
 })();
 </script></body></html>
+
 
 
 
