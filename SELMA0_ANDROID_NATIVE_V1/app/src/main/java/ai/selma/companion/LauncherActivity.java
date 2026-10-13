@@ -463,6 +463,7 @@ public final class LauncherActivity extends Activity {
                     preferences.edit().putStringSet(WORKSPACE_PREF, values).apply();
                     dialog.dismiss();
                     showSection();
+                    focusSelectedNavigationItem();
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
@@ -586,6 +587,7 @@ public final class LauncherActivity extends Activity {
         main.addView(note, full(20));
     }
 }
+
 
 
 
