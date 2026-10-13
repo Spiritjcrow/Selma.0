@@ -58,6 +58,23 @@ class TelegramMCPTests(unittest.TestCase):
                 result = mod.telegram_list_dialogs()
         self.assertFalse(result["ok"])
 
+    def test_dialog_enumeration_needs_separate_opt_in(self):
+        with patch.dict("os.environ", {"SELMA_TG_MCP_READ_ENABLED": "1"}, clear=True):
+            with patch.object(mod, "_invoke_cli", side_effect=AssertionError("must not run")):
+                result = mod.telegram_list_dialogs()
+        self.assertFalse(result["ok"])
+        self.assertIn("dialog enumeration", result["error"])
+
+    def test_dialog_enumeration_can_be_locally_enabled(self):
+        with patch.dict("os.environ", {
+            "SELMA_TG_MCP_READ_ENABLED": "1",
+            "SELMA_TG_MCP_DIALOGS_ENABLED": "1",
+        }, clear=True):
+            with patch.object(mod, "_invoke_cli", return_value={"ok": True, "dialogs": []}) as invoke:
+                result = mod.telegram_list_dialogs(limit=4)
+        self.assertTrue(result["ok"])
+        invoke.assert_called_once_with("dialogs", "--limit", "4")
+
     def test_message_body_needs_separate_flag(self):
         with patch.dict("os.environ", {
             "SELMA_TG_MCP_READ_ENABLED": "1", "SELMA_TG_MCP_READ_TEXT_ENABLED": "0",
