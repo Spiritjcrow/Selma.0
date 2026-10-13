@@ -78,6 +78,12 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
             self.html,
         )
 
+    def test_reminder_add_is_announced_politely(self):
+        self.assertIn(
+            "$('taskText').focus();say('Reminder added: '+txt)",
+            self.html,
+        )
+
     def test_file_preview_outcomes_use_polite_status(self):
         for marker in (
             "say('File exceeds preview limit.')",

@@ -93,7 +93,7 @@ $('taskForm').addEventListener('submit',e=>{
  e.preventDefault();const txt=$('taskText').value.trim();if(!txt)return;
  if(state.tasks.length>=500){say('Task limit reached');return}
  state.tasks.push({id:(crypto.randomUUID?.()??String(Date.now())+Math.random()),text:txt,done:false});
-  $('taskText').value='';save();renderTasks();$('taskText').focus()
+  $('taskText').value='';save();renderTasks();$('taskText').focus();say('Reminder added: '+txt)
 });renderTasks();
 let remain=1500,interval=null,deadline=0;const format=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
 function syncTimerControls(){$('startTimer').disabled=interval!==null||!remain;$('pauseTimer').disabled=interval===null}
