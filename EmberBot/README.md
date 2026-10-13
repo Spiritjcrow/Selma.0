@@ -37,3 +37,24 @@ In the Kivy UI, `Start Round` only starts a **logging** record. You must play an
 - A five-minute cron may be **delayed or skipped** by GitHub. On private repos, frequent jobs can consume significant included Actions minutes, resulting in charges if the quota is exhausted.
 - **Current blocking issue: [#26](https://github.com/Spiritjcrow/Selma.0/issues/26)**. GitHub Actions returns `startup_failure`, zero jobs, no APK. Fixing repo/account Actions admission/policy/billing is outside the scope of a source-code fix. The monitor cannot resolve that external condition.
 - Final acceptance still needs APK installation, Android runtime smoke tests, and verification of actual Ember Mines game fields entered manually.
+
+## APK fallback when GitHub Actions cannot start
+
+Until GitHub issue #26 is resolved, you can compile the APK in a **Linux cloud machine or GitHub Codespace that already provides Docker**. No Termux, Android ADB, device root, paid CI configuration, or GitHub Actions required.
+
+From the repository root after selecting the feature branch:
+
+```bash
+bash EmberBot/scripts/build_apk_docker.sh
+```
+
+The script runs local Python syntax tests and eight unit tests first; then invokes the [official Kivy Buildozer Docker image](https://github.com/kivy/buildozer) and, if compilation succeeds, prints the APK path and SHA-256 checksum. A compatible Linux Docker host and internet access for downloads are **required**. Host/cloud usage may incur costs; verify your existing account allocation before running.
+
+This fallback is staged source and has not produced a validated APK in the ChatGPT environment, which lacks Docker/Android SDK/network access. Install and actual Android launch testing must be done separately. Do not claim that a preflight test proves mobile runtime compatibility.
+
+### Owner-only Actions recovery
+
+1. Visit account **Settings → Billing & Licensing → Payment information** and check for an authorization hold, invalid card, or account lock. Also inspect Actions usage and budgets before changing any billing settings.
+2. Inspect `Spiritjcrow/Selma.0` **Settings → Actions → General** for a policy or permission blocker. Do not loosen security as a workaround.
+3. If account and repo settings look healthy, file a [GitHub Support request](https://support.github.com/contact) using the exact failure details in [issue #26](https://github.com/Spiritjcrow/Selma.0/issues/26).
+4. Recheck for a real Actions job ID before marking CI/build verified.
