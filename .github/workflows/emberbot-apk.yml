@@ -45,3 +45,25 @@ jobs:
           path: ${{ steps.buildozer.outputs.filename }}
           if-no-files-found: error
           retention-days: 30
+
+  verify-artifact:
+    needs: android-apk
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download exact APK artifact from this run
+        uses: actions/download-artifact@v4
+        with:
+          name: EmberBot-Mines-Android-Debug-APK
+          path: verified-apk
+      - name: Check APK ZIP integrity and expected manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="$(find verified-apk -type f -name '*.apk' -print -quit)"
+          test -n "$apk"
+          test "$(stat -c %s "$apk")" -gt 50000
+          unzip -tq "$apk"
+          unzip -Z1 "$apk" | grep -Fxq 'AndroidManifest.xml'
+          echo "Verified: APK file exists, ZIP validates, AndroidManifest.xml present."
+          sha256sum "$apk"
+          echo "Physical-device installation NOT tested."
