@@ -96,7 +96,7 @@ def telegram_status() -> dict[str, Any]:
     Local session existence does NOT imply an authenticated or ChatGPT-connected account.
     """
     return {**bridge_status(), "mcp_transport": "stdio", "mcp_read_enabled": _enabled("SELMA_TG_MCP_READ_ENABLED"),
-            "mcp_read_text_enabled": _enabled("SELMA_TG_MCP_READ_TEXT_ENABLED"), "mcp_write_available": False}
+            "mcp_read_text_enabled": _enabled("SELMA_TG_MCP_READ_TEXT_ENABLED"), "mcp_dialogs_enabled": _enabled("SELMA_TG_MCP_DIALOGS_ENABLED"), "mcp_write_available": False}
 
 
 def telegram_account() -> dict[str, Any]:
@@ -109,12 +109,15 @@ def telegram_account() -> dict[str, Any]:
 
 
 def telegram_list_dialogs(limit: int = 10) -> dict[str, Any]:
-    """List names and unread counts of permitted locally authenticated Telegram chats.
+    """List chat titles and unread counts after a separate local permission.
 
-    Chat titles may be sensitive; this read requires an opt-in on the device.
+    Dialog enumeration covers ALL cloud-chat titles, not just allowlisted peers.
+    It therefore has its own opt-in gate.
     """
     try:
         _permit_read()
+        if not _enabled("SELMA_TG_MCP_DIALOGS_ENABLED"):
+            raise PermissionError("Telegram dialog enumeration is disabled on the local device")
         limit = _check_limit(limit)
     except (PermissionError, ValueError) as exc:
         return {"ok": False, "error": str(exc)}
