@@ -43,6 +43,25 @@ reviews:
         ADB/root/AR, user-visible permissions, offline-local routing, and
         sensitive information in logs. Distinguish tested hardware behavior
         from assumptions or mocked tests.
+    - path: "SELMA0_ANDROID_NATIVE_V1/**"
+      instructions: |
+        Verify rootless Android 13+ behavior, explicit permissions and user
+        opt-in, exact-origin WebView restrictions, safe intents, API compatibility,
+        and security tests. No forced launcher enrollment, unrestricted external
+        navigation, device-policy bypass, or unsupported APK/device-test claims.
+    - path: "EmberBot/**"
+      instructions: |
+        Review Kivy/Buildozer Android build compatibility, lightweight dependencies,
+        deterministic Mines probability/statistics logic, offline JSON validation,
+        and tests for malformed input. Treat balances and payouts as manual records;
+        flag any real-money wager execution, CAPTCHA bypass, wallet credential
+        extraction, deceptive profit claims, or unverified APK-build status.
+    - path: "tools/**"
+      instructions: |
+        Review tool preflight, argument validation, exit-code propagation, bounded
+        retries and failure classification. Never treat zero-job GitHub Actions
+        startup_failure as executed tests; ensure reproducible offline fallbacks.
+
     - path: ".github/workflows/**"
       instructions: |
         Audit action permissions, unpinned third-party actions, secret exposure,
