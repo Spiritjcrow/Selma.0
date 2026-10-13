@@ -202,9 +202,21 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             method,
         )
 
+    def test_home_shortcuts_restore_focus_after_navigation(self):
+        start = self.source.index("private void renderHome()")
+        end = self.source.index("private void loadApps()", start)
+        method = self.source[start:end]
+        self.assertEqual(
+            method.count(
+                "showSection();\n            focusSelectedNavigationItem();"
+            ),
+            3,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 
 

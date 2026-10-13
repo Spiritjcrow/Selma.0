@@ -306,10 +306,12 @@ public final class LauncherActivity extends Activity {
         action("⌕  All applications", "Search and launch apps installed on this device", () -> {
             section = "APPS";
             showSection();
+            focusSelectedNavigationItem();
         });
         action("▦  Workspaces", "Organize installed apps into Build, Connect, Secure and Daily", () -> {
             section = "WORKSPACES";
             showSection();
+            focusSelectedNavigationItem();
         });
         sectionTitle("Pinned workspace");
         List<ResolveInfo> favorites = new ArrayList<>();
@@ -329,6 +331,7 @@ public final class LauncherActivity extends Activity {
         action("⚙  System controls", "Wi-Fi, Bluetooth, settings, files and display", () -> {
             section = "SYSTEM";
             showSection();
+            focusSelectedNavigationItem();
         });
     }
 
@@ -581,6 +584,7 @@ public final class LauncherActivity extends Activity {
         main.addView(note, full(20));
     }
 }
+
 
 
 
