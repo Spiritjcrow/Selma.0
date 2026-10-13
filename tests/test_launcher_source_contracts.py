@@ -242,6 +242,12 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             method,
         )
 
+    def test_safe_activity_failure_is_announced_to_assistive_technology(self):
+        start = self.source.index("private void safeActivity(")
+        end = self.source.index("private void openLocalAssistant()", start)
+        method = self.source[start:end]
+        self.assertIn("main.announceForAccessibility(unavailable)", method)
+
     def test_back_navigation_restores_focus_to_home_tab(self):
         start = self.source.index("@Override public void onBackPressed()")
         end = self.source.index("@Override protected void onResume()", start)

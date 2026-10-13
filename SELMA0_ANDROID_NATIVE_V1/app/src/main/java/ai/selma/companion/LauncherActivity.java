@@ -543,6 +543,7 @@ public final class LauncherActivity extends Activity {
         try { startActivity(intent); }
         catch (ActivityNotFoundException | SecurityException e) {
             Toast.makeText(this, unavailable, Toast.LENGTH_LONG).show();
+            main.announceForAccessibility(unavailable);
         }
     }
 
