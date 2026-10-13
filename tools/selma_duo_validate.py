@@ -26,12 +26,27 @@ def _reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict[str, object]
     return result
 
 
+def _reject_surrogates(value):
+    """Reject invalid Unicode scalar values in decoded JSON strings and keys."""
+    if isinstance(value, str):
+        if any(0xD800 <= ord(char) <= 0xDFFF for char in value):
+            raise ValueError("JSON contains unpaired Unicode surrogate")
+    elif isinstance(value, list):
+        for item in value:
+            _reject_surrogates(item)
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            _reject_surrogates(key)
+            _reject_surrogates(item)
+    return value
+
+
 def _load_bounded_json(stream):
     raw = stream.read(MAX_JSON_BYTES + 1)
     if len(raw) > MAX_JSON_BYTES:
         raise ValueError("JSON input exceeds maximum 1048576 bytes")
     try:
-        return json.loads(raw.decode("utf-8"), object_pairs_hook=_reject_duplicate_keys)
+        return _reject_surrogates(json.loads(raw.decode("utf-8"), object_pairs_hook=_reject_duplicate_keys))
     except RecursionError as exc:
         raise ValueError("JSON nesting exceeds parser limit") from exc
 
