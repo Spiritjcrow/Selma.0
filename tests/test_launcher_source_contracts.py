@@ -208,6 +208,18 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             method,
         )
 
+    def test_workspace_assignment_is_announced_to_assistive_technology(self):
+        start = self.source.index("private void chooseWorkspace(")
+        end = self.source.index("private void renderWorkspaces()", start)
+        method = self.source[start:end]
+        for marker in (
+            'String announcement = which == 0 ? label + " removed from workspaces"',
+            ': label + " assigned to " + choices[which]',
+            "main.announceForAccessibility(announcement)",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, method)
+
     def test_back_navigation_restores_focus_to_home_tab(self):
         start = self.source.index("@Override public void onBackPressed()")
         end = self.source.index("@Override protected void onResume()", start)

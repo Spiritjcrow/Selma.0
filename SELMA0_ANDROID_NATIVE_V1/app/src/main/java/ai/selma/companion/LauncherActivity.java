@@ -464,6 +464,9 @@ public final class LauncherActivity extends Activity {
                     dialog.dismiss();
                     showSection();
                     focusSelectedNavigationItem();
+                    String announcement = which == 0 ? label + " removed from workspaces"
+                            : label + " assigned to " + choices[which];
+                    main.announceForAccessibility(announcement);
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
