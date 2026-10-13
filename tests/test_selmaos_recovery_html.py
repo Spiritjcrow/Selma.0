@@ -139,6 +139,12 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
             self.html,
         )
 
+    def test_focus_timer_start_is_announced_politely(self):
+        self.assertIn(
+            "syncTimerControls();tick();say('Focus timer started')",
+            self.html,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

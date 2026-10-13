@@ -99,7 +99,7 @@ let remain=1500,interval=null,deadline=0;const format=s=>String(Math.floor(s/60)
 function syncTimerControls(){$('startTimer').disabled=interval!==null||!remain;$('pauseTimer').disabled=interval===null}
 function stop(){if(interval!==null){clearInterval(interval);interval=null}syncTimerControls()}
 function tick(){remain=Math.max(0,Math.ceil((deadline-Date.now())/1000));$('clock').textContent=format(remain);if(!remain){stop();say('Focus session complete')}}
-$('startTimer').addEventListener('click',()=>{if(interval!==null||!remain)return;deadline=Date.now()+remain*1000;interval=setInterval(tick,250);syncTimerControls();tick()});
+$('startTimer').addEventListener('click',()=>{if(interval!==null||!remain)return;deadline=Date.now()+remain*1000;interval=setInterval(tick,250);syncTimerControls();tick();say('Focus timer started')});
 $('pauseTimer').addEventListener('click',()=>{if(interval!==null){tick();if(remain){stop();say('Focus timer paused')}}});
 $('resetTimer').addEventListener('click',()=>{stop();remain=1500;$('clock').textContent=format(remain);syncTimerControls();say('Focus timer reset to 25 minutes')});
 syncTimerControls();
