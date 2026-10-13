@@ -114,6 +114,48 @@ def assess(payload: Any) -> dict[str, Any]:
     }
 
 
+
+def _validate_assessment(assessment: Any) -> None:
+    """Allow only deterministic, sanitized assessment fields into local reports."""
+    if type(assessment) is not dict:
+        raise ValueError("invalid WalletShield assessment")
+    baseline = assess({"case_id": "sample_0001", "observations": []})
+    expected = set(baseline)
+    if set(assessment) != expected:
+        raise ValueError("unexpected assessment fields")
+    case_id = assessment.get("case_id")
+    if type(case_id) is not str or not CASE_ID.fullmatch(case_id):
+        raise ValueError("invalid assessment case_id")
+    for field in expected - {"case_id", "status", "signals", "observations_processed"}:
+        if assessment[field] != baseline[field]:
+            raise ValueError("invalid assessment invariant")
+    signals = assessment["signals"]
+    processed = assessment["observations_processed"]
+    if type(signals) is not list or type(processed) is not int or not (0 <= len(signals) <= processed <= 40):
+        raise ValueError("invalid assessment observations")
+    urgency = 0
+    for signal in signals:
+        if type(signal) is not dict or set(signal) != {
+            "kind", "reported_method", "evidence_sha256", "reason", "independently_verified"
+        }:
+            raise ValueError("invalid assessment signal fields")
+        kind = signal["kind"]
+        if type(kind) is not str or kind not in METHODS:
+            raise ValueError("invalid assessment signal kind")
+        method = signal["reported_method"]
+        if type(method) is not str or method not in {"unverified", METHODS[kind]}:
+            raise ValueError("invalid assessment method")
+        evidence = signal["evidence_sha256"]
+        if evidence is not None and (type(evidence) is not str or not DIGEST.fullmatch(evidence)):
+            raise ValueError("invalid assessment digest")
+        if signal["reason"] != RISK_REASONS[kind] or signal["independently_verified"] is not False:
+            raise ValueError("unverified signals may not claim confirmation")
+        qualified = (method == METHODS[kind] and evidence is not None)
+        urgency = max(urgency, 2 if qualified and kind in CRITICAL_KINDS else 1)
+    if assessment["status"] != ("no_reported_indicators", "review", "urgent_review")[urgency]:
+        raise ValueError("inconsistent assessment status")
+
+
 def verify_audit(path: str | Path) -> dict[str, Any]:
     """Verify local hash linkage; not protected against deletion/truncation of the file."""
     path = Path(path)
@@ -141,8 +183,7 @@ def verify_audit(path: str | Path) -> dict[str, Any]:
 
 def append_audit(path: str | Path, assessment: dict[str, Any]) -> dict[str, Any]:
     """Append one sanitized assessment. Single-writer trusted local directory only."""
-    if type(assessment) is not dict or assessment.get("engine") != "SelmaSecure/WalletShield":
-        raise ValueError("only WalletShield assessment output can be logged")
+    _validate_assessment(assessment)
     path = Path(path)
     status = verify_audit(path)
     if not status["valid"]:
@@ -164,8 +205,7 @@ def export_report(assessment: dict[str, Any], *, owner_approved: bool = False) -
     """Build a local report only after explicit owner approval; never send it."""
     if owner_approved is not True:
         raise PermissionError("explicit owner approval required for report export")
-    if type(assessment) is not dict or assessment.get("engine") != "SelmaSecure/WalletShield":
-        raise ValueError("invalid assessment")
+    _validate_assessment(assessment)
     return {
         "report_version": 1,
         "requires_independent_review": True,
