@@ -12,3 +12,8 @@ SELMA0_ANDROID_AGENT_V1/selma0_data_android_v1/
 **/.gradle/
 **/build/
 local.properties
+# Sensitive local Telegram authorization sessions
+*.session
+*.session-journal
+*.session-wal
+*.session-shm
