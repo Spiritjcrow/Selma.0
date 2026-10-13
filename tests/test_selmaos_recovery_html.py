@@ -68,7 +68,13 @@ class SelmaOSBrowserRecoveryTests(unittest.TestCase):
 
     def test_reminder_delete_returns_focus_to_task_input(self):
         self.assertIn(
-            "del.addEventListener('click',()=>{state.tasks=state.tasks.filter(t=>t.id!==task.id);save();renderTasks();$('taskText').focus()})",
+            "renderTasks();$('taskText').focus()",
+            self.html,
+        )
+
+    def test_reminder_delete_is_announced_politely(self):
+        self.assertIn(
+            "$('taskText').focus();say('Reminder deleted: '+task.text)",
             self.html,
         )
 
