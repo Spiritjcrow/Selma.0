@@ -29,7 +29,7 @@ def label(text, size=16, color=TEXT, height=37):
     return widget
 
 
-def field(value, kind='number'):
+def field(value, kind='int'):
     return TextInput(text=str(value), multiline=False, input_filter=kind, font_size='18sp',
                      foreground_color=TEXT, background_color=PANEL, cursor_color=ACCENT,
                      size_hint_y=None, height=dp(46), padding=[dp(10), dp(8)])
