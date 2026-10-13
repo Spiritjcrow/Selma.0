@@ -233,6 +233,15 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, method)
 
+    def test_app_launch_failure_is_announced_to_assistive_technology(self):
+        start = self.source.index("private void launch(")
+        end = self.source.index("private void safeActivity(", start)
+        method = self.source[start:end]
+        self.assertIn(
+            'main.announceForAccessibility("This app cannot be opened on this device")',
+            method,
+        )
+
     def test_back_navigation_restores_focus_to_home_tab(self):
         start = self.source.index("@Override public void onBackPressed()")
         end = self.source.index("@Override protected void onResume()", start)

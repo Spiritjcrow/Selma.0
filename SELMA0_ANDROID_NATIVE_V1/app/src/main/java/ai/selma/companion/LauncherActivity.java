@@ -535,6 +535,7 @@ public final class LauncherActivity extends Activity {
             startActivity(run);
         } catch (ActivityNotFoundException | SecurityException e) {
             Toast.makeText(this, "This app cannot be opened on this device", Toast.LENGTH_LONG).show();
+            main.announceForAccessibility("This app cannot be opened on this device");
         }
     }
 
