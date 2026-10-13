@@ -3,7 +3,7 @@
 ## Current verified design
 - MCP transport: **local stdio** using the official Python MCP SDK v1 API (pinned to `mcp>=1.28,<2`).
 - Tool names: `telegram_status`, `telegram_account`, `telegram_list_dialogs`, `telegram_list_messages`.
-- All Telegram MCP account/chat reads **DENY BY DEFAULT**. Reading an individual chat additionally requires its explicit peer allowlist entry.
+- All Telegram MCP account/chat reads **DENY BY DEFAULT**. Reading an individual chat additionally requires its explicit peer allowlist entry. Listing ALL dialog titles needs a separate `SELMA_TG_MCP_DIALOGS_ENABLED=1` local opt-in.
 - Message bodies have another independent OFF-by-default switch. Even after locally enabled, message bodies will be sent to whatever MCP host invoked the tool; only use a host you trust.
 - No MCP tool for sending, deleting, inviting, exporting, or automating replies. The existing CLI permits one explicitly confirmed send after its separate local gates.
 - User sign-in and API credentials never pass through MCP; interactive authentication remains on the owner's device.
@@ -36,7 +36,7 @@ export SELMA_TG_MCP_READ_ALLOWLIST=me
 python -m adapters.telegram_mcp
 ```
 
-The final command starts an MCP stdio server that **waits for an MCP host**; it is not a standalone interactive shell or website. If you choose to let the MCP host receive message bodies (which may include sensitive personal information), set `SELMA_TG_MCP_READ_TEXT_ENABLED=1` locally before launching. Leave it unset to receive only message metadata. Dialog titles and unread counts can be sensitive too. To allowlist another chat, use a Telegram numeric peer ID or username (e.g. `me,@chosen_friend`). Do not open that scope unintentionally.
+The final command starts an MCP stdio server that **waits for an MCP host**; it is not a standalone interactive shell or website. If you choose to let the MCP host receive message bodies (which may include sensitive personal information), set `SELMA_TG_MCP_READ_TEXT_ENABLED=1` locally before launching. Leave it unset to receive only message metadata. Dialog titles and unread counts can be sensitive too, so `telegram_list_dialogs` stays disabled until `SELMA_TG_MCP_DIALOGS_ENABLED=1` is set locally. To allowlist another chat, use a Telegram numeric peer ID or username (e.g. `me,@chosen_friend`). Do not open that scope unintentionally.
 
 For a **local MCP-compatible development client**, configure a stdio server like:
 
