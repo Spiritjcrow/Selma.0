@@ -46,10 +46,9 @@ def credentials() -> tuple[int, str]:
 
 async def perform(action: str, limit: int = 5) -> int:
     """Only inspect the account. Login may create one local session."""
-    from telethon import TelegramClient
-
     if action not in {"login", "status", "dialogs"}:
         raise ValueError("Unsupported read-only operation")
+    from telethon import TelegramClient
     api_id, api_hash = credentials()
     base = session_base()
     client = TelegramClient(
