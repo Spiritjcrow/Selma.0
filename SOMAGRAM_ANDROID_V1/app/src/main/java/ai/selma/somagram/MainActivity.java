@@ -163,7 +163,7 @@ public final class MainActivity extends Activity {
                 params.databaseDirectory = db.getAbsolutePath();
                 params.filesDirectory = files.getAbsolutePath();
                 params.databaseEncryptionKey = SessionKeyStore.loadOrCreate(this);
-                params.useFileDatabase = false;
+                params.useFileDatabase = true;
                 params.useChatInfoDatabase = true;
                 params.useMessageDatabase = false;
                 params.useSecretChats = false;
