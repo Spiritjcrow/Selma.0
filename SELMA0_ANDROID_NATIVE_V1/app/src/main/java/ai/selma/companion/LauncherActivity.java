@@ -107,6 +107,7 @@ public final class LauncherActivity extends Activity {
             section = "HOME";
             filter = "";
             showSection();
+            focusSelectedNavigationItem();
         } else {
             // A HOME activity should not disappear on a Back gesture.
         }
@@ -580,6 +581,7 @@ public final class LauncherActivity extends Activity {
         main.addView(note, full(20));
     }
 }
+
 
 
 

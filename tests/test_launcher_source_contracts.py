@@ -193,9 +193,19 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.source)
 
+    def test_back_navigation_restores_focus_to_home_tab(self):
+        start = self.source.index("@Override public void onBackPressed()")
+        end = self.source.index("@Override protected void onResume()", start)
+        method = self.source[start:end]
+        self.assertIn(
+            "showSection();\n            focusSelectedNavigationItem();",
+            method,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 
 
