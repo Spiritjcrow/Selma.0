@@ -12,3 +12,10 @@ SELMA0_ANDROID_AGENT_V1/selma0_data_android_v1/
 **/.gradle/
 **/build/
 local.properties
+
+# Telegram credentials and active account sessions
+*.session
+*.session-journal
+*.session-shm
+*.session-wal
+*.session-lock
