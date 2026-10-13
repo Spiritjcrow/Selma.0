@@ -213,9 +213,18 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             3,
         )
 
+    def test_appearance_change_restores_focus_to_system_tab(self):
+        start = self.source.index("private void renderSystem()")
+        method = self.source[start:]
+        self.assertIn(
+            "createShell();\n            focusSelectedNavigationItem();",
+            method,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 
 

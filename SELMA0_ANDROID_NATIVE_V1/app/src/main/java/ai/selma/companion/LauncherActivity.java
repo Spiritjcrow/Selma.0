@@ -573,6 +573,7 @@ public final class LauncherActivity extends Activity {
             light = !light;
             preferences.edit().putBoolean(LIGHT, light).apply();
             createShell();
+            focusSelectedNavigationItem();
         });
         action("Home app", "Choose your default HOME app in Android settings",
                 () -> safeActivity(new Intent(Settings.ACTION_HOME_SETTINGS),
@@ -584,6 +585,7 @@ public final class LauncherActivity extends Activity {
         main.addView(note, full(20));
     }
 }
+
 
 
 
