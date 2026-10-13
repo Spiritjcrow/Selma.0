@@ -1,0 +1,92 @@
+name: EmberBot Mines Monitor (five-minute opt-in)
+on:
+  schedule:
+    # Runs at minutes 2,7,...,57 UTC, avoiding the busiest top-of-hour minute.
+    # Schedules only work when this workflow exists on the DEFAULT BRANCH.
+    - cron: '2-59/5 * * * *'
+  workflow_run:
+    workflows:
+      - EmberBot Mines Android APK
+    types:
+      - completed
+  workflow_dispatch:
+
+# Read-only. Never execute PR code or create downstream write-capable runs.
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: emberbot-monitor
+  cancel-in-progress: true
+
+jobs:
+  observe:
+    # The 5-minute cron is OFF unless repo variable EMBERBOT_FIVE_MINUTE_WATCH=true.
+    # This prevents involuntary consumption of private-repo runner minutes.
+    if: ${{ github.event_name != 'schedule' || vars.EMBERBOT_FIVE_MINUTE_WATCH == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Inspect last APK pipeline run and artifact
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            let run;
+            if (context.eventName === 'workflow_run') {
+              run = context.payload.workflow_run;
+            } else {
+              try {
+                const response = await github.rest.actions.listWorkflowRuns({
+                  owner, repo,
+                  workflow_id: 'emberbot-apk.yml',
+                  per_page: 10,
+                });
+                const runs = response.data.workflow_runs || [];
+                run = runs.find(r => r.head_branch === 'feature/emberbot-mines-research-20261012')
+                  || runs[0];
+              } catch (error) {
+                core.warning('APK workflow lookup unavailable: ' + error.message);
+                return;
+              }
+            }
+            if (!run) {
+              core.notice('No EmberBot APK workflow runs found.');
+              return;
+            }
+            const url = run.html_url || `https://github.com/${owner}/${repo}/actions/runs/${run.id}`;
+            core.info(`Build: ${url}; status=${run.status}; conclusion=${run.conclusion || 'n/a'}`);
+            if (run.status !== 'completed') {
+              core.notice('APK workflow in progress; next check will observe again.');
+              return;
+            }
+            if (run.conclusion !== 'success') {
+              try {
+                const jobs = await github.rest.actions.listJobsForWorkflowRun({
+                  owner, repo, run_id: run.id, per_page: 100
+                });
+                if (!jobs.data.jobs?.length) {
+                  core.warning('NO JOBS CREATED. Repository Actions startup/admission blocker #26.');
+                } else {
+                  const failures = jobs.data.jobs.filter(j => j.conclusion === 'failure');
+                  core.warning(`APK run did not succeed; failed jobs: ${failures.map(j => j.name).join(', ') || 'none reported'}`);
+                }
+              } catch (error) {
+                core.warning('Job inspection unavailable: ' + error.message);
+              }
+              return;
+            }
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner, repo, run_id: run.id, per_page: 100
+            });
+            const apk = artifacts.data.artifacts.find(a =>
+              a.name === 'EmberBot-Mines-Android-Debug-APK' && !a.expired
+            );
+            if (!apk) {
+              core.warning('Workflow passed, but no downloadable APK artifact was found.');
+              return;
+            }
+            core.notice(`Confirmed APK artifact: ${apk.name}, id ${apk.id}; download at ${url}`);
+            core.info('APK integrity and physical device installation must be evaluated separately.');
