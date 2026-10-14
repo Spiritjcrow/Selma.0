@@ -280,6 +280,19 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             3,
         )
 
+    def test_empty_workspace_find_apps_restores_focus_to_apps_tab(self):
+        start = self.source.index("private void renderWorkspaces()")
+        end = self.source.index("private void focusSelectedWorkspaceItem()", start)
+        method = self.source[start:end]
+        self.assertIn(
+            'action("Find apps", "Choose from the apps already on this device", () -> {',
+            method,
+        )
+        self.assertIn(
+            'section = "APPS";\n                showSection();\n                focusSelectedNavigationItem();',
+            method,
+        )
+
     def test_appearance_change_restores_focus_to_system_tab(self):
         start = self.source.index("private void renderSystem()")
         method = self.source[start:]
