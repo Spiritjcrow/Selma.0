@@ -186,6 +186,18 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.source)
 
+    def test_navigation_focus_announcement_matches_selected_tab(self):
+        start = self.source.index("private void focusSelectedNavigationItem()")
+        end = self.source.index("private String sectionLabel()", start)
+        method = self.source[start:end]
+        self.assertIn("CharSequence description = child.getContentDescription()", method)
+        self.assertIn(
+            'description == null ? sectionLabel() + " selected"',
+            method,
+        )
+        self.assertIn(': description + " selected"', method)
+        self.assertNotIn('activeWorkspace + " workspace selected"', method)
+
     def test_workspace_change_restores_focus_to_selected_tab(self):
         for marker in (
             "private LinearLayout workspaceNavigation;",
