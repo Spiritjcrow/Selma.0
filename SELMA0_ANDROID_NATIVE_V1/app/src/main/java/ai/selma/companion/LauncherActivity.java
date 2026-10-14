@@ -230,7 +230,10 @@ public final class LauncherActivity extends Activity {
             View child = navigation.getChildAt(i);
             if (child.isSelected()) {
                 child.requestFocus();
-                child.announceForAccessibility(activeWorkspace + " workspace selected");
+                CharSequence description = child.getContentDescription();
+                child.announceForAccessibility(
+                        description == null ? sectionLabel() + " selected"
+                                : description + " selected");
                 return;
             }
         }
@@ -520,6 +523,7 @@ public final class LauncherActivity extends Activity {
             View child = workspaceNavigation.getChildAt(i);
             if (child.isSelected()) {
                 child.requestFocus();
+                child.announceForAccessibility(activeWorkspace + " workspace selected");
                 return;
             }
         }
