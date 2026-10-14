@@ -1,0 +1,155 @@
+{
+  "inventory_date": "2026-10-14",
+  "source_owner": "Spiritjcrow",
+  "state": "PREPARED_NO_TARGET_REPO_AUTH",
+  "primary_provider": "GitLab",
+  "secondary_provider": "Bitbucket Cloud",
+  "private_count": 5,
+  "public_count": 7,
+  "source_repositories": [
+    {
+      "name": "Androidfixfactory",
+      "visibility": "public",
+      "source_url": "https://github.com/Spiritjcrow/Androidfixfactory.git",
+      "default_branch": "main",
+      "destination_gitlab_url": null,
+      "destination_bitbucket_url": null,
+      "refs_verified": false,
+      "objects_verified": false,
+      "issues_verified": false
+    },
+    {
+      "name": "CryptoCrow",
+      "visibility": "public",
+      "source_url": "https://github.com/Spiritjcrow/CryptoCrow.git",
+      "default_branch": "main",
+      "destination_gitlab_url": null,
+      "destination_bitbucket_url": null,
+      "refs_verified": false,
+      "objects_verified": false,
+      "issues_verified": false
+    },
+    {
+      "name": "Replika-style-offline-online-AI.Agent-Assistant",
+      "visibility": "private",
+      "source_url": "https://github.com/Spiritjcrow/Replika-style-offline-online-AI.Agent-Assistant.git",
+      "default_branch": "main",
+      "destination_gitlab_url": null,
+      "destination_bitbucket_url": null,
+      "refs_verified": false,
+      "objects_verified": false,
+      "issues_verified": false
+    },
+    {
+      "name": "Selma.0",
+      "visibility": "private",
+      "source_url": "https://github.com/Spiritjcrow/Selma.0.git",
+      "default_branch": "main",
+      "destination_gitlab_url": null,
+      "destination_bitbucket_url": null,
+      "refs_verified": false,
+      "objects_verified": false,
+      "issues_verified": false
+    },
+    {
+      "name": "CrowRecovery-DeepSeek-Built",
+      "visibility": "public",
+      "source_url": "https://github.com/Spiritjcrow/CrowRecovery-DeepSeek-Built.git",
+      "default_branch": "main",
+      "destination_gitlab_url": null,
+      "destination_bitbucket_url": null,
+      "refs_verified": false,
+      "objects_verified": false,
+      "issues_verified": false
+    },
+    {
+      "name": "WifiSignalWave",
+      "visibility": "public",
+      "source_url": "https://github.com/Spiritjcrow/WifiSignalWave.git",
+      "default_branch": "main",
+      "destination_gitlab_url": null,
+      "destination_bitbucket_url": null,
+      "refs_verified": false,
+      "objects_verified": false,
+      "issues_verified": false
+    },
+    {
+      "name": "CrowRecovery",
+      "visibility": "public",
+      "source_url": "https://github.com/Spiritjcrow/CrowRecovery.git",
+      "default_branch": "main",
+      "destination_gitlab_url": null,
+      "destination_bitbucket_url": null,
+      "refs_verified": false,
+      "objects_verified": false,
+      "issues_verified": false
+    },
+    {
+      "name": "Dungeons-Crows",
+      "visibility": "public",
+      "source_url": "https://github.com/Spiritjcrow/Dungeons-Crows.git",
+      "default_branch": "main",
+      "destination_gitlab_url": null,
+      "destination_bitbucket_url": null,
+      "refs_verified": false,
+      "objects_verified": false,
+      "issues_verified": false
+    },
+    {
+      "name": "ARIA",
+      "visibility": "private",
+      "source_url": "https://github.com/Spiritjcrow/ARIA.git",
+      "default_branch": "main",
+      "destination_gitlab_url": null,
+      "destination_bitbucket_url": null,
+      "refs_verified": false,
+      "objects_verified": false,
+      "issues_verified": false
+    },
+    {
+      "name": "CrowRF-Max",
+      "visibility": "public",
+      "source_url": "https://github.com/Spiritjcrow/CrowRF-Max.git",
+      "default_branch": "main",
+      "destination_gitlab_url": null,
+      "destination_bitbucket_url": null,
+      "refs_verified": false,
+      "objects_verified": false,
+      "issues_verified": false
+    },
+    {
+      "name": "MauiAPKForge-Builder",
+      "visibility": "private",
+      "source_url": "https://github.com/Spiritjcrow/MauiAPKForge-Builder.git",
+      "default_branch": "main",
+      "destination_gitlab_url": null,
+      "destination_bitbucket_url": null,
+      "refs_verified": false,
+      "objects_verified": false,
+      "issues_verified": false
+    },
+    {
+      "name": "CrowRF",
+      "visibility": "private",
+      "source_url": "https://github.com/Spiritjcrow/CrowRF.git",
+      "default_branch": "main",
+      "destination_gitlab_url": null,
+      "destination_bitbucket_url": null,
+      "refs_verified": false,
+      "objects_verified": false,
+      "issues_verified": false
+    }
+  ],
+  "known_refs": {
+    "Selma0_main": "9a7d3c02036aadbb7f7cf03a03877987af9dda11",
+    "EmberBot_feature": "feature/emberbot-mines-research-20261012",
+    "EmberBot_pr": 56
+  },
+  "security": [
+    "Never expose private repositories by creating public destinations",
+    "Use private targets, authenticated owner credentials, and read-only source imports",
+    "Never copy account credentials, API tokens, recovery codes or secrets into repository files",
+    "Never force push or delete source repositories"
+  ],
+  "limitation": "This file is an inventory, NOT a clone/mirror of Git object data."
+}
