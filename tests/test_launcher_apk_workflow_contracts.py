@@ -81,6 +81,23 @@ class LauncherApkWorkflowContracts(unittest.TestCase):
         self.assertIn(activity, self.workflow)
         self.assertIn(home, self.workflow)
 
+    def test_compiled_apk_permissions_remain_least_privilege(self):
+        permissions = (
+            '"$AAPT2" dump permissions "$APK" '
+            '> "$RUNNER_TEMP/selma-apk-permissions.txt"'
+        )
+        count = (
+            'test "$(grep -Fc \'uses-permission:\' '
+            '"$RUNNER_TEMP/selma-apk-permissions.txt")" -eq 1'
+        )
+        internet = (
+            "grep -Fq \"uses-permission: name='android.permission.INTERNET'\" "
+            '"$RUNNER_TEMP/selma-apk-permissions.txt"'
+        )
+        self.assertIn(permissions, self.workflow)
+        self.assertIn(count, self.workflow)
+        self.assertIn(internet, self.workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

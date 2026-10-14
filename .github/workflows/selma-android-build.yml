@@ -98,6 +98,9 @@ jobs:
           "$AAPT2" dump xmltree "$APK" --file AndroidManifest.xml > "$RUNNER_TEMP/selma-apk-manifest.txt"
           grep -Fq 'ai.selma.companion.LauncherActivity' "$RUNNER_TEMP/selma-apk-manifest.txt"
           grep -Fq 'android.intent.category.HOME' "$RUNNER_TEMP/selma-apk-manifest.txt"
+          "$AAPT2" dump permissions "$APK" > "$RUNNER_TEMP/selma-apk-permissions.txt"
+          test "$(grep -Fc 'uses-permission:' "$RUNNER_TEMP/selma-apk-permissions.txt")" -eq 1
+          grep -Fq "uses-permission: name='android.permission.INTERNET'" "$RUNNER_TEMP/selma-apk-permissions.txt"
 
       - name: Record APK checksum
         working-directory: SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug
