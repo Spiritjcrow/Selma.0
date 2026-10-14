@@ -50,6 +50,20 @@ class LauncherApkWorkflowContracts(unittest.TestCase):
         )
         self.assertNotIn("grep -Fq 'drawable/ic_selma'", self.workflow)
 
+    def test_apk_badging_requires_package_and_target_sdk_35(self):
+        badging = '"$AAPT2" dump badging "$APK" > "$RUNNER_TEMP/selma-apk-badging.txt"'
+        package = (
+            "grep -Fq \"package: name='ai.selma.companion'\" "
+            '"$RUNNER_TEMP/selma-apk-badging.txt"'
+        )
+        target = (
+            "grep -Fq \"targetSdkVersion:'35'\" "
+            '"$RUNNER_TEMP/selma-apk-badging.txt"'
+        )
+        self.assertIn(badging, self.workflow)
+        self.assertIn(package, self.workflow)
+        self.assertIn(target, self.workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
