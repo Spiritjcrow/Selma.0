@@ -128,7 +128,11 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
 
 
     def test_screen_titles_are_accessibility_headings(self):
-        self.assertIn("h.setAccessibilityHeading(true)", self.source)
+        self.assertIn("markAccessibilityHeading(h)", self.source)
+        self.assertIn(
+            "if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)",
+            self.source,
+        )
 
 
     def test_app_search_results_are_announced_after_initial_render(self):
@@ -143,7 +147,7 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
         method = self.source[start:end]
         for marker in (
             "TextView h = text(value, 17, foreground(), true)",
-            "h.setAccessibilityHeading(true)",
+            "markAccessibilityHeading(h)",
             "main.addView(h, full(24))",
         ):
             with self.subTest(marker=marker):
@@ -162,7 +166,7 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
         )
 
     def test_section_changes_expose_accessibility_pane_title(self):
-        marker = "main.setAccessibilityPaneTitle(sectionLabel())"
+        marker = "setAccessibilityPaneTitleCompat(main, sectionLabel())"
         self.assertIn(marker, self.source)
         render = self.source.index("else renderHome();")
         self.assertGreater(self.source.index(marker), render)
@@ -174,6 +178,18 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
         ):
             with self.subTest(label=label):
                 self.assertIn(label, self.source)
+
+    def test_api_28_accessibility_calls_are_guarded_for_min_sdk_26(self):
+        for marker in (
+            "private void markAccessibilityHeading(View view)",
+            "private void setAccessibilityPaneTitleCompat(View view, CharSequence title)",
+            "if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)",
+            "view.setAccessibilityHeading(true)",
+            "view.setAccessibilityPaneTitle(title)",
+            "view.announceForAccessibility(title)",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.source)
 
     def test_navigation_change_restores_focus_to_selected_tab(self):
         for marker in (
