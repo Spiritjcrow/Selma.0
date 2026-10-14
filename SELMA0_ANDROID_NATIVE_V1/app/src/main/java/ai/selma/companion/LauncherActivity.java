@@ -239,6 +239,20 @@ public final class LauncherActivity extends Activity {
         }
     }
 
+    private void markAccessibilityHeading(View view) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            view.setAccessibilityHeading(true);
+        }
+    }
+
+    private void setAccessibilityPaneTitleCompat(View view, CharSequence title) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            view.setAccessibilityPaneTitle(title);
+        } else {
+            view.announceForAccessibility(title);
+        }
+    }
+
     private String sectionLabel() {
         if ("APPS".equals(section)) return "SelmaOS Applications";
         if ("WORKSPACES".equals(section)) return "SelmaOS Workspaces";
@@ -255,7 +269,7 @@ public final class LauncherActivity extends Activity {
         else if ("WORKSPACES".equals(section)) renderWorkspaces();
         else if ("SYSTEM".equals(section)) renderSystem();
         else renderHome();
-        main.setAccessibilityPaneTitle(sectionLabel());
+        setAccessibilityPaneTitleCompat(main, sectionLabel());
         navItem("Home", "HOME");
         navItem("Apps", "APPS");
         navItem("Work", "WORKSPACES");
@@ -264,7 +278,7 @@ public final class LauncherActivity extends Activity {
 
     private void title(String title, String subtitle) {
         TextView h = text(title, 26, foreground(), true);
-        h.setAccessibilityHeading(true);
+        markAccessibilityHeading(h);
         main.addView(h, full(18));
         TextView s = text(subtitle, 13, muted(), false);
         main.addView(s, full(5));
@@ -272,7 +286,7 @@ public final class LauncherActivity extends Activity {
 
     private void sectionTitle(String value) {
         TextView h = text(value, 17, foreground(), true);
-        h.setAccessibilityHeading(true);
+        markAccessibilityHeading(h);
         main.addView(h, full(24));
     }
 
