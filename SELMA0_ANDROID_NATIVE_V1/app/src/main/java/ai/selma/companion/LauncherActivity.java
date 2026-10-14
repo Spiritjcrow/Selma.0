@@ -513,6 +513,7 @@ public final class LauncherActivity extends Activity {
             action("Find apps", "Choose from the apps already on this device", () -> {
                 section = "APPS";
                 showSection();
+                focusSelectedNavigationItem();
             });
         }
     }
