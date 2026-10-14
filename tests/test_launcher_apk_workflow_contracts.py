@@ -108,6 +108,14 @@ class LauncherApkWorkflowContracts(unittest.TestCase):
         self.assertLess(self.workflow.index(verify), self.workflow.index(checksum))
         self.assertLess(self.workflow.index(verify), self.workflow.index(upload))
 
+    def test_apk_alignment_is_verified_before_artifact_upload(self):
+        verifier = 'ZIPALIGN="${ANDROID_HOME}/build-tools/35.0.0/zipalign"'
+        verify = '"$ZIPALIGN" -c -P 16 -v 4 "$APK"'
+        upload = "- name: Upload Selma APK"
+        self.assertIn(verifier, self.workflow)
+        self.assertIn(verify, self.workflow)
+        self.assertLess(self.workflow.index(verify), self.workflow.index(upload))
+
 
 if __name__ == "__main__":
     unittest.main()
