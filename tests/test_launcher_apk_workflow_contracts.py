@@ -98,6 +98,16 @@ class LauncherApkWorkflowContracts(unittest.TestCase):
         self.assertIn(count, self.workflow)
         self.assertIn(internet, self.workflow)
 
+    def test_apk_signature_is_verified_before_checksum_and_upload(self):
+        verifier = 'APKSIGNER="${ANDROID_HOME}/build-tools/35.0.0/apksigner"'
+        verify = '"$APKSIGNER" verify --verbose "$APK"'
+        checksum = "sha256sum app-debug.apk > app-debug.apk.sha256"
+        upload = "- name: Upload Selma APK"
+        self.assertIn(verifier, self.workflow)
+        self.assertIn(verify, self.workflow)
+        self.assertLess(self.workflow.index(verify), self.workflow.index(checksum))
+        self.assertLess(self.workflow.index(verify), self.workflow.index(upload))
+
 
 if __name__ == "__main__":
     unittest.main()

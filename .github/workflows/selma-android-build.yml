@@ -87,8 +87,10 @@ jobs:
           set -euo pipefail
           APK=SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk
           AAPT2="${ANDROID_HOME}/build-tools/35.0.0/aapt2"
+          APKSIGNER="${ANDROID_HOME}/build-tools/35.0.0/apksigner"
           test -s "$APK"
           unzip -tq "$APK"
+          "$APKSIGNER" verify --verbose "$APK"
           "$AAPT2" dump badging "$APK" > "$RUNNER_TEMP/selma-apk-badging.txt"
           grep -Fq "package: name='ai.selma.companion'" "$RUNNER_TEMP/selma-apk-badging.txt"
           grep -Fq "targetSdkVersion:'35'" "$RUNNER_TEMP/selma-apk-badging.txt"
