@@ -64,6 +64,23 @@ class LauncherApkWorkflowContracts(unittest.TestCase):
         self.assertIn(package, self.workflow)
         self.assertIn(target, self.workflow)
 
+    def test_compiled_manifest_requires_selma_home_activity(self):
+        manifest = (
+            '"$AAPT2" dump xmltree "$APK" --file AndroidManifest.xml '
+            '> "$RUNNER_TEMP/selma-apk-manifest.txt"'
+        )
+        activity = (
+            "grep -Fq 'ai.selma.companion.LauncherActivity' "
+            '"$RUNNER_TEMP/selma-apk-manifest.txt"'
+        )
+        home = (
+            "grep -Fq 'android.intent.category.HOME' "
+            '"$RUNNER_TEMP/selma-apk-manifest.txt"'
+        )
+        self.assertIn(manifest, self.workflow)
+        self.assertIn(activity, self.workflow)
+        self.assertIn(home, self.workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
