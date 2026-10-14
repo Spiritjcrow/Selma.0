@@ -44,10 +44,14 @@ class HandoffMessage:
     def from_mapping(cls, raw: Mapping[str, Any]) -> "HandoffMessage":
         if not isinstance(raw, Mapping):
             raise ValueError("message must be a JSON object")
-        if set(raw) != FIELDS:
+        keys = tuple(raw)
+        if any(type(key) is not str for key in keys):
+            raise ValueError("message field names must be strings")
+        key_set = set(keys)
+        if key_set != FIELDS:
             raise ValueError(
-                f"message fields mismatch: missing={sorted(FIELDS - set(raw))}, "
-                f"extra={sorted(set(raw) - FIELDS)}"
+                f"message fields mismatch: missing={sorted(FIELDS - key_set)}, "
+                f"extra={sorted(key_set - FIELDS)}"
             )
         if type(raw["schema_version"]) is not int or raw["schema_version"] != SCHEMA_VERSION:
             raise ValueError("unsupported schema_version")
