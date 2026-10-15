@@ -36,13 +36,19 @@ emberbot_android_apk:
     - when: manual
       allow_failure: true
   script:
-    - cd EmberBot
-    - buildozer android debug
-    - test -n "$(find bin -maxdepth 1 -name '*.apk' -print -quit)"
+    - |
+      set -eu
+      cd EmberBot
+      buildozer android debug
+      APK="$(find bin -maxdepth 1 -name '*.apk' -print -quit)"
+      test -n "$APK"
+      cd "$(dirname "$APK")"
+      sha256sum "$(basename "$APK")" > "$(basename "$APK").sha256"
   artifacts:
     when: on_success
     paths:
       - EmberBot/bin/*.apk
+      - EmberBot/bin/*.apk.sha256
     expire_in: 14 days
 
 verify_emberbot_apk:
@@ -62,7 +68,10 @@ verify_emberbot_apk:
         test -s "$file"
         unzip -tq "$file"
         unzip -Z1 "$file" | grep -Fxq 'AndroidManifest.xml'
-        sha256sum "$file"
+        (
+          cd "$(dirname "$file")"
+          sha256sum --check "$(basename "$file").sha256"
+        )
         found=1
       done
       test "$found" -eq 1
