@@ -255,6 +255,31 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
         self.assertIn("if (!appDiscoveryAvailable)", render_apps)
         self.assertIn("App discovery is unavailable", render_apps)
 
+    def test_broken_app_labels_fall_back_to_package_name(self):
+        marker = "private String safeAppLabel(ResolveInfo info, PackageManager pm)"
+        self.assertIn(marker, self.source)
+        start = self.source.index(marker)
+        end = self.source.index("private void loadApps()", start)
+        method = self.source[start:end]
+        for expected in (
+            "info.activityInfo.packageName",
+            "label == null",
+            "label.toString().trim().isEmpty()",
+            "catch (RuntimeException ignored)",
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, method)
+
+        self.assertIn(
+            "safeAppLabel(x, pm).toLowerCase(Locale.ROOT)",
+            self.source,
+        )
+        self.assertIn(
+            "safeAppLabel(info, getPackageManager()).toLowerCase(Locale.ROOT)",
+            self.source,
+        )
+        self.assertIn("String label = safeAppLabel(info, pm);", self.source)
+
 
 if __name__ == "__main__":
     unittest.main()

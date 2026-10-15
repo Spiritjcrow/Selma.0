@@ -346,6 +346,18 @@ public final class LauncherActivity extends Activity {
         }
     }
 
+    private String safeAppLabel(ResolveInfo info, PackageManager pm) {
+        String fallback = info.activityInfo == null || info.activityInfo.packageName == null
+                ? "Unknown app" : info.activityInfo.packageName;
+        try {
+            CharSequence label = info.loadLabel(pm);
+            if (label == null || label.toString().trim().isEmpty()) return fallback;
+            return label.toString();
+        } catch (RuntimeException ignored) {
+            return fallback;
+        }
+    }
+
     private void loadApps() {
         installed.clear();
         Intent intent = new Intent(Intent.ACTION_MAIN);
@@ -354,7 +366,7 @@ public final class LauncherActivity extends Activity {
         installed.addAll(pm.queryIntentActivities(intent, 0));
         installed.removeIf(info -> info.activityInfo == null
                 || getPackageName().equals(info.activityInfo.packageName));
-        installed.sort(Comparator.comparing(x -> x.loadLabel(pm).toString().toLowerCase(Locale.ROOT)));
+        installed.sort(Comparator.comparing(x -> safeAppLabel(x, pm).toLowerCase(Locale.ROOT)));
     }
 
     private void renderApps() {
@@ -396,8 +408,8 @@ public final class LauncherActivity extends Activity {
         String needle = query.trim().toLowerCase(Locale.ROOT);
         int matches = 0;
         for (ResolveInfo info : installed) {
-            if (!info.loadLabel(getPackageManager()).toString()
-                    .toLowerCase(Locale.ROOT).contains(needle)) continue;
+            if (!safeAppLabel(info, getPackageManager()).toLowerCase(Locale.ROOT)
+                    .contains(needle)) continue;
             addAppRow(info, destination);
             matches++;
         }
@@ -407,7 +419,7 @@ public final class LauncherActivity extends Activity {
     private void addAppRow(ResolveInfo info, LinearLayout destination) {
         PackageManager pm = getPackageManager();
         String pkg = info.activityInfo.packageName;
-        String label = info.loadLabel(pm).toString();
+        String label = safeAppLabel(info, pm);
         LinearLayout cell = row();
         cell.setPadding(dp(14), dp(10), dp(14), dp(10));
         cell.setBackground(shape(surface(), 16));
