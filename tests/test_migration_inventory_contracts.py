@@ -14,7 +14,7 @@ INVENTORY = (
 
 
 class MigrationInventoryContracts(unittest.TestCase):
-    def test_every_source_has_stable_id_and_default_branch_head(self):
+    def test_every_source_has_stable_id_and_complete_ref_snapshot(self):
         data = json.loads(INVENTORY.read_text(encoding="utf-8"))
         sources = data["source_repositories"]
         self.assertEqual(len(sources), 12)
@@ -25,14 +25,23 @@ class MigrationInventoryContracts(unittest.TestCase):
         for item in sources:
             repository_id = item.get("source_repository_id")
             head_sha = item.get("source_head_sha")
+            branch_refs = item.get("source_branch_refs")
+            tag_refs = item.get("source_tag_refs")
             with self.subTest(repository=item["name"]):
                 self.assertIsInstance(repository_id, int)
                 self.assertGreater(repository_id, 0)
                 self.assertIsInstance(head_sha, str)
                 self.assertRegex(head_sha, re.compile(r"^[0-9a-f]{40}$"))
                 self.assertEqual(item["default_branch"], "main")
+                self.assertIsInstance(branch_refs, dict)
+                self.assertIsInstance(tag_refs, dict)
+                self.assertEqual(branch_refs.get(item["default_branch"]), head_sha)
+                for ref_name, ref_sha in {**branch_refs, **tag_refs}.items():
+                    self.assertTrue(ref_name)
+                    self.assertRegex(ref_sha, re.compile(r"^[0-9a-f]{40}$"))
                 self.assertIsNone(item["destination_gitlab_url"])
                 self.assertIsNone(item["destination_bitbucket_url"])
+                self.assertFalse(item["refs_verified"])
             ids.append(repository_id)
 
         self.assertEqual(len(ids), len(set(ids)))
