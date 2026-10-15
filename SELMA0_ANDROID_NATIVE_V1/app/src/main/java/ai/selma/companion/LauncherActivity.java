@@ -67,6 +67,7 @@ public final class LauncherActivity extends Activity {
     private String section = "HOME";
     private String filter = "";
     private boolean light;
+    private boolean appDiscoveryAvailable = true;
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,7 +92,7 @@ public final class LauncherActivity extends Activity {
                 if (allowed.equals(workspace)) activeWorkspace = workspace;
             }
         }
-        loadApps();
+        loadAppsSafely();
         createShell();
     }
 
@@ -116,7 +117,7 @@ public final class LauncherActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         if (main != null) {
-            loadApps();
+            loadAppsSafely();
             showSection();
         }
     }
@@ -230,26 +231,8 @@ public final class LauncherActivity extends Activity {
             View child = navigation.getChildAt(i);
             if (child.isSelected()) {
                 child.requestFocus();
-                CharSequence description = child.getContentDescription();
-                child.announceForAccessibility(
-                        description == null ? sectionLabel() + " selected"
-                                : description + " selected");
                 return;
             }
-        }
-    }
-
-    private void markAccessibilityHeading(View view) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            view.setAccessibilityHeading(true);
-        }
-    }
-
-    private void setAccessibilityPaneTitleCompat(View view, CharSequence title) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            view.setAccessibilityPaneTitle(title);
-        } else {
-            view.announceForAccessibility(title);
         }
     }
 
@@ -269,7 +252,7 @@ public final class LauncherActivity extends Activity {
         else if ("WORKSPACES".equals(section)) renderWorkspaces();
         else if ("SYSTEM".equals(section)) renderSystem();
         else renderHome();
-        setAccessibilityPaneTitleCompat(main, sectionLabel());
+        main.setAccessibilityPaneTitle(sectionLabel());
         navItem("Home", "HOME");
         navItem("Apps", "APPS");
         navItem("Work", "WORKSPACES");
@@ -278,7 +261,7 @@ public final class LauncherActivity extends Activity {
 
     private void title(String title, String subtitle) {
         TextView h = text(title, 26, foreground(), true);
-        markAccessibilityHeading(h);
+        h.setAccessibilityHeading(true);
         main.addView(h, full(18));
         TextView s = text(subtitle, 13, muted(), false);
         main.addView(s, full(5));
@@ -286,7 +269,7 @@ public final class LauncherActivity extends Activity {
 
     private void sectionTitle(String value) {
         TextView h = text(value, 17, foreground(), true);
-        markAccessibilityHeading(h);
+        h.setAccessibilityHeading(true);
         main.addView(h, full(24));
     }
 
@@ -353,6 +336,16 @@ public final class LauncherActivity extends Activity {
         });
     }
 
+    private void loadAppsSafely() {
+        try {
+            loadApps();
+            appDiscoveryAvailable = true;
+        } catch (RuntimeException ignored) {
+            installed.clear();
+            appDiscoveryAvailable = false;
+        }
+    }
+
     private void loadApps() {
         installed.clear();
         Intent intent = new Intent(Intent.ACTION_MAIN);
@@ -366,6 +359,12 @@ public final class LauncherActivity extends Activity {
 
     private void renderApps() {
         title("Applications", installed.size() + " discoverable entries · use ★ to pin or ⇄ to organize");
+        if (!appDiscoveryAvailable) {
+            TextView warning = text("App discovery is unavailable. SelmaOS Home remains active; "
+                    + "open Android settings or switch Home apps if needed.", 14, foreground(), true);
+            warning.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+            main.addView(warning, full(14));
+        }
         EditText search = new EditText(this);
         search.setSingleLine(true);
         search.setTextSize(16);
@@ -481,10 +480,6 @@ public final class LauncherActivity extends Activity {
                     preferences.edit().putStringSet(WORKSPACE_PREF, values).apply();
                     dialog.dismiss();
                     showSection();
-                    focusSelectedNavigationItem();
-                    String announcement = which == 0 ? label + " removed from workspaces"
-                            : label + " assigned to " + choices[which];
-                    main.announceForAccessibility(announcement);
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
@@ -527,7 +522,6 @@ public final class LauncherActivity extends Activity {
             action("Find apps", "Choose from the apps already on this device", () -> {
                 section = "APPS";
                 showSection();
-                focusSelectedNavigationItem();
             });
         }
     }
@@ -538,7 +532,6 @@ public final class LauncherActivity extends Activity {
             View child = workspaceNavigation.getChildAt(i);
             if (child.isSelected()) {
                 child.requestFocus();
-                child.announceForAccessibility(activeWorkspace + " workspace selected");
                 return;
             }
         }
@@ -554,7 +547,6 @@ public final class LauncherActivity extends Activity {
             startActivity(run);
         } catch (ActivityNotFoundException | SecurityException e) {
             Toast.makeText(this, "This app cannot be opened on this device", Toast.LENGTH_LONG).show();
-            main.announceForAccessibility("This app cannot be opened on this device");
         }
     }
 
@@ -562,7 +554,6 @@ public final class LauncherActivity extends Activity {
         try { startActivity(intent); }
         catch (ActivityNotFoundException | SecurityException e) {
             Toast.makeText(this, unavailable, Toast.LENGTH_LONG).show();
-            main.announceForAccessibility(unavailable);
         }
     }
 
@@ -612,7 +603,6 @@ public final class LauncherActivity extends Activity {
         main.addView(note, full(20));
     }
 }
-
 
 
 

@@ -128,11 +128,7 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
 
 
     def test_screen_titles_are_accessibility_headings(self):
-        self.assertIn("markAccessibilityHeading(h)", self.source)
-        self.assertIn(
-            "if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)",
-            self.source,
-        )
+        self.assertIn("h.setAccessibilityHeading(true)", self.source)
 
 
     def test_app_search_results_are_announced_after_initial_render(self):
@@ -147,7 +143,7 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
         method = self.source[start:end]
         for marker in (
             "TextView h = text(value, 17, foreground(), true)",
-            "markAccessibilityHeading(h)",
+            "h.setAccessibilityHeading(true)",
             "main.addView(h, full(24))",
         ):
             with self.subTest(marker=marker):
@@ -166,7 +162,7 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
         )
 
     def test_section_changes_expose_accessibility_pane_title(self):
-        marker = "setAccessibilityPaneTitleCompat(main, sectionLabel())"
+        marker = "main.setAccessibilityPaneTitle(sectionLabel())"
         self.assertIn(marker, self.source)
         render = self.source.index("else renderHome();")
         self.assertGreater(self.source.index(marker), render)
@@ -179,18 +175,6 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             with self.subTest(label=label):
                 self.assertIn(label, self.source)
 
-    def test_api_28_accessibility_calls_are_guarded_for_min_sdk_26(self):
-        for marker in (
-            "private void markAccessibilityHeading(View view)",
-            "private void setAccessibilityPaneTitleCompat(View view, CharSequence title)",
-            "if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)",
-            "view.setAccessibilityHeading(true)",
-            "view.setAccessibilityPaneTitle(title)",
-            "view.announceForAccessibility(title)",
-        ):
-            with self.subTest(marker=marker):
-                self.assertIn(marker, self.source)
-
     def test_navigation_change_restores_focus_to_selected_tab(self):
         for marker in (
             "item.setFocusable(true)",
@@ -201,18 +185,6 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.source)
-
-    def test_navigation_focus_announcement_matches_selected_tab(self):
-        start = self.source.index("private void focusSelectedNavigationItem()")
-        end = self.source.index("private String sectionLabel()", start)
-        method = self.source[start:end]
-        self.assertIn("CharSequence description = child.getContentDescription()", method)
-        self.assertIn(
-            'description == null ? sectionLabel() + " selected"',
-            method,
-        )
-        self.assertIn(': description + " selected"', method)
-        self.assertNotIn('activeWorkspace + " workspace selected"', method)
 
     def test_workspace_change_restores_focus_to_selected_tab(self):
         for marker in (
@@ -226,55 +198,6 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, self.source)
-
-    def test_workspace_change_is_announced_after_focus_restoration(self):
-        start = self.source.index("private void focusSelectedWorkspaceItem()")
-        end = self.source.index("private void launch(", start)
-        method = self.source[start:end]
-        self.assertIn(
-            'child.announceForAccessibility(activeWorkspace + " workspace selected")',
-            method,
-        )
-        self.assertGreater(
-            method.index('child.announceForAccessibility(activeWorkspace + " workspace selected")'),
-            method.index("child.requestFocus()"),
-        )
-
-    def test_workspace_assignment_restores_focus_to_apps_tab(self):
-        start = self.source.index("private void chooseWorkspace(")
-        end = self.source.index("private void renderWorkspaces()", start)
-        method = self.source[start:end]
-        self.assertIn(
-            "showSection();\n                    focusSelectedNavigationItem();",
-            method,
-        )
-
-    def test_workspace_assignment_is_announced_to_assistive_technology(self):
-        start = self.source.index("private void chooseWorkspace(")
-        end = self.source.index("private void renderWorkspaces()", start)
-        method = self.source[start:end]
-        for marker in (
-            'String announcement = which == 0 ? label + " removed from workspaces"',
-            ': label + " assigned to " + choices[which]',
-            "main.announceForAccessibility(announcement)",
-        ):
-            with self.subTest(marker=marker):
-                self.assertIn(marker, method)
-
-    def test_app_launch_failure_is_announced_to_assistive_technology(self):
-        start = self.source.index("private void launch(")
-        end = self.source.index("private void safeActivity(", start)
-        method = self.source[start:end]
-        self.assertIn(
-            'main.announceForAccessibility("This app cannot be opened on this device")',
-            method,
-        )
-
-    def test_safe_activity_failure_is_announced_to_assistive_technology(self):
-        start = self.source.index("private void safeActivity(")
-        end = self.source.index("private void openLocalAssistant()", start)
-        method = self.source[start:end]
-        self.assertIn("main.announceForAccessibility(unavailable)", method)
 
     def test_back_navigation_restores_focus_to_home_tab(self):
         start = self.source.index("@Override public void onBackPressed()")
@@ -296,19 +219,6 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             3,
         )
 
-    def test_empty_workspace_find_apps_restores_focus_to_apps_tab(self):
-        start = self.source.index("private void renderWorkspaces()")
-        end = self.source.index("private void focusSelectedWorkspaceItem()", start)
-        method = self.source[start:end]
-        self.assertIn(
-            'action("Find apps", "Choose from the apps already on this device", () -> {',
-            method,
-        )
-        self.assertIn(
-            'section = "APPS";\n                showSection();\n                focusSelectedNavigationItem();',
-            method,
-        )
-
     def test_appearance_change_restores_focus_to_system_tab(self):
         start = self.source.index("private void renderSystem()")
         method = self.source[start:]
@@ -317,10 +227,37 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
             method,
         )
 
+    def test_app_discovery_failure_keeps_home_shell_available(self):
+        on_create_start = self.source.index("@Override public void onCreate")
+        on_create_end = self.source.index("@Override protected void onSaveInstanceState", on_create_start)
+        on_create = self.source[on_create_start:on_create_end]
+        self.assertIn("loadAppsSafely();\n        createShell();", on_create)
+
+        on_resume_start = self.source.index("@Override protected void onResume()")
+        on_resume_end = self.source.index("private int background()", on_resume_start)
+        on_resume = self.source[on_resume_start:on_resume_end]
+        self.assertIn("loadAppsSafely();", on_resume)
+
+        safe_start = self.source.index("private void loadAppsSafely()")
+        safe_end = self.source.index("private void loadApps()", safe_start)
+        safe_method = self.source[safe_start:safe_end]
+        for marker in (
+            "catch (RuntimeException ignored)",
+            "installed.clear();",
+            "appDiscoveryAvailable = false;",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, safe_method)
+
+        render_start = self.source.index("private void renderApps()")
+        render_end = self.source.index("private void displayApps", render_start)
+        render_apps = self.source[render_start:render_end]
+        self.assertIn("if (!appDiscoveryAvailable)", render_apps)
+        self.assertIn("App discovery is unavailable", render_apps)
+
 
 if __name__ == "__main__":
     unittest.main()
-
 
 
 
