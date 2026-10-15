@@ -31,7 +31,6 @@ import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -72,16 +71,7 @@ public final class LauncherActivity extends Activity {
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         preferences = getSharedPreferences(PREFS, MODE_PRIVATE);
-        pinned = new HashSet<>(preferences.getStringSet(PINNED, Collections.emptySet()));
-        light = preferences.getBoolean(LIGHT, false);
-        for (String value : preferences.getStringSet(WORKSPACE_PREF, Collections.emptySet())) {
-            int split = value.indexOf('|');
-            if (split <= 0) continue;
-            String category = value.substring(split + 1);
-            for (String allowed : WORKSPACE_NAMES) {
-                if (allowed.equals(category)) assignments.put(value.substring(0, split), category);
-            }
-        }
+        loadPreferencesSafely();
         if (savedInstanceState != null) {
             String restored = savedInstanceState.getString("section", "HOME");
             if ("HOME".equals(restored) || "APPS".equals(restored)
@@ -94,6 +84,34 @@ public final class LauncherActivity extends Activity {
         }
         loadAppsSafely();
         createShell();
+    }
+
+    private void loadPreferencesSafely() {
+        pinned = new HashSet<>();
+        light = false;
+        assignments.clear();
+        try {
+            Set<String> storedPinned = preferences.getStringSet(PINNED, null);
+            if (storedPinned != null) pinned.addAll(storedPinned);
+            light = preferences.getBoolean(LIGHT, false);
+            Set<String> storedAssignments = preferences.getStringSet(WORKSPACE_PREF, null);
+            if (storedAssignments == null) return;
+            for (String value : storedAssignments) {
+                if (value == null) continue;
+                int split = value.indexOf('|');
+                if (split <= 0) continue;
+                String category = value.substring(split + 1);
+                for (String allowed : WORKSPACE_NAMES) {
+                    if (allowed.equals(category)) {
+                        assignments.put(value.substring(0, split), category);
+                    }
+                }
+            }
+        } catch (RuntimeException ignored) {
+            pinned.clear();
+            light = false;
+            assignments.clear();
+        }
     }
 
     @Override protected void onSaveInstanceState(Bundle state) {

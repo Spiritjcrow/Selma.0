@@ -280,6 +280,34 @@ class SelmaLauncherSourceContracts(unittest.TestCase):
         )
         self.assertIn("String label = safeAppLabel(info, pm);", self.source)
 
+    def test_corrupt_preferences_fall_back_to_safe_local_defaults(self):
+        on_create_start = self.source.index("@Override public void onCreate")
+        on_create_end = self.source.index(
+            "@Override protected void onSaveInstanceState", on_create_start
+        )
+        on_create = self.source[on_create_start:on_create_end]
+        self.assertIn(
+            "preferences = getSharedPreferences(PREFS, MODE_PRIVATE);\n"
+            "        loadPreferencesSafely();",
+            on_create,
+        )
+
+        marker = "private void loadPreferencesSafely()"
+        self.assertIn(marker, self.source)
+        start = self.source.index(marker)
+        end = self.source.index("@Override protected void onSaveInstanceState", start)
+        method = self.source[start:end]
+        for expected in (
+            "pinned = new HashSet<>();",
+            "light = false;",
+            "assignments.clear();",
+            "catch (RuntimeException ignored)",
+            "Set<String> storedPinned = preferences.getStringSet",
+            "Set<String> storedAssignments = preferences.getStringSet",
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, method)
+
 
 if __name__ == "__main__":
     unittest.main()
