@@ -23,7 +23,8 @@
         "main": "4763aea2e291c37a51eaadccfaa58776fb51b77c"
       },
       "source_tag_refs": {},
-      "source_refs_snapshot_complete": true
+      "source_refs_snapshot_complete": true,
+      "source_refs_sha256": "ac949da121479c71c91de467032cae438d11abd1973594b4501f70d7edc0813b"
     },
     {
       "name": "CryptoCrow",
@@ -41,7 +42,8 @@
         "main": "389792dff4d192357729142bebfe374eadac5e63"
       },
       "source_tag_refs": {},
-      "source_refs_snapshot_complete": true
+      "source_refs_snapshot_complete": true,
+      "source_refs_sha256": "8a6418fc184caf1b27dd830a528d237fa026709e607245397eb68f5f8838ce55"
     },
     {
       "name": "Replika-style-offline-online-AI.Agent-Assistant",
@@ -60,7 +62,8 @@
         "main": "2a520e5bf9487a72968c10438a0f51bbfd21e18c"
       },
       "source_tag_refs": {},
-      "source_refs_snapshot_complete": true
+      "source_refs_snapshot_complete": true,
+      "source_refs_sha256": "b841895fa282e599e64c49a08754937a212bb4a3539e6e6643e54ea57b9131a4"
     },
     {
       "name": "Selma.0",
@@ -205,7 +208,8 @@
         "test/selmaos-duo-mapping-key-regression-20261015": "bec9c66833f91e11d559a9f15b38019c2558ec17"
       },
       "source_tag_refs": {},
-      "source_refs_snapshot_complete": true
+      "source_refs_snapshot_complete": true,
+      "source_refs_sha256": "aeb872f495d413ea64b01f2aaceb6b7600bcd6689601b993c2f7b872bc0bb3da"
     },
     {
       "name": "CrowRecovery-DeepSeek-Built",
@@ -223,7 +227,8 @@
         "main": "c750405b08d0c7d52c90c58e387d1992bf060666"
       },
       "source_tag_refs": {},
-      "source_refs_snapshot_complete": true
+      "source_refs_snapshot_complete": true,
+      "source_refs_sha256": "f12319f708a0b9d0e353fcea4c87e61fbfae32079c2f838c89fc00ad14a44516"
     },
     {
       "name": "WifiSignalWave",
@@ -242,7 +247,8 @@
         "main": "9236a497d8110402919d68c4ceeeb5a6b8a26885"
       },
       "source_tag_refs": {},
-      "source_refs_snapshot_complete": true
+      "source_refs_snapshot_complete": true,
+      "source_refs_sha256": "497b981dc4949a3da829f5b3f3883defca752cf4a31799561e444eb4a7e86f60"
     },
     {
       "name": "CrowRecovery",
@@ -260,7 +266,8 @@
         "main": "7a7970f02eef2c9906a4ea183989455ac9c8dfe2"
       },
       "source_tag_refs": {},
-      "source_refs_snapshot_complete": true
+      "source_refs_snapshot_complete": true,
+      "source_refs_sha256": "4e747244e81d3899c62c9d92d256e73801487eca1e35416f53d109667742186a"
     },
     {
       "name": "Dungeons-Crows",
@@ -279,7 +286,8 @@
         "selma/unity-ai-foundation-v0.1": "ae691e0fbf404661098d538b34fafff5cd2a28da"
       },
       "source_tag_refs": {},
-      "source_refs_snapshot_complete": true
+      "source_refs_snapshot_complete": true,
+      "source_refs_sha256": "19ad4f5c8b877fcbc50b576c2e5a4fb011222f839a4a5fb215634f0bc80e92e4"
     },
     {
       "name": "ARIA",
@@ -298,7 +306,8 @@
         "main": "f6419968a1a36e4c73bc0a817c91368ab9ad8b1f"
       },
       "source_tag_refs": {},
-      "source_refs_snapshot_complete": true
+      "source_refs_snapshot_complete": true,
+      "source_refs_sha256": "383b100a0a04d0b558d459a73244169c4793064236bb7ed943e4c5965c91d2bf"
     },
     {
       "name": "CrowRF-Max",
@@ -317,7 +326,8 @@
         "main": "99cede0e9badf18ce16c7bb711992c030337d02a"
       },
       "source_tag_refs": {},
-      "source_refs_snapshot_complete": true
+      "source_refs_snapshot_complete": true,
+      "source_refs_sha256": "60289c3522fe730fd9c9bcfbe776d7d3032d136484c9ee0c0585bc16f75d6aa4"
     },
     {
       "name": "MauiAPKForge-Builder",
@@ -337,7 +347,8 @@
         "vox-forensic-3.2-build": "bd367b554323906e54356325e6842ae1ee0e9944"
       },
       "source_tag_refs": {},
-      "source_refs_snapshot_complete": true
+      "source_refs_snapshot_complete": true,
+      "source_refs_sha256": "e61debf902006a7cf92138cb58402bc8ede23e60926527e8b1e4d5a830494c06"
     },
     {
       "name": "CrowRF",
@@ -370,7 +381,8 @@
         "vox-forensic-studio-3.3-adaptive": "be4548f7dab2c1eaf895e8ccbe3dbd98e4c40fb1"
       },
       "source_tag_refs": {},
-      "source_refs_snapshot_complete": true
+      "source_refs_snapshot_complete": true,
+      "source_refs_sha256": "b3c7bfb52c392a8fa1dd413ebbbdb551d7a96fc7326e591c93ac02679ee19f4d"
     }
   ],
   "known_refs": {
@@ -386,5 +398,6 @@
   ],
   "limitation": "This file is an inventory, NOT a clone/mirror of Git object data.",
   "source_refs_observed_on": "2026-10-15",
-  "source_refs_scope": "All GitHub branch refs (paginated) and tag refs visible to the authenticated repository connection."
+  "source_refs_scope": "All GitHub branch refs (paginated) and tag refs visible to the authenticated repository connection.",
+  "source_ref_fingerprint_algorithm": "sha256-canonical-json-v1"
 }

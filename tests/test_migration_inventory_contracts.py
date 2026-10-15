@@ -1,6 +1,7 @@
 """Source-evidence contracts for the multi-host migration inventory."""
 
 import json
+import hashlib
 from pathlib import Path
 import re
 import unittest
@@ -47,6 +48,28 @@ class MigrationInventoryContracts(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         selma = next(item for item in sources if item["name"] == "Selma.0")
         self.assertEqual(data["known_refs"]["Selma0_main"], selma["source_head_sha"])
+
+    def test_ref_fingerprints_are_reproducible(self):
+        data = json.loads(INVENTORY.read_text(encoding="utf-8"))
+        self.assertEqual(
+            data.get("source_ref_fingerprint_algorithm"),
+            "sha256-canonical-json-v1",
+        )
+
+        for item in data["source_repositories"]:
+            snapshot = {
+                "branches": item["source_branch_refs"],
+                "tags": item["source_tag_refs"],
+            }
+            canonical = json.dumps(
+                snapshot,
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ).encode("utf-8")
+            expected = hashlib.sha256(canonical).hexdigest()
+            with self.subTest(repository=item["name"]):
+                self.assertEqual(item.get("source_refs_sha256"), expected)
 
 
 if __name__ == "__main__":
