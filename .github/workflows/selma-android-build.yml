@@ -95,6 +95,7 @@ jobs:
           "$APKSIGNER" verify --verbose "$APK"
           "$AAPT2" dump badging "$APK" > "$RUNNER_TEMP/selma-apk-badging.txt"
           grep -Fq "package: name='ai.selma.companion'" "$RUNNER_TEMP/selma-apk-badging.txt"
+          grep -Fq "versionName='0.10.0'" "$RUNNER_TEMP/selma-apk-badging.txt"
           grep -Fq "targetSdkVersion:'35'" "$RUNNER_TEMP/selma-apk-badging.txt"
           "$AAPT2" dump resources "$APK" > "$RUNNER_TEMP/selma-apk-resources.txt"
           grep -Fq 'ai.selma.companion:drawable/ic_selma:' "$RUNNER_TEMP/selma-apk-resources.txt"

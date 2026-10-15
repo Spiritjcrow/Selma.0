@@ -64,6 +64,16 @@ class LauncherApkWorkflowContracts(unittest.TestCase):
         self.assertIn(package, self.workflow)
         self.assertIn(target, self.workflow)
 
+    def test_apk_badging_matches_published_artifact_version(self):
+        version = (
+            "grep -Fq \"versionName='0.10.0'\" "
+            '"$RUNNER_TEMP/selma-apk-badging.txt"'
+        )
+        artifact = "name: Selma-Android-v0.10.0-debug"
+        self.assertIn(version, self.workflow)
+        self.assertIn(artifact, self.workflow)
+        self.assertLess(self.workflow.index(version), self.workflow.index(artifact))
+
     def test_compiled_manifest_requires_selma_home_activity(self):
         manifest = (
             '"$AAPT2" dump xmltree "$APK" --file AndroidManifest.xml '
