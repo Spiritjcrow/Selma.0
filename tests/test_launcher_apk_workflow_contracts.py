@@ -126,6 +126,27 @@ class LauncherApkWorkflowContracts(unittest.TestCase):
         self.assertIn(verify, self.workflow)
         self.assertLess(self.workflow.index(verify), self.workflow.index(upload))
 
+    def test_uploaded_artifact_is_downloaded_and_reverified(self):
+        job = "verify-uploaded-apk:"
+        download = "uses: actions/download-artifact@v4"
+        artifact = "name: Selma-Android-v0.10.0-debug"
+        checksum = "sha256sum --check app-debug.apk.sha256"
+        package = "grep -Fq \"package: name='ai.selma.companion'\""
+        main_icon = "grep -Fq 'ai.selma.companion:drawable/ic_selma:'"
+        home_icon = "grep -Fq 'ai.selma.companion:drawable/ic_selma_home:'"
+
+        self.assertIn(job, self.workflow)
+        section = self.workflow[self.workflow.index(job):]
+        self.assertIn("needs: native-android", section)
+        self.assertIn(download, section)
+        self.assertIn(artifact, section)
+        self.assertIn(checksum, section)
+        self.assertIn(package, section)
+        self.assertIn(main_icon, section)
+        self.assertIn(home_icon, section)
+        self.assertLess(section.index(download), section.index(checksum))
+        self.assertLess(section.index(checksum), section.index(package))
+
 
 if __name__ == "__main__":
     unittest.main()
