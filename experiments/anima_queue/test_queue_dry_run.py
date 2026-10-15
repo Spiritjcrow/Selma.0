@@ -1,5 +1,8 @@
 import unittest
-from queue_dry_run import evaluate
+try:
+    from .queue_dry_run import evaluate
+except ImportError:
+    from queue_dry_run import evaluate
 
 class QueueTests(unittest.TestCase):
     def test_first_task_ready(self):
