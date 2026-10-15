@@ -9,6 +9,8 @@
   "source_repositories": [
     {
       "name": "Androidfixfactory",
+      "source_repository_id": 617742700,
+      "source_head_sha": "4763aea2e291c37a51eaadccfaa58776fb51b77c",
       "visibility": "public",
       "source_url": "https://github.com/Spiritjcrow/Androidfixfactory.git",
       "default_branch": "main",
@@ -20,6 +22,8 @@
     },
     {
       "name": "CryptoCrow",
+      "source_repository_id": 654086641,
+      "source_head_sha": "389792dff4d192357729142bebfe374eadac5e63",
       "visibility": "public",
       "source_url": "https://github.com/Spiritjcrow/CryptoCrow.git",
       "default_branch": "main",
@@ -31,6 +35,8 @@
     },
     {
       "name": "Replika-style-offline-online-AI.Agent-Assistant",
+      "source_repository_id": 1093303096,
+      "source_head_sha": "2a520e5bf9487a72968c10438a0f51bbfd21e18c",
       "visibility": "private",
       "source_url": "https://github.com/Spiritjcrow/Replika-style-offline-online-AI.Agent-Assistant.git",
       "default_branch": "main",
@@ -42,6 +48,8 @@
     },
     {
       "name": "Selma.0",
+      "source_repository_id": 1157720425,
+      "source_head_sha": "9a7d3c02036aadbb7f7cf03a03877987af9dda11",
       "visibility": "private",
       "source_url": "https://github.com/Spiritjcrow/Selma.0.git",
       "default_branch": "main",
@@ -53,6 +61,8 @@
     },
     {
       "name": "CrowRecovery-DeepSeek-Built",
+      "source_repository_id": 1218328422,
+      "source_head_sha": "c750405b08d0c7d52c90c58e387d1992bf060666",
       "visibility": "public",
       "source_url": "https://github.com/Spiritjcrow/CrowRecovery-DeepSeek-Built.git",
       "default_branch": "main",
@@ -64,6 +74,8 @@
     },
     {
       "name": "WifiSignalWave",
+      "source_repository_id": 1219679736,
+      "source_head_sha": "9236a497d8110402919d68c4ceeeb5a6b8a26885",
       "visibility": "public",
       "source_url": "https://github.com/Spiritjcrow/WifiSignalWave.git",
       "default_branch": "main",
@@ -75,6 +87,8 @@
     },
     {
       "name": "CrowRecovery",
+      "source_repository_id": 1236400001,
+      "source_head_sha": "7a7970f02eef2c9906a4ea183989455ac9c8dfe2",
       "visibility": "public",
       "source_url": "https://github.com/Spiritjcrow/CrowRecovery.git",
       "default_branch": "main",
@@ -86,6 +100,8 @@
     },
     {
       "name": "Dungeons-Crows",
+      "source_repository_id": 1254112006,
+      "source_head_sha": "7a8a481bbf2d2a7c6960f032ab380ef1b870d580",
       "visibility": "public",
       "source_url": "https://github.com/Spiritjcrow/Dungeons-Crows.git",
       "default_branch": "main",
@@ -97,6 +113,8 @@
     },
     {
       "name": "ARIA",
+      "source_repository_id": 1256347531,
+      "source_head_sha": "f6419968a1a36e4c73bc0a817c91368ab9ad8b1f",
       "visibility": "private",
       "source_url": "https://github.com/Spiritjcrow/ARIA.git",
       "default_branch": "main",
@@ -108,6 +126,8 @@
     },
     {
       "name": "CrowRF-Max",
+      "source_repository_id": 1263470284,
+      "source_head_sha": "99cede0e9badf18ce16c7bb711992c030337d02a",
       "visibility": "public",
       "source_url": "https://github.com/Spiritjcrow/CrowRF-Max.git",
       "default_branch": "main",
@@ -119,6 +139,8 @@
     },
     {
       "name": "MauiAPKForge-Builder",
+      "source_repository_id": 1309575074,
+      "source_head_sha": "1691e3d8fc7be9edc0f54f6c9670aa97ec278407",
       "visibility": "private",
       "source_url": "https://github.com/Spiritjcrow/MauiAPKForge-Builder.git",
       "default_branch": "main",
@@ -130,6 +152,8 @@
     },
     {
       "name": "CrowRF",
+      "source_repository_id": 1325007031,
+      "source_head_sha": "51cc6dc5f01ba8410e53a7b26094ba3174a6d9e3",
       "visibility": "private",
       "source_url": "https://github.com/Spiritjcrow/CrowRF.git",
       "default_branch": "main",
@@ -153,3 +177,4 @@
   ],
   "limitation": "This file is an inventory, NOT a clone/mirror of Git object data."
 }
+
