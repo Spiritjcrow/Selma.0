@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SelmaOS | SyncLab v0.1</title>
+<style>
+:root{color-scheme:dark;--bg:#0a101a;--card:#121d2c;--line:#293b50;--txt:#eff7ff;--sub:#a4b7cc;--accent:#6ef0cf;--accent2:#b4a0ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -15%,#20394d 0,var(--bg) 44%);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--txt)}
+main{max-width:880px;padding:24px 16px 44px;margin:auto}header{display:flex;justify-content:space-between;gap:12px;align-items:start;flex-wrap:wrap}h1{margin:0;font-size:clamp(1.7rem,5vw,2.5rem);letter-spacing:-.035em}h2{font-size:1.03rem;margin:0 0 12px}p{margin:8px 0;color:var(--sub)}.eyebrow{color:var(--accent);font-size:.76rem;letter-spacing:.18em;font-weight:800;text-transform:uppercase}.tag{background:#203045;border:1px solid #3b4b60;border-radius:100px;padding:5px 11px;color:#d6e4f5;font-size:.75rem}.grid{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-top:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:18px;box-shadow:0 16px 40px #0002}.span{grid-column:1/-1}
+#system{width:100%;height:auto;display:block;min-height:280px}.metrics{display:flex;gap:9px;flex-wrap:wrap}.metric{background:#0d1622;border:1px solid var(--line);padding:9px 12px;border-radius:12px;min-width:98px;flex:1}.metric small{color:var(--sub);display:block;font-size:.75rem}.metric strong{font-size:1.35rem;font-variant-numeric:tabular-nums}.good{color:var(--accent)}.controls{display:grid;gap:16px}.ctl label{display:flex;justify-content:space-between;gap:12px;color:#eaf6ff;font-weight:600}.ctl small{color:var(--sub);display:block;margin-top:3px;font-size:.79rem}input[type=range]{width:100%;accent-color:var(--accent);margin:11px 0 0}.buttons{display:flex;flex-wrap:wrap;gap:9px;margin:13px 0}button{border:1px solid #53667a;border-radius:11px;background:#1d3043;color:white;padding:10px 15px;font-weight:700;cursor:pointer;touch-action:manipulation}button.primary{background:#155b50;border-color:#39b49e}button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}button:active{transform:translateY(1px)}#history{height:190px;width:100%;display:block}.legend{font-size:.8rem;color:var(--sub);margin-top:8px}.swatch{color:var(--accent)}.hint{padding:12px;border-left:3px solid var(--accent);background:#0d1826;border-radius:8px;color:#d3e4f1}.muted{font-size:.81rem;color:var(--sub)}code{color:#c2abff}a{color:#8cebd8}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.card{padding:15px}#system{min-height:225px}}@media(prefers-reduced-motion:reduce){button:active{transform:none}}
+</style>
+</head>
+<body><main>
+<header><div><div class="eyebrow">SelmaOS / Experimental Robotics</div><h1>SyncLab <span style="color:var(--accent)">v0.1</span></h1><p>Five independent oscillators. Neighbor-to-neighbor feedback. No master beat.</p></div><span class="tag">OFFLINE • SIMULATION</span></header>
+<div class="grid"><section class="card"><h2>Five-module elastic ring concept</h2><canvas id="system" width="620" height="390" role="img" aria-label="Diagram of five simulated coupled oscillator modules; rotating pointers show their phases."></canvas>
+<div class="metrics" aria-live="polite"><div class="metric"><small>Phase coherence</small><strong id="coherence">0.00</strong></div><div class="metric"><small>Simulation time</small><strong id="elapsed">0.0 s</strong></div><div class="metric"><small>Behavior</small><strong id="status" style="font-size:1rem">Uncoordinated</strong></div></div>
+<div class="buttons"><button class="primary" id="start">▶ Start</button><button id="pause">Ⅱ Pause</button><button id="reset">↺ Reset</button><button id="disturb">⚡ Disturb</button><button id="export">↓ Export CSV</button></div></section>
+<section class="card"><h2>Local interaction controls</h2><div class="controls">
+<div class="ctl"><label for="coupling">Coupling strength <output id="couplingValue">3.0</output></label><input id="coupling" type="range" min="0" max="8" step="0.1" value="3"><small>How strongly each module responds to neighbors.</small></div>
+<div class="ctl"><label for="asymmetry">Nonreciprocity <output id="asymmetryValue">0.25</output></label><input id="asymmetry" type="range" min="0" max="0.9" step="0.05" value="0.25"><small>Unequal left/right neighbor influences. Zero is symmetric.</small></div>
+<div class="ctl"><label for="noise">Random disturbances <output id="noiseValue">0.03</output></label><input id="noise" type="range" min="0" max="0.5" step="0.01" value="0.03"><small>How much local timing jitter affects the modules.</small></div>
+</div><p class="hint">Try <b>Start</b>, watch the phase coherence increase, then press <b>Disturb</b>. Set coupling to zero to see why feedback matters.</p>
+<p class="muted">The simulated units have slightly different natural frequencies. Each responds only to its two neighbors. A numerical timestep advances the simulation; it is not a shared timing command to the units.</p></section>
+<section class="card span"><h2>Synchronization history</h2><canvas id="history" width="850" height="200" role="img" aria-label="Line graph of phase coherence ranging from 0 to 1 over simulated time."></canvas><div class="legend"><span class="swatch">━</span> Phase coherence, 0 = dispersed phases, 1 = aligned phases. Sustained coordinated traveling waves could require another metric and do not necessarily produce coherence near 1.</div></section>
+<section class="card span"><h2>What this demonstrates</h2><p><b>This is an educational coupled-oscillator model, not a reproduction of the Nature study and not a time crystal.</b> It is the first software test for a later physical SelmaOS robot prototype.</p><p>Next hardware milestone: one 5 V actuator, one position sensor, one properly rated motor driver, and one microcontroller. Verify that the controller can read position and command safe small movements before connecting two or more units. Keep actuator power separate from microcontroller GPIO, and share ground only where the circuit specifications require it.</p><p class="muted">No internet, account, special Android permissions, or cloud connection required. All calculations stay in this page.</p></section>
+</div></main>
+<script>
+(()=>{'use strict';
+const TAU=2*Math.PI,N=5, frequencies=[.83,.91,1.05,1.13,.96];
+const system=document.getElementById('system'),ctx=system.getContext('2d');
+const history=document.getElementById('history'),hctx=history.getContext('2d');
+const $=id=>document.getElementById(id);
+let phases=[],seconds=0,running=false,record=[],seed=0,previous=null,bank=0,displayR=0;
+function random(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;}
+function coherence(){let x=0,y=0;for(const p of phases){x+=Math.cos(p);y+=Math.sin(p)}return Math.hypot(x,y)/N;}
+function reset(){seed=(Date.now()>>>0)||1;phases=Array.from({length:N},()=>random()*TAU);seconds=0;record=[];bank=0;displayR=coherence();render();}
+function value(id){return parseFloat($(id).value);}
+function step(dt){let K=value('coupling'),a=value('asymmetry'),noise=value('noise');const old=phases.slice();phases=old.map((p,i)=>{
+const left=Math.sin(old[(i+N-1)%N]-p),right=Math.sin(old[(i+1)%N]-p);
+return (p+dt*(TAU*frequencies[i]+K*((1+a)*left+(1-a)*right))+noise*Math.sqrt(dt)*((random()-.5)*3.464))%TAU;
+});seconds+=dt;displayR=coherence();
+if(!record.length || seconds-record[record.length-1][0]>=.09){record.push([seconds,displayR]);if(record.length>650)record.shift();}
+}
+function line(c,x1,y1,x2,y2,color,width=1){c.strokeStyle=color;c.lineWidth=width;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();}
+function renderSystem(){let w=system.width,h=system.height,cx=w/2,cy=h/2+6,rad=Math.min(w*.29,h*.35),points=[];ctx.clearRect(0,0,w,h);
+for(let i=0;i<N;i++){const t=i*TAU/N-Math.PI/2;points.push([cx+rad*Math.cos(t),cy+rad*Math.sin(t)]);}
+ctx.lineJoin='round';ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.strokeStyle='#42637a';ctx.lineWidth=12;ctx.stroke();ctx.strokeStyle='#6ef0cf';ctx.lineWidth=2;ctx.stroke();
+for(let i=0;i<N;i++){const [x,y]=points[i],p=phases[i];ctx.beginPath();ctx.arc(x,y,40,0,TAU);ctx.fillStyle='#182d3d';ctx.fill();ctx.strokeStyle='#7190a3';ctx.lineWidth=2;ctx.stroke();
+ctx.beginPath();ctx.arc(x,y,27,0,TAU);ctx.strokeStyle='#365167';ctx.lineWidth=1;ctx.stroke();
+line(ctx,x,y,x+28*Math.cos(p),y+28*Math.sin(p),'#6ef0cf',5);ctx.beginPath();ctx.arc(x,y,5,0,TAU);ctx.fillStyle='#b4a0ff';ctx.fill();ctx.fillStyle='#ffffff';ctx.textAlign='center';ctx.font='bold 16px system-ui';ctx.fillText(String(i+1),x,y+62);}
+ctx.fillStyle='#aabed2';ctx.textAlign='center';ctx.font='14px system-ui';ctx.fillText('LOCAL COUPLING',cx,cy-8);ctx.fillStyle='#6ef0cf';ctx.font='bold 23px system-ui';ctx.fillText(Math.round(displayR*100)+'%',cx,cy+22);
+}
+function renderHistory(){let c=hctx,w=history.width,h=history.height,pad={l:42,r:14,t:16,b:30};c.clearRect(0,0,w,h);c.fillStyle='#0c1724';c.fillRect(0,0,w,h);
+for(let i=0;i<=4;i++){let y=pad.t+(h-pad.t-pad.b)*(i/4);line(c,pad.l,y,w-pad.r,y,'#263c4f');c.fillStyle='#9daec3';c.font='12px system-ui';c.textAlign='right';c.fillText((1-i/4).toFixed(2),pad.l-7,y+4);}
+let end=Math.max(10,seconds),start=Math.max(0,end-30);c.fillStyle='#9daec3';c.textAlign='left';c.fillText(start.toFixed(0)+' s',pad.l,h-9);c.textAlign='right';c.fillText(end.toFixed(0)+' s',w-pad.r,h-9);
+if(record.length>1){c.beginPath();let started=false;for(const [t,r] of record){if(t<start)continue;let x=pad.l+(w-pad.l-pad.r)*(t-start)/(end-start),y=pad.t+(h-pad.t-pad.b)*(1-r);if(!started){c.moveTo(x,y);started=true;}else c.lineTo(x,y);}c.strokeStyle='#6ef0cf';c.lineWidth=3;c.stroke();}}
+function render(){if(!phases.length)return;renderSystem();renderHistory();$('coherence').textContent=displayR.toFixed(2);$('elapsed').textContent=seconds.toFixed(1)+' s';let state=displayR>=.95?'Highly aligned':displayR>=.7?'Converging':'Uncoordinated';$('status').textContent=state;$('status').className=displayR>=.95?'good':'';}
+function tick(now){if(previous===null)previous=now;const delta=Math.min(.08,(now-previous)/1000);previous=now;if(running){bank+=delta;let count=0;while(bank>=.015&&count++<8){step(.015);bank-=.015;}render();}requestAnimationFrame(tick);}
+for(let id of ['coupling','asymmetry','noise']){$(id).addEventListener('input',()=>{$(id+'Value').textContent=value(id).toFixed(id==='coupling'?1:2);});}
+$('start').addEventListener('click',()=>running=true);$('pause').addEventListener('click',()=>running=false);$('reset').addEventListener('click',()=>{running=false;reset()});
+$('disturb').addEventListener('click',()=>{for(let i=0;i<N;i++)phases[i]+=((random()-.5)*2.2);displayR=coherence();record.push([seconds,displayR]);render();});
+$('export').addEventListener('click',()=>{let csv='time_seconds,phase_coherence\n'+record.map(([t,r])=>`${t.toFixed(3)},${r.toFixed(5)}`).join('\n')+'\n';let u=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));let a=document.createElement('a');a.href=u;a.download='SelmaOS_SyncLab_results.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);});
+reset();requestAnimationFrame(tick);
+})();
+</script></body></html>
