@@ -1,0 +1,44 @@
+name: SpaceGhost EarthWatch
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '29 11 * * *'
+  push:
+    paths:
+      - '.github/workflows/spaceghost-earthwatch.yml'
+      - 'spaceghost/watch.py'
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: spaceghost-earthwatch
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout private repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Validate EarthWatch Python
+        run: python3 -m py_compile spaceghost/watch.py
+      - name: Check public imagery catalogs and create notable-scene issue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python3 spaceghost/watch.py
+      - name: Persist index and report
+        run: |
+          git add spaceghost/state.json spaceghost/latest.md
+          if ! git diff --cached --quiet; then
+            git config user.name 'selma-spaceghost[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'data(spaceghost): refresh EarthWatch catalog index [skip ci]'
+            git push
+          fi
