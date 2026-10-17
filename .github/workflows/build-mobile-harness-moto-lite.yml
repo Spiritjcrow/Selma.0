@@ -1,0 +1,50 @@
+name: Build Mobile Harness Moto G Play 2023 Lite
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'integrations/mobile-harness-moto-lite/**'
+      - '.github/workflows/build-mobile-harness-moto-lite.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Android toolchains
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platforms;android-36' 'build-tools;35.0.0' 'ndk;28.2.13676358' 'cmake;3.22.1'
+      - name: Build ARM32 editor / ARM64 low-RAM dual-ABI APK
+        run: |
+          bash integrations/mobile-harness-moto-lite/build_moto_lite.sh "$RUNNER_TEMP/Mobile-Harness"
+      - name: Verify APK ABIs
+        run: |
+          python3 - <<'PY'
+          import glob, zipfile
+          files=glob.glob('/home/runner/work/**/Mobile-Harness/app/build/outputs/apk/online/debug/*.apk',recursive=True)
+          if not files:
+              import os
+              files=glob.glob(os.environ['RUNNER_TEMP']+'/Mobile-Harness/app/build/outputs/apk/online/debug/*.apk')
+          assert files, 'APK not created'
+          with zipfile.ZipFile(files[0]) as z:
+              names=set(z.namelist())
+              for abi in ('arm64-v8a','armeabi-v7a'):
+                  assert f'lib/{abi}/libpocketspawn.so' in names, f'{abi} native JNI missing'
+              assert 'lib/armeabi-v7a/libproot.so' not in names, 'ARM32 PRoot must not ship'
+              print('Verified:',files[0], 'dual-ABI pocketspawn; no fake ARM32 PRoot')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mobile-harness-moto-lite-debug-apk
+          path: ${{ runner.temp }}/Mobile-Harness/app/build/outputs/apk/online/debug/app-online-debug.apk
+          if-no-files-found: error
