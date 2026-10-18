@@ -1,0 +1,272 @@
+{
+  "schema_version": 1,
+  "catalog_id": "selmaos-hunt-forge-fdroid-v1",
+  "researched_on": "2026-10-18",
+  "implementation_status": "research_candidates_only",
+  "platform_focus": "rootless Android 13+; other platforms require their own adapters",
+  "policy": {
+    "install_mode": "user_initiated_external_store",
+    "silent_install": false,
+    "default_opt_in": false,
+    "permissions_at_point_of_use": true,
+    "third_party_attribution_required": true,
+    "copy_or_fork_without_license_review": false,
+    "network_connection_never_hardcoded": true,
+    "device_policy_bypass": false
+  },
+  "wizard_profiles": [
+    {
+      "id": "essentials",
+      "label": "Everyday essentials",
+      "default_checked": false
+    },
+    {
+      "id": "productivity",
+      "label": "Office & planning",
+      "default_checked": false
+    },
+    {
+      "id": "creative",
+      "label": "Drawing & photos",
+      "default_checked": false
+    },
+    {
+      "id": "media",
+      "label": "Music & recording",
+      "default_checked": false
+    },
+    {
+      "id": "connectivity",
+      "label": "Device bridge & transfer",
+      "default_checked": false
+    },
+    {
+      "id": "security",
+      "label": "Security laboratory",
+      "default_checked": false
+    }
+  ],
+  "apps": [
+    {
+      "id": "fossify-files",
+      "name": "Fossify File Manager",
+      "category": "essentials",
+      "platform": "android",
+      "package_id": "org.fossify.filemanager",
+      "source_listing": "https://f-droid.org/en/packages/org.fossify.filemanager/",
+      "license_spdx": "GPL-3.0-only",
+      "purpose": "File management, archives, and local storage",
+      "selection_default": false,
+      "proposed_integration": "external_installed_app_shortcut",
+      "store_action": "open_approved_listing_only",
+      "redistribution": "not_approved",
+      "forking": "separate_legal_and_security_review",
+      "verification_status": "listing_and_license_identified; no APK tested",
+      "attribution": "Retain upstream application identity and attribution"
+    },
+    {
+      "id": "fossify-gallery",
+      "name": "Fossify Gallery",
+      "category": "creative",
+      "platform": "android",
+      "package_id": "org.fossify.gallery",
+      "source_listing": "https://f-droid.org/en/packages/org.fossify.gallery/",
+      "license_spdx": "GPL-3.0-only",
+      "purpose": "Photos, videos, and basic image editing",
+      "selection_default": false,
+      "proposed_integration": "external_installed_app_shortcut",
+      "store_action": "open_approved_listing_only",
+      "redistribution": "not_approved",
+      "forking": "separate_legal_and_security_review",
+      "verification_status": "listing_and_license_identified; no APK tested",
+      "attribution": "Retain upstream application identity and attribution"
+    },
+    {
+      "id": "fossify-calendar",
+      "name": "Fossify Calendar",
+      "category": "productivity",
+      "platform": "android",
+      "package_id": "org.fossify.calendar",
+      "source_listing": "https://f-droid.org/en/packages/org.fossify.calendar/",
+      "license_spdx": "GPL-3.0-only",
+      "purpose": "Calendar and local planning",
+      "selection_default": false,
+      "proposed_integration": "external_installed_app_shortcut",
+      "store_action": "open_approved_listing_only",
+      "redistribution": "not_approved",
+      "forking": "separate_legal_and_security_review",
+      "verification_status": "listing_and_license_identified; no APK tested",
+      "attribution": "Retain upstream application identity and attribution"
+    },
+    {
+      "id": "fossify-paint",
+      "name": "Fossify Paint",
+      "category": "creative",
+      "platform": "android",
+      "package_id": "org.fossify.paint",
+      "source_listing": "https://f-droid.org/en/packages/org.fossify.paint/",
+      "license_spdx": "GPL-3.0-only",
+      "purpose": "Offline drawing (publisher marks beta)",
+      "selection_default": false,
+      "proposed_integration": "external_installed_app_shortcut",
+      "store_action": "open_approved_listing_only",
+      "redistribution": "not_approved",
+      "forking": "separate_legal_and_security_review",
+      "verification_status": "listing_and_license_identified; no APK tested",
+      "attribution": "Retain upstream application identity and attribution"
+    },
+    {
+      "id": "fossify-notes",
+      "name": "Fossify Notes",
+      "category": "productivity",
+      "platform": "android",
+      "package_id": "org.fossify.notes",
+      "source_listing": "https://f-droid.org/en/packages/org.fossify.notes/",
+      "license_spdx": "GPL-3.0-only",
+      "purpose": "Local notes (publisher marks beta)",
+      "selection_default": false,
+      "proposed_integration": "external_installed_app_shortcut",
+      "store_action": "open_approved_listing_only",
+      "redistribution": "not_approved",
+      "forking": "separate_legal_and_security_review",
+      "verification_status": "listing_and_license_identified; no APK tested",
+      "attribution": "Retain upstream application identity and attribution"
+    },
+    {
+      "id": "fossify-music",
+      "name": "Fossify Music Player",
+      "category": "media",
+      "platform": "android",
+      "package_id": "org.fossify.musicplayer",
+      "source_listing": "https://f-droid.org/en/packages/org.fossify.musicplayer/",
+      "license_spdx": "GPL-3.0-only",
+      "purpose": "Offline audio playback",
+      "selection_default": false,
+      "proposed_integration": "external_installed_app_shortcut",
+      "store_action": "open_approved_listing_only",
+      "redistribution": "not_approved",
+      "forking": "separate_legal_and_security_review",
+      "verification_status": "listing_and_license_identified; no APK tested",
+      "attribution": "Retain upstream application identity and attribution"
+    },
+    {
+      "id": "fossify-voice",
+      "name": "Fossify Voice Recorder",
+      "category": "media",
+      "platform": "android",
+      "package_id": "org.fossify.voicerecorder",
+      "source_listing": "https://f-droid.org/en/packages/org.fossify.voicerecorder/",
+      "license_spdx": "GPL-3.0-only",
+      "purpose": "Local audio recording (publisher marks beta)",
+      "selection_default": false,
+      "proposed_integration": "external_installed_app_shortcut",
+      "store_action": "open_approved_listing_only",
+      "redistribution": "not_approved",
+      "forking": "separate_legal_and_security_review",
+      "verification_status": "listing_and_license_identified; no APK tested",
+      "attribution": "Retain upstream application identity and attribution"
+    },
+    {
+      "id": "fossify-calculator",
+      "name": "Fossify Calculator",
+      "category": "essentials",
+      "platform": "android",
+      "package_id": "org.fossify.math",
+      "source_listing": "https://f-droid.org/en/packages/org.fossify.math/",
+      "license_spdx": "GPL-3.0-only",
+      "purpose": "Everyday calculations (publisher marks beta)",
+      "selection_default": false,
+      "proposed_integration": "external_installed_app_shortcut",
+      "store_action": "open_approved_listing_only",
+      "redistribution": "not_approved",
+      "forking": "separate_legal_and_security_review",
+      "verification_status": "listing_and_license_identified; no APK tested",
+      "attribution": "Retain upstream application identity and attribution"
+    },
+    {
+      "id": "kde-connect",
+      "name": "KDE Connect",
+      "category": "connectivity",
+      "platform": "android",
+      "package_id": "org.kde.kdeconnect_tp",
+      "source_listing": "https://f-droid.org/en/packages/org.kde.kdeconnect_tp/",
+      "license_spdx": "GPL-3.0-only",
+      "purpose": "Cross-device share, clipboard and remote input; separate paired desktop software",
+      "selection_default": false,
+      "proposed_integration": "external_installed_app_shortcut",
+      "store_action": "open_approved_listing_only",
+      "redistribution": "not_approved",
+      "forking": "separate_legal_and_security_review",
+      "verification_status": "listing_and_license_identified; no APK tested",
+      "attribution": "Retain upstream application identity and attribution"
+    },
+    {
+      "id": "local-send",
+      "name": "LocalSend",
+      "category": "connectivity",
+      "platform": "android",
+      "package_id": "org.localsend.localsend_app",
+      "source_listing": "https://f-droid.org/en/packages/org.localsend.localsend_app/",
+      "license_spdx": "Apache-2.0",
+      "purpose": "Encrypted local-network file transfer; peers must share a usable LAN",
+      "selection_default": false,
+      "proposed_integration": "external_installed_app_shortcut",
+      "store_action": "open_approved_listing_only",
+      "redistribution": "not_approved",
+      "forking": "separate_legal_and_security_review",
+      "verification_status": "listing_and_license_identified; no APK tested",
+      "attribution": "Retain upstream application identity and attribution"
+    },
+    {
+      "id": "pcapdroid",
+      "name": "PCAPdroid",
+      "category": "security",
+      "platform": "android",
+      "package_id": "com.emanuelef.remote_capture",
+      "source_listing": "https://f-droid.org/en/packages/com.emanuelef.remote_capture/",
+      "license_spdx": "GPL-3.0-or-later",
+      "purpose": "User-consented, rootless traffic inspection through Android VPN service",
+      "selection_default": false,
+      "proposed_integration": "external_installed_app_shortcut",
+      "store_action": "open_approved_listing_only",
+      "redistribution": "not_approved",
+      "forking": "separate_legal_and_security_review",
+      "verification_status": "listing_and_license_identified; no APK tested",
+      "attribution": "Retain upstream application identity and attribution"
+    }
+  ],
+  "native_runtime_candidates": [
+    {
+      "id": "llama-cpp",
+      "source": "https://github.com/ggml-org/llama.cpp",
+      "license_spdx": "MIT",
+      "scope": "optional local GGUF inference adapter; verify model weight license separately",
+      "status": "not-integrated-by-this-PR"
+    },
+    {
+      "id": "sherpa-onnx",
+      "source": "https://github.com/k2-fsa/sherpa-onnx",
+      "license_spdx": "Apache-2.0",
+      "scope": "optional on-device ASR/VAD/TTS; verify each model/data license separately",
+      "status": "not-integrated-by-this-PR"
+    },
+    {
+      "id": "cyclonedx",
+      "source": "https://github.com/CycloneDX/specification",
+      "license_spdx": "Apache-2.0",
+      "scope": "build time SBOM standard; choose language-specific producer later",
+      "status": "not-integrated-by-this-PR"
+    }
+  ],
+  "release_gates": [
+    "source_licenses_and_all_transitive_dependencies_reviewed",
+    "package_id_and_signing_verified",
+    "device_policy_and_permissions_tested",
+    "user_consented_to_every_external_install",
+    "no_unverified_auto_install_or_background_control",
+    "api_auth_issue_43_resolved_before_privileged_integration",
+    "repository_ci_issue_26_yields_real_jobs",
+    "owned_android_13_to_17_device_acceptance",
+    "privacy_accessibility_offline_memory_storage_and_rollback_reviewed"
+  ]
+}
