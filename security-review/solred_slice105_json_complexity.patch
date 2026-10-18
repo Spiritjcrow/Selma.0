@@ -1,0 +1,79 @@
+--- a/security-review/fixtures/selma0_http_gate_review_v6.py
++++ b/security-review/fixtures/selma0_http_gate_review_v7.py
+@@ -8,6 +8,7 @@
+ import copy
+ import hashlib
+ import hmac
++import math
+ import secrets
+ import threading
+ import time
+@@ -61,10 +62,52 @@
+     return origin == f"http://{authority}:{port}"
+ 
+ 
++
++# Bound the parsed JSON shape before deepcopy, hashing, or native UI rendering.
++# This is deliberately iterative: a valid deeply nested JSON value must not
++# cause RecursionError in a request handler or trusted native approval issuer.
++MAX_REQUEST_DEPTH = 64
++MAX_REQUEST_NODES = 8192
++MAX_REQUEST_TEXT_BYTES = 1024 * 1024
++
++
++def _validate_json_shape(value):
++    pending = [(value, 0)]
++    nodes = 0
++    text_bytes = 0
++    while pending:
++        item, depth = pending.pop()
++        nodes += 1
++        if nodes > MAX_REQUEST_NODES or depth > MAX_REQUEST_DEPTH:
++            raise ValueError("request JSON complexity limit")
++        if isinstance(item, dict):
++            for key, child in item.items():
++                if not isinstance(key, str):
++                    raise ValueError("JSON object keys must be strings")
++                text_bytes += len(key.encode("utf-8"))
++                if text_bytes > MAX_REQUEST_TEXT_BYTES:
++                    raise ValueError("request JSON text limit")
++                pending.append((child, depth + 1))
++        elif isinstance(item, list):
++            pending.extend((child, depth + 1) for child in item)
++        elif isinstance(item, str):
++            text_bytes += len(item.encode("utf-8"))
++            if text_bytes > MAX_REQUEST_TEXT_BYTES:
++                raise ValueError("request JSON text limit")
++        elif item is None or isinstance(item, (bool, int)):
++            pass
++        elif isinstance(item, float):
++            if not math.isfinite(item):
++                raise ValueError("non-finite JSON number")
++        else:
++            raise ValueError("unsupported JSON value")
++
++
+ def _operation_args(path, body, memory_db_path):
+     """Canonicalize from route and parsed body; never trust caller's operation label."""
+     if not isinstance(body, dict):
+         raise ValueError("JSON object required")
++    _validate_json_shape(body)
+     if path == "/api/selma0/tools/execute/v1":
+         tool, args = body.get("tool", ""), body.get("arguments", {})
+         if not isinstance(tool, str) or not tool or not isinstance(args, dict):
+@@ -81,7 +124,7 @@
+         }
+     if path == "/api/selma0/safety/profile/v1":
+         updates = dict(body)
+-        for key in ("confirmed", "approved", "request_id"):
++        for key in ("confirmed", "request_id"):
+             updates.pop(key, None)
+         return "safety.update_profile", {"updates": updates}
+     if path == "/api/selma0/safety/sos/v1":
+@@ -226,5 +269,5 @@
+                     return Decision(409, "operation_approval_required")
+                 self._approval_sessions.pop(evidence_hash, None)
+             return Decision(200, "approved_operation", client, operation, arguments)
+-        except (TypeError, ValueError, KeyError):
++        except (TypeError, ValueError, KeyError, UnicodeError, RecursionError):
+             return Decision(400, "invalid_request")
