@@ -1,0 +1,20 @@
+--- a/selma0_http_gate_review_v4.py
++++ b/selma0_http_gate_review_v4.py
+@@ -170,7 +170,7 @@
+             }
+             if len(self._approval_sessions) >= 1024:
+                 raise PermissionError("approval capacity reached")
+-            evidence = self._authority.issue_approval(client, operation, arguments, request_id)
++            evidence = self._authority.issue_approval(client, f"POST {path} {operation}", arguments, request_id)
+             evidence_hash = hashlib.sha256(evidence.encode("ascii")).digest()
+             session_hash = hashlib.sha256(session_token.encode("utf-8")).digest()
+             self._approval_sessions[evidence_hash] = (session_hash, now + 60)
+@@ -222,7 +222,7 @@
+                         not hmac.compare_digest(bound[0], session_hash)):
+                     return Decision(409, "operation_approval_required")
+                 if not self._authority.authorize_operation(
+-                        client, self._secrets[client], operation, arguments, request_id, evidence):
++                        client, self._secrets[client], f"POST {path} {operation}", arguments, request_id, evidence):
+                     return Decision(409, "operation_approval_required")
+                 self._approval_sessions.pop(evidence_hash, None)
+             return Decision(200, "approved_operation", client, operation, arguments)
