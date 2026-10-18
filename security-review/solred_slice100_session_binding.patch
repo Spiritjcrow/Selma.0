@@ -1,0 +1,58 @@
+# Sol Red Slice 100 | Review-only session binding
+# Target: Slice 99 disposable fixture selma0_http_gate_review_v1.py.
+# NOT applicable to production main, which has no integrated HTTP gate.
+# No credentials, private records, or live endpoints are included.
+--- a/fixtures/selma0_http_gate_review_v1.py
++++ b/fixtures/selma0_http_gate_review_v1.py
+@@ -120,6 +120,8 @@
+         self._authority = Selma0LocalAuthorityV1(
+             client_secrets, approval_key, trusted_presence, now=self._now)
+         self._sessions = {}
++        # Bind evidence to the exact native session, not merely the client identity.
++        self._approval_sessions = {}
+         self._lock = threading.RLock()
+         self.bind_host, self.port = bind_host, port
+         self.memory_db_path = memory_db_path
+@@ -159,7 +161,19 @@
+         request_id = body.get("request_id")
+         if not isinstance(request_id, str) or not (1 <= len(request_id) <= 128):
+             raise ValueError("request_id required")
+-        return self._authority.issue_approval(client, operation, arguments, request_id)
++        # Keep the native issuer private; never expose this through HTTP.
++        with self._lock:
++            now = self._now()
++            self._approval_sessions = {
++                k: v for k, v in self._approval_sessions.items() if v[1] > now
++            }
++            if len(self._approval_sessions) >= 1024:
++                raise PermissionError("approval capacity reached")
++            evidence = self._authority.issue_approval(client, operation, arguments, request_id)
++            evidence_hash = hashlib.sha256(evidence.encode("ascii")).digest()
++            session_hash = hashlib.sha256(session_token.encode("utf-8")).digest()
++            self._approval_sessions[evidence_hash] = (session_hash, now + 60)
++            return evidence
+ 
+     def authorize_http(self, method, path, headers, body=None):
+         """Returns only decisions and canonical args; never returns credentials."""
+@@ -190,9 +204,19 @@
+                 return Decision(400, "request_id_required")
+             evidence = headers.get("X-Selma-Approval", "")
+             # User-supplied JSON 'approved' and 'confirmed' never count as proof.
+-            if not self._authority.authorize_operation(
+-                    client, self._secrets[client], operation, arguments, request_id, evidence):
++            if not isinstance(evidence, str) or len(evidence) > 4096:
+                 return Decision(409, "operation_approval_required")
++            evidence_hash = hashlib.sha256(evidence.encode("utf-8")).digest()
++            session_hash = hashlib.sha256(auth[7:].encode("utf-8")).digest()
++            with self._lock:
++                bound = self._approval_sessions.get(evidence_hash)
++                if (not bound or bound[1] <= self._now() or
++                        not hmac.compare_digest(bound[0], session_hash)):
++                    return Decision(409, "operation_approval_required")
++                if not self._authority.authorize_operation(
++                        client, self._secrets[client], operation, arguments, request_id, evidence):
++                    return Decision(409, "operation_approval_required")
++                self._approval_sessions.pop(evidence_hash, None)
+             return Decision(200, "approved_operation", client, operation, arguments)
+         except (TypeError, ValueError, KeyError):
+             return Decision(400, "invalid_request")
