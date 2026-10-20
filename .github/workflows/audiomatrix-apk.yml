@@ -1,0 +1,50 @@
+name: AudioMatrixEngine Android APK
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'audiomatrix/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'AudioMatrixEngine/**'
+      - '.github/workflows/audiomatrix-apk.yml'
+permissions:
+  contents: read
+jobs:
+  android-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract AudioMatrixEngine source
+        run: |
+          mkdir -p AudioMatrixEngine
+          tar -xJf AudioMatrixEngine/source-v0.2.tar.xz -C AudioMatrixEngine
+          test -f AudioMatrixEngine/settings.gradle
+          test -f AudioMatrixEngine/app/src/main/AndroidManifest.xml
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android toolchain
+        run: sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0' 'ndk;25.2.9519653' 'cmake;3.22.1'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Host DSP tests
+        working-directory: AudioMatrixEngine
+        run: |
+          bash scripts/test-dsp.sh
+          bash scripts/test-native.sh
+      - name: Build Android debug APK
+        working-directory: AudioMatrixEngine
+        run: gradle :app:assembleDebug --no-daemon --stacktrace
+      - name: Upload installable debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AudioMatrixEngine-v0.2-debug-APK
+          path: AudioMatrixEngine/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
