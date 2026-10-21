@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SelmaOS • Universal Files</title>
+<style>
+:root{color-scheme:dark;font:15px system-ui,sans-serif;background:#0b111d;color:#e7edf7}
+*{box-sizing:border-box}body{margin:0;min-height:100vh}
+header{padding:18px 24px;border-bottom:1px solid #29364b;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:1.15rem;margin:0;letter-spacing:.02em}header span,.muted{color:#91a3bd;font-size:.84rem}
+main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:14px}
+.pane{border:1px solid #29364b;background:#121e30;border-radius:12px;min-width:0;overflow:hidden}
+.pane h2{font-size:.85rem;margin:0;padding:14px 16px;color:#9eb4d3;font-weight:600}
+.toolbar{display:flex;gap:7px;padding:0 12px 12px;align-items:center;flex-wrap:wrap}
+button,input{background:#1e314c;color:#f1f6ff;border:1px solid #35506f;border-radius:7px;padding:9px;font:inherit}
+button{cursor:pointer}button:hover,button:focus-visible{background:#305073}button:disabled{opacity:.4;cursor:not-allowed}
+input{min-width:0;max-width:100%;flex:1} .crumb{font-family:ui-monospace,monospace;color:#c4dbff;overflow-wrap:anywhere;padding:0 14px 12px;font-size:.83rem}
+ul{list-style:none;margin:0;padding:0;max-height:55vh;min-height:240px;overflow:auto}
+li button{border:0;border-radius:0;background:none;width:100%;text-align:left;padding:11px 14px;border-top:1px solid #213047;display:flex;gap:12px;align-items:center}
+li button[data-selected=true]{background:#244266}li button:hover{background:#1a3957}
+li button .icon{width:23px;text-align:center}li button .name{overflow-wrap:anywhere}li button[disabled]{opacity:.5}
+.actions{display:flex;gap:8px;padding:12px 14px;border-top:1px solid #29364b;flex-wrap:wrap}
+#message{padding:0 18px 16px;color:#9dd6ba;min-height:2.2rem;white-space:pre-wrap}
+.error{color:#ffaeae!important}footer{padding:0 20px 20px;color:#91a3bd;font-size:.8rem}
+@media(max-width:720px){main{grid-template-columns:1fr}ul{max-height:36vh;min-height:180px}}
+</style>
+</head>
+<body>
+<header><h1>◈ SelmaOS / Universal Files <span>v0.1</span></h1><span id="root">Offline · local directory only</span></header>
+<main id="panes"></main><div id="message" role="status" aria-live="polite"></div>
+<footer>No deletion or overwriting. Copy/move operates on regular files only. Symbolic links cannot be opened.</footer>
+<script>
+'use strict';
+const state=[{path:'',items:[],selected:null,filter:''},{path:'',items:[],selected:null,filter:''}];
+let token='';
+const dom=document.getElementById('panes');
+const message=document.getElementById('message');
+const alertMessage=(s,error=false)=>{message.textContent=s;message.className=error?'error':''};
+async function api(url,body){
+ const res=await fetch(url,body?{method:'POST',headers:{'Content-Type':'application/json','X-Selma-Token':token},body:JSON.stringify(body)}:{});
+ const data=await res.json();if(!res.ok)throw Error(data.error||'Operation failed');return data;
+}
+function make(tag,text,cls){const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el}
+function button(label,fn){const el=make('button',label);el.type='button';el.onclick=fn;return el}
+function draw(){
+ dom.replaceChildren();
+ state.forEach((pane,i)=>{
+  const article=make('section',undefined,'pane');article.setAttribute('aria-label',i?'Right file pane':'Left file pane');
+  article.append(make('h2',i?'RIGHT PANE':'LEFT PANE'));
+  const toolbar=make('div',undefined,'toolbar');
+  const up=button('↑ Up',()=>openPane(i,pane.path.split('/').slice(0,-1).join('/')));up.disabled=!pane.path;toolbar.append(up);
+  const reload=button('↻ Reload',()=>openPane(i,pane.path));toolbar.append(reload);
+  const filter=make('input');filter.placeholder='Filter filenames';filter.setAttribute('aria-label','Filter filenames');filter.value=pane.filter;
+  filter.oninput=e=>{pane.filter=e.target.value;for(const li of listing.children)li.hidden=!li.textContent.toLowerCase().includes(pane.filter.toLowerCase())};toolbar.append(filter);article.append(toolbar);
+  article.append(make('div','/'+pane.path,'crumb'));
+  const listing=make('ul');
+  pane.items.filter(x=>x.name.toLowerCase().includes(pane.filter.toLowerCase())).forEach(item=>{
+   const li=make('li');const b=button('',()=>{
+    if(item.type==='folder'){openPane(i,item.path)}else{pane.selected=item.type==='file'?item:null;draw()}
+   });b.replaceChildren(make('span',item.type==='folder'?'📁':item.type==='link'?'🔗':'📄','icon'),make('span',item.name,'name'));
+   b.disabled=item.type==='link';b.dataset.selected=String(pane.selected?.path===item.path);
+   b.title=item.type==='folder'?'Open folder':item.type==='link'?'Symlinks disabled':'Select file';li.append(b);listing.append(li);
+  });article.append(listing);
+  const actions=make('div',undefined,'actions');
+  const copy=button('Copy → opposite',()=>transfer(i,'copy'));const move=button('Move → opposite',()=>transfer(i,'move'));
+  copy.disabled=move.disabled=!pane.selected;actions.append(copy,move,button('+ Folder',()=>newFolder(i)));
+  article.append(actions);dom.append(article);
+ });
+}
+async function openPane(i,path){try{const data=await api('/api/list?path='+encodeURIComponent(path));state[i].path=data.path;state[i].items=data.entries;state[i].selected=null;draw();if(data.truncated)alertMessage('Showing first 1,500 entries; narrow the directory.',true)}catch(e){alertMessage(e.message,true)}}
+async function transfer(i,action){const source=state[i].selected;if(!source)return;
+ const destination=state[1-i].path;
+ if(!confirm(action.toUpperCase()+' “'+source.name+'” into /'+destination+'?\nExisting files will NOT be overwritten.'))return;
+ try{await api('/api/operation',{action,source:source.path,destination});await Promise.all([openPane(0,state[0].path),openPane(1,state[1].path)]);alertMessage(action+' completed: '+source.name)}catch(e){alertMessage(e.message,true)}
+}
+async function newFolder(i){const name=prompt('New folder name:');if(name===null)return;
+ try{await api('/api/operation',{action:'mkdir',name,destination:state[i].path});await openPane(i,state[i].path);alertMessage('Folder created: '+name)}catch(e){alertMessage(e.message,true)}
+}
+(async()=>{try{const session=await api('/api/session');token=session.token;document.getElementById('root').textContent='ROOT: '+session.root+' · offline';await Promise.all([openPane(0,''),openPane(1,'')]);}catch(e){alertMessage(e.message,true)}})();
+</script>
+</body></html>
