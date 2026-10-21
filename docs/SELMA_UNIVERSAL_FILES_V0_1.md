@@ -6,9 +6,9 @@ An **offline, stdlib-only** local-folder file browser designed as the first adap
 
 From repository root:
 
-\`\`\`bash
+```bash
 python3 tools/selma_files_server.py --root "$HOME/Downloads" --port 8766
-\`\`\`
+```
 
 Open `http://127.0.0.1:8766` in the **same device**. Change the root to an accessible, user-owned directory, especially on Android/Termux (`~/storage/downloads` after granting Termux storage access). Stop with Ctrl+C. The app binds only to loopback; it does **not** accept connections from other devices.
 
