@@ -17,10 +17,31 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
-      - name: Extract AudioMatrixEngine source
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Safely extract AudioMatrixEngine source
+        shell: bash
         run: |
-          mkdir -p AudioMatrixEngine
-          tar -xJf AudioMatrixEngine/source-v0.2.tar.xz -C AudioMatrixEngine
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import PurePosixPath
+          import tarfile
+
+          with tarfile.open('AudioMatrixEngine/source-v0.2.tar.xz', 'r:xz') as package:
+              members = package.getmembers()
+              if sum(m.size for m in members if m.isfile()) > 150 * 1024 * 1024:
+                  raise ValueError('Archive exceeds 150 MiB expanded source limit')
+              for member in members:
+                  path = PurePosixPath(member.name)
+                  if (path.is_absolute() or '..' in path.parts or
+                          not (member.isfile() or member.isdir()) or
+                          'source-v0.2.tar.xz' in path.parts):
+                      raise ValueError(f'Unsafe source archive entry: {member.name}')
+              package.extractall(path='AudioMatrixEngine', filter='data')
+          PY
           test -f AudioMatrixEngine/settings.gradle
           test -f AudioMatrixEngine/app/src/main/AndroidManifest.xml
       - uses: actions/setup-java@v4
