@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from core.universal_files import FileBoundaryError, LocalFileProvider
+from tools.selma_files_server import parse_operation_payload
 
 
 class LocalProviderTests(unittest.TestCase):
@@ -53,6 +54,12 @@ class LocalProviderTests(unittest.TestCase):
         (self.root / 'a' / 'shortcut').symlink_to(self.root / 'a' / 'hello.txt')
         with self.assertRaises(FileBoundaryError):
             self.fs.copy_file('a/shortcut', 'b')
+
+    def test_operation_json_requires_object(self):
+        for payload in (b'[]', b'null', b'true', b'17', b'"text"'):
+            with self.subTest(payload=payload), self.assertRaises(FileBoundaryError):
+                parse_operation_payload(payload)
+        self.assertEqual('mkdir', parse_operation_payload(b'{"action":"mkdir"}')['action'])
 
     def test_copy_does_not_mutate_source(self):
         self.fs.copy_file('a/hello.txt', 'b')
