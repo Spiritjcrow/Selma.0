@@ -25,6 +25,21 @@ def parse_operation_payload(payload: bytes) -> dict:
     return request
 
 
+def public_error(exc: Exception) -> str:
+    """Return a bounded API error without host paths or OS details."""
+    if isinstance(exc, FileBoundaryError):
+        return str(exc)
+    if isinstance(exc, FileExistsError):
+        return 'destination already exists'
+    if isinstance(exc, FileNotFoundError):
+        return 'item not found'
+    if isinstance(exc, PermissionError):
+        return 'permission denied'
+    if isinstance(exc, (KeyError, TypeError, ValueError)):
+        return 'invalid request'
+    return 'operation failed'
+
+
 
 def serve(root: str, port: int = 8766) -> None:
     provider = LocalFileProvider(root)
@@ -64,7 +79,7 @@ def serve(root: str, port: int = 8766) -> None:
                     name = parse_qs(parts.query).get('path', [''])[0]
                     return self._json(200, provider.list_dir(name))
                 except (ValueError, FileNotFoundError, PermissionError, OSError) as exc:
-                    return self._json(400, {'error': str(exc)})
+                    return self._json(400, {'error': public_error(exc)})
             self._json(404, {'error': 'not found'})
 
         def do_POST(self):
@@ -95,7 +110,7 @@ def serve(root: str, port: int = 8766) -> None:
                     raise FileBoundaryError('unknown operation')
                 return self._json(200, result)
             except (ValueError, KeyError, TypeError, FileNotFoundError, FileExistsError, PermissionError, OSError) as exc:
-                return self._json(400, {'error': str(exc)})
+                return self._json(400, {'error': public_error(exc)})
 
     server = ThreadingHTTPServer(('127.0.0.1', port), Handler)
     print(f'Selma Universal Files: http://127.0.0.1:{port} (root: {provider.root})', flush=True)

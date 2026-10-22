@@ -4,7 +4,9 @@ import unittest
 from pathlib import Path
 
 from core.universal_files import FileBoundaryError, LocalFileProvider
-from tools.selma_files_server import parse_operation_payload
+from tools import selma_files_server
+
+parse_operation_payload = selma_files_server.parse_operation_payload
 
 
 class LocalProviderTests(unittest.TestCase):
@@ -65,6 +67,25 @@ class LocalProviderTests(unittest.TestCase):
         self.fs.copy_file('a/hello.txt', 'b')
         self.assertEqual((self.root / 'a' / 'hello.txt').read_bytes(), (self.root / 'b' / 'hello.txt').read_bytes())
 
+    def test_api_errors_do_not_disclose_host_paths(self):
+        self.assertTrue(hasattr(selma_files_server, 'public_error'))
+        public_error = selma_files_server.public_error
+        secret = '/private/selma/root/hidden.txt'
+        for error, expected in (
+            (PermissionError(13, 'denied', secret), 'permission denied'),
+            (OSError(5, 'I/O failure', secret), 'operation failed'),
+            (FileNotFoundError(2, 'missing', secret), 'item not found'),
+            (FileExistsError(17, 'exists', secret), 'destination already exists'),
+            (KeyError('source'), 'invalid request'),
+            (FileBoundaryError('symbolic links are not accessible'),
+             'symbolic links are not accessible'),
+        ):
+            with self.subTest(error=type(error).__name__):
+                message = public_error(error)
+                self.assertEqual(expected, message)
+                self.assertNotIn(secret, message)
+
 
 if __name__ == '__main__':
     unittest.main()
+
