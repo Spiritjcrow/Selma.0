@@ -72,6 +72,8 @@ def serve(root: str, port: int = 8766) -> None:
                 if length < 2 or length > 4096:
                     return self._json(413, {'error': 'invalid request size'})
                 request = json.loads(self.rfile.read(length))
+                if not isinstance(request, dict):
+                    raise FileBoundaryError('JSON object required')
                 action = request.get('action')
                 if action == 'copy':
                     result = provider.copy_file(request['source'], request['destination'])
