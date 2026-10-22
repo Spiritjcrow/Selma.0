@@ -50,6 +50,7 @@ jobs:
       - name: Validate JSON
         shell: bash
         run: |
+          set -euo pipefail
           python3 - <<'PY'
           import json, pathlib
           bad=[]
@@ -70,6 +71,7 @@ jobs:
       - name: Build-entrypoint summary
         shell: bash
         run: |
+          set -euo pipefail
           {
             echo '## Selma repository health'
             echo
