@@ -58,6 +58,8 @@ def serve(root: str, port: int = 8766) -> None:
             if parts.path == '/api/session':
                 return self._json(200, {'token': token, 'root': provider.root.name})
             if parts.path == '/api/list':
+                if not secrets.compare_digest(self.headers.get('X-Selma-Token', ''), token):
+                    return self._json(403, {'error': 'invalid session'})
                 try:
                     name = parse_qs(parts.query).get('path', [''])[0]
                     return self._json(200, provider.list_dir(name))
@@ -111,3 +113,4 @@ if __name__ == '__main__':
     parser.add_argument('--port', type=int, default=8766)
     args = parser.parse_args()
     serve(args.root, args.port)
+

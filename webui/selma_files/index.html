@@ -37,7 +37,8 @@ const dom=document.getElementById('panes');
 const message=document.getElementById('message');
 const alertMessage=(s,error=false)=>{message.textContent=s;message.className=error?'error':''};
 async function api(url,body){
- const res=await fetch(url,body?{method:'POST',headers:{'Content-Type':'application/json','X-Selma-Token':token},body:JSON.stringify(body)}:{});
+ const headers={};if(token)headers['X-Selma-Token']=token;if(body)headers['Content-Type']='application/json';
+ const res=await fetch(url,{method:body?'POST':'GET',headers,body:body?JSON.stringify(body):undefined});
  const data=await res.json();if(!res.ok)throw Error(data.error||'Operation failed');return data;
 }
 function make(tag,text,cls){const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el}
@@ -79,3 +80,4 @@ async function newFolder(i){const name=prompt('New folder name:');if(name===null
 (async()=>{try{const session=await api('/api/session');token=session.token;document.getElementById('root').textContent='ROOT: '+session.root+' · offline';await Promise.all([openPane(0,''),openPane(1,'')]);}catch(e){alertMessage(e.message,true)}})();
 </script>
 </body></html>
+
