@@ -71,7 +71,7 @@ def serve(root: str, port: int = 8766) -> None:
             if parts.path == '/':
                 return self._send(200, PAGE.read_bytes(), 'text/html; charset=utf-8')
             if parts.path == '/api/session':
-                return self._json(200, {'token': token, 'root': provider.root.name})
+                return self._json(200, {'token': token})
             if parts.path == '/api/list':
                 if not secrets.compare_digest(self.headers.get('X-Selma-Token', ''), token):
                     return self._json(403, {'error': 'invalid session'})

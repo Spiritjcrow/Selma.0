@@ -50,7 +50,10 @@ class FileServerAuthenticationTests(unittest.TestCase):
             for _ in range(50):
                 try:
                     with urllib.request.urlopen(session_url, timeout=0.2) as response:
-                        token = json.load(response)["token"]
+                        session = json.load(response)
+                        token = session["token"]
+                        self.assertNotIn("root", session)
+                        self.assertNotIn(Path(root).name, json.dumps(session))
                     break
                 except (OSError, urllib.error.URLError):
                     if process.poll() is not None:

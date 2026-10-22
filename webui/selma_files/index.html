@@ -77,7 +77,7 @@ async function transfer(i,action){const source=state[i].selected;if(!source)retu
 async function newFolder(i){const name=prompt('New folder name:');if(name===null)return;
  try{await api('/api/operation',{action:'mkdir',name,destination:state[i].path});await openPane(i,state[i].path);alertMessage('Folder created: '+name)}catch(e){alertMessage(e.message,true)}
 }
-(async()=>{try{const session=await api('/api/session');token=session.token;document.getElementById('root').textContent='ROOT: '+session.root+' · offline';await Promise.all([openPane(0,''),openPane(1,'')]);}catch(e){alertMessage(e.message,true)}})();
+(async()=>{try{const session=await api('/api/session');token=session.token;document.getElementById('root').textContent='Selected local folder · offline';await Promise.all([openPane(0,''),openPane(1,'')]);}catch(e){alertMessage(e.message,true)}})();
 </script>
 </body></html>
 
