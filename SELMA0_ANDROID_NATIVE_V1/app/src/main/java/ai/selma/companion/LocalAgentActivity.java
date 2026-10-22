@@ -79,7 +79,7 @@ public final class LocalAgentActivity extends Activity {
         root.addView(refresh);
 
         scroll = new ScrollView(this);
-        conversation = text("Welcome. This screen connects only to Selma on this phone.\n" +
+        conversation = text("Welcome. This screen connects to the Selma service on your phone.\n" +
                 "Start the Selma Termux server to begin chatting.", 15);
         conversation.setPadding(dp(4), dp(12), dp(4), dp(12));
         scroll.addView(conversation);
@@ -90,7 +90,7 @@ public final class LocalAgentActivity extends Activity {
         message.setMaxLines(4);
         message.setTextColor(Color.WHITE);
         message.setHintTextColor(Color.LTGRAY);
-        message.setHint("Message Selma privately…");
+        message.setHint("Message Selma…");
         message.setBackgroundTintList(android.content.res.ColorStateList.valueOf(PURPLE));
         root.addView(message, new LinearLayout.LayoutParams(-1, -2));
 
@@ -129,7 +129,7 @@ public final class LocalAgentActivity extends Activity {
         message.setText("");
         append("YOU", input);
         send.setEnabled(false);
-        status.setText("Thinking locally…");
+        status.setText("Waiting for Selma…");
         io.execute(() -> {
             try {
                 JSONObject payload = new JSONObject();
