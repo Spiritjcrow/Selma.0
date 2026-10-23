@@ -9,7 +9,9 @@ pet presence, pulse, speech, brain activity or intent. RF change index is an unv
 numeric observation and must never be interpreted as danger or probability.
 
 Build: Android SDK 35 + JDK 17 + Gradle 8.9, from this folder:
-`gradle :app:assembleDebug`.
+`bash tools/build-android-local.sh --allow-network` for a reviewed first dependency download,
+or `bash tools/build-android-local.sh` for a later cached offline build. The script runs source
+checks, assembles the debug APK, and records archive/signature/SHA-256 evidence.
 
 Pre-release acceptance requires an actual GitHub Actions *job* and signed-off
 physical Android 11/13+ device QA: Wi-Fi/BLE permissions denied, location/radios off,
@@ -17,7 +19,6 @@ throttle/cached reads, BLE stop, privacy/export, airplane mode and battery draw.
 No CI job or debug APK counts as device QA. CI startup_failure / zero jobs on repo issue #26
 must be treated as an external admission blocker, not a successful build.
 
-Fallback: extract the conversation artifact RF Sentinel Autopilot v0.2 and run
-`python3 tools/autopilot.py run` on a supported developer machine. It provides
-Python/C++/Kotlin source checks, NOT an Android APK without the SDK.
-See repository issue #81 for queued acceptance gates.
+See `ci/FALLBACK.md` for prerequisites and evidence boundaries. The optional GitLab example
+is inactive until a separately authorized repository and runner exist. See repository issue
+#81 for queued acceptance gates.
