@@ -86,13 +86,23 @@ def paginate_json(url: str, token: str, *, header_name="PRIVATE-TOKEN"):
         page += 1
 
 
+def github_paged(path: str, token: str):
+    page = 1
+    items = []
+    while True:
+        sep = "&" if "?" in path else "?"
+        batch = github_json(f"{path}{sep}per_page=100&page={page}", token)
+        if not isinstance(batch, list):
+            raise TransferError(f"Unexpected GitHub paginated response for {path}")
+        items.extend(batch)
+        if len(batch) < 100:
+            return items
+        page += 1
+
+
 def github_refs(token: str):
-    branches = github_json(f"/repos/{GITHUB_OWNER}/{GITHUB_REPO}/branches?per_page=100", token)
-    tags = github_json(f"/repos/{GITHUB_OWNER}/{GITHUB_REPO}/tags?per_page=100", token)
-    # Repository is small enough for one page today. Fail rather than silently
-    # claiming completeness if that changes.
-    if len(branches) >= 100 or len(tags) >= 100:
-        raise TransferError("GitHub ref count reached one-page safety limit; update verifier before continuing.")
+    branches = github_paged(f"/repos/{GITHUB_OWNER}/{GITHUB_REPO}/branches", token)
+    tags = github_paged(f"/repos/{GITHUB_OWNER}/{GITHUB_REPO}/tags", token)
     return {
         **{f"refs/heads/{b['name']}": b["commit"]["sha"] for b in branches},
         **{f"refs/tags/{t['name']}": t["commit"]["sha"] for t in tags},
@@ -163,7 +173,7 @@ def main() -> int:
     p.add_argument("--gitlab-base", default=DEFAULT_GITLAB_BASE)
     p.add_argument("--project-name", default=DEFAULT_PROJECT_NAME)
     p.add_argument("--aux-bundle", type=Path, help="Selma migration staging ZIP to store in GitLab Generic Packages")
-    p.add_argument("--package-version", default="2026-09-26")
+    p.add_argument("--package-version", default="2026-10-23")
     p.add_argument("--poll-seconds", type=int, default=15)
     p.add_argument("--timeout-seconds", type=int, default=3600)
     p.add_argument("--evidence-out", type=Path, default=Path("gitlab-transfer-evidence.json"))
