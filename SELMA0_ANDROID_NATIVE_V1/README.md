@@ -12,7 +12,7 @@ The native Android app now offers two explicit modes:
 3. Start an OpenAI-compatible local model server on `127.0.0.1:8080` for actual offline answers. The Android APK does **not** bundle a model or start a llama.cpp process.
 4. Install the native debug APK and tap **Local Selma + Avatar**. Tap **Check local agent** to confirm the server connection.
 
-**Offline privacy caveat:** The backend can fall back to an online model if `SELMA0_ONLINE_BASE_URL_V1` and `SELMA0_ONLINE_MODEL_V1` are configured. The local screen reports this configuration. For strict offline operation, unset the online fallback variables in the Termux server process and verify no network dependency remains. The app itself sends chat requests to loopback only. No guarantee of air-gapped inference is implied when the backend is configured for network fallback.
+**Strict offline contract:** The local screen requires an updated Termux backend advertising `offline_only_supported: true` and `local_llm_loopback: true`. If either is absent, Send stays disabled. Every native-local chat turn includes `offline_only: true` and `confirmed: true`. The router rejects remote model URLs, refuses HTTP redirects, bypasses environment proxies, and never attempts the configured cloud fallback for these requests. If no local model answers, the UI says unavailable. Cloud fallback remains an explicit possibility for *other clients* and the separate online companion. The local server may itself be a model-proxy executable; only the internet-disabled owned-device test can verify that the actual inference engine is local.
 
 The manifest allows no additional Android permissions beyond `INTERNET`. Cleartext HTTP is permitted only to `127.0.0.1` through a scoped Network Security Configuration; other cleartext endpoints remain blocked. No overlay, microphone, camera, SMS, AR/VR, root, ADB, or developer options are required for this UI.
 
@@ -35,7 +35,16 @@ The checked-in wrapper pins Gradle 8.9 and verifies its published SHA-256 checks
 - Install the APK on the user's actual Android device and confirm animation remains responsive.
 - Check that offline agent reports unavailable when the Termux server is stopped and connected when started.
 - Verify successful responses from a running on-device model with internet disabled.
-- With online fallback enabled, confirm the UI warns it is configured; with it unset, confirm it does not.
+- With a cloud fallback configured on the backend, confirm native-local chat still never calls it. Verify the status identifies the strict mode.
+- Confirm an older Termux server that lacks the offline-only handshake cannot receive messages from the new local screen.
+- Confirm a configured non-loopback model endpoint is rejected before any chat traffic.
+- Run the Python regression suite including `test_offline_only_router_v1.py` and `test_native_offline_contract_v1.py`. These are network-free source/unit checks, not Android proof.
 - Verify that cloud mode requires a tap and the native UI does not grant sensitive device permissions.
 
 This is **Fractal Build 01**: a native local-chat/avatar bridge. It is not yet a standalone offline LLM APK, wake-word service, autonomous heartbeat, self-modifying agent, or evidence of consciousness. Kai 9000 is an architectural reference only; no Kai source code has been copied.
+
+## GitHub Actions admission blocker
+
+On 2026-10-23, PR #78's earlier run `39869547320` and subsequent run `39974247710` ended with `startup_failure`; no jobs executed. Both the current branch and `main` have the same workflow configuration, and other Selma branches show the same signature. This is tracked in [issue #26](https://github.com/Spiritjcrow/Selma.0/issues/26).
+
+**Owner-side diagnostic order:** (1) check GitHub account billing/payment authorization and Actions quota for private repositories; (2) check repository Actions enablement and policy; (3) provide the two run IDs, synthetic `BuildFailed` path (when reported), and zero-job evidence to GitHub Support if not resolved. Similar failures have been associated with account billing locks, but that cause is **not verified** for this repository. Do not churn workflow YAML or bypass security restrictions merely to fabricate a green check.
