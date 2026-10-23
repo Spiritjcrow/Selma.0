@@ -11,8 +11,10 @@ import urllib.error
 import urllib.request
 import uuid
 
+from selma0_llm_router_android_v1 import _DenyRedirect
+
 BASE = "http://127.0.0.1:8765"
-OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), _DenyRedirect())
 
 
 def local_request(method, path, payload=None):
