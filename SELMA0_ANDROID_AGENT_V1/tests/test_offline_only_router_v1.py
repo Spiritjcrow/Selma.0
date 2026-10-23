@@ -4,7 +4,7 @@ import os
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -78,7 +78,7 @@ class OfflineOnlyRouterTests(unittest.TestCase):
 
     def test_strict_transport_ignores_proxy_env(self):
         router = self.router()
-        response = Mock()
+        response = MagicMock()
         response.__enter__ = Mock(return_value=response)
         response.__exit__ = Mock(return_value=False)
         response.read.return_value = b'{"choices":[{"message":{"content":"hello"}}]}'
