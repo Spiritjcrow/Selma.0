@@ -28,6 +28,12 @@ class ProjectContracts(unittest.TestCase):
         self.assertIn("Wi-Fi hardware unavailable.", code)
         self.assertNotIn("as WifiManager", code)
 
+    def test_main_activity_source_is_complete(self):
+        code = (ROOT / "app/src/main/java/org/selma/rfsentinel/MainActivity.kt").read_text()
+        self.assertIn("private fun exportCsv()", code)
+        self.assertIn("override fun onDestroy()", code)
+        self.assertTrue(code.rstrip().endswith("}"))
+
 if __name__ == "__main__":
     unittest.main()
 
