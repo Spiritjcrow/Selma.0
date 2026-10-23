@@ -6,8 +6,8 @@
 - Repository ID observed through the authenticated GitHub connection: `1157720425`
 - Visibility observed: private
 - Default branch: `main`
-- Baseline main commit observed before this migration-preparation branch was created: `9a7d3c02036aadbb7f7cf03a03877987af9dda11`
-- Migration-preparation branch: `selma-gitlab-migration-v1`
+- Current verified `main` commit at refresh: `f19a514846e7dcd26c90b461d7107d73dc8fc163`
+- Migration-preparation branch: `selma-gitlab-migration-v2`
 
 No GitLab destination is recorded here because no authenticated GitLab project has yet been made available to this workspace.
 
