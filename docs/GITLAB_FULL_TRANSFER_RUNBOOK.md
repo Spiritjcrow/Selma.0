@@ -59,18 +59,17 @@ The GitHub importer only migrates GitHub project data. Separate Selma material i
 
 The current staged auxiliary archive prepared in this workspace is:
 
-`SELMA_GITLAB_MIGRATION_STAGING_PRIVATE_2026-09-24.zip`
+`SELMA_GITLAB_PRIVATE_STAGING_2026-10-23.zip`
 
 Recorded evidence from its creation:
 
-- bytes: `37644331`
-- SHA-256: `65f5bffa87fcf69aa64dcf16ca8ffd0336758f8ba5a4fc68b48b3e27a058532a`
+- bytes and SHA-256 are written only after the refreshed archive is finalized; see `migration_evidence/CURRENT_TRANSFER_STATE.json` in the auxiliary package.
 
 The archive remains private migration material. Restricted account-defense material inside it must not be republished into a public project.
 
 ## Credential quarantine
 
-A connected Drive inventory surfaced one credential-like item. It is deliberately excluded from source-control migration. Any live credential must be rotated or revoked and recreated in GitLab only as a protected CI/CD variable or another appropriate secret store.
+The refreshed connected Drive inventory surfaced two credential-like items. It is deliberately excluded from source-control migration. Any live credential must be rotated or revoked and recreated in GitLab only as a protected CI/CD variable or another appropriate secret store.
 
 ## Canonical cutover
 
