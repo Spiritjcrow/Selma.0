@@ -11,6 +11,7 @@ The native Android app now offers two explicit modes:
 2. Start the installed runtime via `~/SELMA0_ANDROID_AGENT_V1/selma0_start_android_v1.sh`. It normally binds to `127.0.0.1:8765`.
 3. Start an OpenAI-compatible local model server on `127.0.0.1:8080` for actual offline answers. The Android APK does **not** bundle a model or start a llama.cpp process.
 4. Install the native debug APK and tap **Local Selma + Avatar**. Tap **Check local agent** to confirm the server connection.
+5. On the same device, switch **off both Wi-Fi and mobile data** and run `python ~/SELMA0_ANDROID_AGENT_V1/selma0_offline_acceptance_android_v1.py --chat` to test a fresh offline-only reply. Without `--chat`, the script checks the status handshake only. It cannot independently verify that the device radios were disabled.
 
 **Strict offline contract:** The local screen requires an updated Termux backend advertising `offline_only_supported: true` and `local_llm_loopback: true`. If either is absent, Send stays disabled. Every native-local chat turn includes `offline_only: true` and `confirmed: true`. The router rejects remote model URLs, refuses HTTP redirects, bypasses environment proxies, and never attempts the configured cloud fallback for these requests. If no local model answers, the UI says unavailable. Cloud fallback remains an explicit possibility for *other clients* and the separate online companion. The local server may itself be a model-proxy executable; only the internet-disabled owned-device test can verify that the actual inference engine is local.
 
