@@ -32,7 +32,7 @@ import java.util.Locale
  * Radio readings are NOT a detector for humans, vital signs, thoughts or threats.
  */
 class MainActivity : Activity() {
-    private lateinit var wifiManager: WifiManager
+    private var wifiManager: WifiManager? = null
     private lateinit var summary: TextView
     private lateinit var details: TextView
     private val handler = Handler(Looper.getMainLooper())
@@ -83,7 +83,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
         val panel = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(28, 32, 28, 28)
@@ -158,8 +158,14 @@ class MainActivity : Activity() {
 
     @Suppress("DEPRECATION")
     private fun startWifi() {
+        val manager = wifiManager
+        if (manager == null) {
+            notice = "Wi-Fi hardware unavailable."
+            render()
+            return
+        }
         try {
-            val started = wifiManager.startScan()
+            val started = manager.startScan()
             notice = if (started) "Wi-Fi scan requested." else
                 "Wi-Fi scan unavailable or throttled; results may be cached."
             readWifi(false)
@@ -174,8 +180,14 @@ class MainActivity : Activity() {
 
     @Suppress("DEPRECATION")
     private fun readWifi(fresh: Boolean) {
+        val manager = wifiManager
+        if (manager == null) {
+            notice = "Wi-Fi hardware unavailable."
+            render()
+            return
+        }
         try {
-            val results = wifiManager.scanResults
+            val results = manager.scanResults
             wifiCount = results.size
             wifiMean = results.map { it.level.toDouble() }.average().takeIf { !it.isNaN() }
             val timestampUs = results.maxOfOrNull { it.timestamp }
@@ -246,73 +258,3 @@ class MainActivity : Activity() {
         val ref = baseline ?: return null
         val current = snapshot() ?: return null
         return RfMetrics.variability(ref, current)
-    }
-    private fun saveRow() {
-        rows.add(Row(System.currentTimeMillis(), wifiCount, wifiMean, bleCount, bleMean, score()))
-        if (rows.size > 250) rows.removeAt(0)
-    }
-    private fun render() {
-        if (!::summary.isInitialized) return
-        summary.text = "Wi-Fi AP count: " + (wifiCount?.toString() ?: "not measured") +
-            "\nBLE radio count: " + (bleCount?.toString() ?: "not measured") +
-            "\nRF change index (0-100): " + (score()?.toString() ?: "not calibrated")
-        details.text = "\nWi-Fi mean RSSI: " + (wifiMean?.toString() ?: "unknown") +
-            "\nBLE mean RSSI: " + (bleMean?.toString() ?: "unknown") +
-            "\n" + wifiAge + "\n" + bleStatus +
-            "\nBLE active: " + scanningBle +
-            "\nStatus: " + notice +
-            "\n\nReadings are environmental radio observations ONLY. " +
-            "They cannot measure thoughts, conversations, heartbeats or attack intentions."
-    }
-    private fun exportCsv() {
-        if (rows.isEmpty()) {
-            notice = "Nothing to export; scan first."
-            render()
-            return
-        }
-        @Suppress("DEPRECATION")
-        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "text/csv"
-            putExtra(Intent.EXTRA_TITLE, "selma_rf_aggregate.csv")
-        }
-        @Suppress("DEPRECATION")
-        startActivityForResult(intent, 902)
-    }
-
-    @Deprecated("Simple local export without external dependencies")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != 902 || resultCode != RESULT_OK) return
-        val uri = data?.data ?: return
-        try {
-            val stream = contentResolver.openOutputStream(uri)
-                ?: throw java.io.IOException("No document output stream")
-            stream.bufferedWriter().use { writer ->
-                writer.appendLine("timestamp,wifi_ap_count,wifi_mean_rssi_dbm,ble_radio_count,ble_mean_rssi_dbm,rf_change_index")
-                val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US)
-                for (row in rows) {
-                    writer.appendLine(listOf(
-                        dateFormat.format(Date(row.timestamp)),
-                        row.wifiCount ?: "", row.wifiMean ?: "",
-                        row.bleCount ?: "", row.bleMean ?: "", row.score ?: ""
-                    ).joinToString(","))
-                }
-            }
-            notice = "Aggregate CSV exported; no device identifiers, MACs or SSIDs."
-        } catch (exc: Exception) {
-            notice = "Export failed: " + exc.javaClass.simpleName
-        }
-        render()
-    }
-
-    override fun onStop() {
-        stopBle() // Never leave BLE scanning in the background.
-        super.onStop()
-    }
-    override fun onDestroy() {
-        handler.removeCallbacksAndMessages(null)
-        unregisterReceiver(wifiReceiver)
-        super.onDestroy()
-    }
-}

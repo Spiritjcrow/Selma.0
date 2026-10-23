@@ -22,5 +22,12 @@ class ProjectContracts(unittest.TestCase):
         self.assertIn("radio change index", code)
         self.assertNotIn("attackProbability", code)
 
+    def test_optional_wifi_hardware_fails_closed(self):
+        code = (ROOT / "app/src/main/java/org/selma/rfsentinel/MainActivity.kt").read_text()
+        self.assertIn("private var wifiManager: WifiManager? = null", code)
+        self.assertIn("Wi-Fi hardware unavailable.", code)
+        self.assertNotIn("as WifiManager", code)
+
 if __name__ == "__main__":
     unittest.main()
+
