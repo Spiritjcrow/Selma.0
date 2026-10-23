@@ -40,6 +40,7 @@ public final class LocalAgentActivity extends Activity {
     private Button send;
     private ScrollView scroll;
     private OrbView avatar;
+    private volatile boolean offlineContractReady = false;
 
     private int dp(float value) {
         return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
@@ -96,6 +97,7 @@ public final class LocalAgentActivity extends Activity {
 
         send = new Button(this);
         send.setText("Send to local Selma");
+        send.setEnabled(false);
         send.setOnClickListener(v -> sendMessage());
         root.addView(send);
         setContentView(root);
@@ -108,24 +110,37 @@ public final class LocalAgentActivity extends Activity {
     }
 
     private void checkStatus() {
+        offlineContractReady = false;
+        if (send != null) send.setEnabled(false);
         status.setText("Checking 127.0.0.1:8765…");
         io.execute(() -> {
             try {
                 JSONObject result = request("GET", "/api/selma0/status/v1", null);
+                final boolean supportsOffline = result.optBoolean("offline_only_supported", false);
+                final boolean localEndpoint = result.optBoolean("local_llm_loopback", false);
                 final boolean fallback = result.optBoolean("online_fallback_configured", false);
-                runOnUiThread(() -> status.setText(fallback
-                        ? "Local server ready • online fallback is configured"
-                        : "Local server ready • no online fallback configured"));
+                runOnUiThread(() -> {
+                    offlineContractReady = supportsOffline && localEndpoint;
+                    send.setEnabled(offlineContractReady);
+                    status.setText(offlineContractReady
+                            ? (fallback
+                                ? "Offline-only enforced • cloud fallback exists but is disabled here"
+                                : "Offline-only bridge ready • local model required")
+                            : "Offline mode blocked: update Termux agent or use a loopback model URL.");
+                });
             } catch (Exception failure) {
-                runOnUiThread(() -> status.setText(
-                        "Local agent unavailable. Start the Selma Termux server."));
+                runOnUiThread(() -> {
+                    offlineContractReady = false;
+                    send.setEnabled(false);
+                    status.setText("Local agent unavailable. Start the Selma Termux server.");
+                });
             }
         });
     }
 
     private void sendMessage() {
         String input = message.getText().toString().trim();
-        if (input.isEmpty() || !send.isEnabled()) return;
+        if (input.isEmpty() || !send.isEnabled() || !offlineContractReady) return;
         message.setText("");
         append("YOU", input);
         send.setEnabled(false);
@@ -135,6 +150,7 @@ public final class LocalAgentActivity extends Activity {
                 JSONObject payload = new JSONObject();
                 payload.put("message", input);
                 payload.put("confirmed", true); // The Send tap is per-message authorization.
+                payload.put("offline_only", true); // Never use the online fallback.
                 JSONObject response = request("POST", "/api/selma0/chat/v1", payload);
                 if (!response.optBoolean("ok", false)) {
                     throw new IllegalStateException(response.optString("error", "Chat rejected"));
@@ -144,15 +160,17 @@ public final class LocalAgentActivity extends Activity {
                 String answer = result.optString("text", "No model response");
                 String route = result.optString("route", "unknown");
                 runOnUiThread(() -> {
-                    append("SELMA", answer);
-                    status.setText("Reply route: " + route);
-                    send.setEnabled(true);
+                    append("unavailable".equals(route) ? "SYSTEM" : "SELMA", answer);
+                    status.setText("unavailable".equals(route)
+                            ? "Local model unavailable; no cloud request was made"
+                            : "Reply route: " + route);
+                    send.setEnabled(offlineContractReady);
                 });
             } catch (Exception failure) {
                 runOnUiThread(() -> {
                     append("SYSTEM", "Could not complete the local request. Your message remains visible.");
                     status.setText("Local request failed");
-                    send.setEnabled(true);
+                    send.setEnabled(offlineContractReady);
                 });
             }
         });
