@@ -13,6 +13,7 @@ for file in \
   selma0_runtime_command_core_android_v1.py \
   selma0_runtime_device_crowrf_android_v1.py \
   selma0_llm_router_android_v1.py \
+  selma0_omniroute_termux_android_v1.sh \
   selma0_memory_android_v1.py \
   selma0_safety_guardian_android_v1.py \
   selma0_audit_log_android_v1.py \
@@ -28,6 +29,7 @@ for file in \
 do
   cp -f "$SOURCE_DIR/$file" "$SELMA0_HOME_V1/$file"
 done
+chmod +x "$SELMA0_HOME_V1/selma0_omniroute_termux_android_v1.sh"
 chmod +x "$SELMA0_HOME_V1/selma0_smoke_test_android_v1.sh"
 chmod +x "$SELMA0_HOME_V1/selma0_crowrf_hardware_validate_android_v1.sh"
 
@@ -56,5 +58,6 @@ echo "Start: $SELMA0_HOME_V1/selma0_start_android_v1.sh"
 echo "UI: http://127.0.0.1:8765"
 echo "Tools: http://127.0.0.1:8765/api/selma0/tools/v1"
 echo "Offline LLM default endpoint: http://127.0.0.1:8080/v1"
+echo "Optional OmniRoute (NOT installed automatically): $SELMA0_HOME_V1/selma0_omniroute_termux_android_v1.sh help"
 echo "Command Core, rootless Termux device bridge, measured CrowRF Wi-Fi acquisition, append-only CrowRF session storage, verified derived RSSI summaries, local audit, Replika migration, tests, smoke validation, and Safety Guardian deployed."
 echo "Termux:API Android companion app permissions are still required for Wi-Fi scan, location, notification, vibration, and SMS capabilities."
