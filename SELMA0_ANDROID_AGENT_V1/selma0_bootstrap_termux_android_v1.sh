@@ -13,6 +13,7 @@ for file in \
   selma0_runtime_command_core_android_v1.py \
   selma0_runtime_device_crowrf_android_v1.py \
   selma0_llm_router_android_v1.py \
+  selma0_offline_acceptance_android_v1.py \
   selma0_memory_android_v1.py \
   selma0_safety_guardian_android_v1.py \
   selma0_audit_log_android_v1.py \
@@ -54,6 +55,7 @@ echo "Validate software stack: $SELMA0_HOME_V1/selma0_smoke_test_android_v1.sh"
 echo "Validate one real CrowRF scan: $SELMA0_HOME_V1/selma0_crowrf_hardware_validate_android_v1.sh --confirmed-sensitive-scan"
 echo "Start: $SELMA0_HOME_V1/selma0_start_android_v1.sh"
 echo "UI: http://127.0.0.1:8765"
+echo "Offline-only probe: python $SELMA0_HOME_V1/selma0_offline_acceptance_android_v1.py --chat (disable Wi-Fi and mobile data first)"
 echo "Tools: http://127.0.0.1:8765/api/selma0/tools/v1"
 echo "Offline LLM default endpoint: http://127.0.0.1:8080/v1"
 echo "Command Core, rootless Termux device bridge, measured CrowRF Wi-Fi acquisition, append-only CrowRF session storage, verified derived RSSI summaries, local audit, Replika migration, tests, smoke validation, and Safety Guardian deployed."
