@@ -6,10 +6,6 @@ import urllib.request
 from urllib.parse import urlsplit
 
 
-class _NoRedirect:
-    """Placeholder for a redirect policy, installed below as a handler."""
-
-
 class _DenyRedirect(urllib.request.HTTPRedirectHandler):
     """Do not let loopback model servers redirect strict-offline traffic."""
 
