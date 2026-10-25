@@ -12,10 +12,10 @@ create table if not exists selma_kimi_bridge.handoffs (
   sender text not null check (sender in ('selma', 'kimi', 'sol_blue', 'sol_red')),
   recipient text not null check (recipient in ('selma', 'kimi', 'sol_blue', 'sol_red')),
   task_kind text not null check (task_kind in ('research', 'code_review', 'implementation', 'test_plan', 'security_triage', 'documentation')),
-  github_ref text not null check (github_ref ~ '^https://github\\.com/Spiritjcrow/[A-Za-z0-9_.-]+/(issues|pull)/[1-9][0-9]*$'),
+  github_ref text not null check (github_ref ~ '^https://github\.com/Spiritjcrow/[A-Za-z0-9_.-]+/(issues|pull)/[1-9][0-9]*$'),
   state text not null default 'queued' check (state in ('queued', 'claimed', 'submitted', 'blocked', 'rejected', 'closed')),
   result_code text not null default 'none' check (result_code in ('none', 'pass', 'needs_review', 'failed', 'unsupported', 'blocked', 'duplicate')),
-  artifact_ref text check (artifact_ref is null or artifact_ref ~ '^https://github\\.com/Spiritjcrow/[A-Za-z0-9_.-]+/(pull|issues|blob|commit)/'),
+  artifact_ref text check (artifact_ref is null or artifact_ref ~ '^https://github\.com/Spiritjcrow/[A-Za-z0-9_.-]+/(pull|issues|blob|commit)/'),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   expires_at timestamptz not null default (now() + interval '7 days'),
@@ -32,7 +32,7 @@ create table if not exists selma_kimi_bridge.events (
   actor text not null check (actor in ('selma', 'kimi', 'sol_blue', 'sol_red', 'human')),
   event_kind text not null check (event_kind in ('created', 'claimed', 'progress', 'submitted', 'blocked', 'rejected', 'closed')),
   result_code text not null default 'none' check (result_code in ('none', 'pass', 'needs_review', 'failed', 'unsupported', 'blocked', 'duplicate')),
-  artifact_ref text check (artifact_ref is null or artifact_ref ~ '^https://github\\.com/Spiritjcrow/[A-Za-z0-9_.-]+/(pull|issues|blob|commit)/'),
+  artifact_ref text check (artifact_ref is null or artifact_ref ~ '^https://github\.com/Spiritjcrow/[A-Za-z0-9_.-]+/(pull|issues|blob|commit)/'),
   happened_at timestamptz not null default now()
 );
 create index if not exists selma_kimi_events_handoff_idx
