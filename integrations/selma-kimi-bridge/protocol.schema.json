@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Spiritjcrow/Selma.0/blob/feature/selma-kimi-bridge/integrations/selma-kimi-bridge/protocol.schema.json",
+  "title": "Selma-Kimi Handoff v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol", "idempotency_key", "sender", "recipient", "task_kind", "github_ref", "state"],
+  "properties": {
+    "protocol": {"const": "selma-kimi/1"},
+    "idempotency_key": {"type": "string", "format": "uuid"},
+    "sender": {"enum": ["selma", "kimi", "sol_blue", "sol_red"]},
+    "recipient": {"enum": ["selma", "kimi", "sol_blue", "sol_red"]},
+    "task_kind": {"enum": ["research", "code_review", "implementation", "test_plan", "security_triage", "documentation"]},
+    "github_ref": {"type": "string", "pattern": "^https://github\\.com/Spiritjcrow/[A-Za-z0-9_.-]+/(issues|pull)/[1-9][0-9]*$"},
+    "state": {"enum": ["queued", "claimed", "submitted", "blocked", "rejected", "closed"]},
+    "result_code": {"enum": ["none", "pass", "needs_review", "failed", "unsupported", "blocked", "duplicate"]},
+    "artifact_ref": {"type": ["string", "null"], "pattern": "^https://github\\.com/Spiritjcrow/[A-Za-z0-9_.-]+/(pull|issues|blob|commit)/"}
+  }
+}
