@@ -197,7 +197,7 @@ class WizardHandler(BaseHTTPRequestHandler):
                                                  start_new_session=True)
                         # Detect an immediate crash without claiming HTTP/model readiness.
                         try:
-                            early_exit = child.wait(timeout=0.25)
+                            early_exit = child.wait(timeout=1.5)
                         except subprocess.TimeoutExpired:
                             early_exit = None
                         if early_exit is not None:
