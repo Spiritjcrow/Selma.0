@@ -119,16 +119,17 @@ const qs=id=>document.getElementById(id);
 qs('scene').onchange=()=>qs('sky').className=qs('scene').value;
 qs('motion').onchange=()=>document.body.classList.toggle('reduced',qs('motion').value==='reduced');
 (async()=>{try{let r=await fetch('/diagnostics');let j=await r.json();qs('profile').value=j.recommended;qs('measured').textContent='Available RAM: '+(j.available_ram_mb??'unknown')+' MB. Free app storage: '+(j.storage_free_mb??'unknown')+' MB.';}catch(e){qs('measured').textContent='Resource check unavailable. Eco is safest.';qs('profile').value='eco';}})();
-qs('start').onclick=async()=>{qs('start').disabled=true;qs('result').textContent='Saving and starting...';try{
+qs('start').onclick=async()=>{qs('start').disabled=true;qs('result').textContent='Saving and starting...';let launchPending=false;try{
  const data={profile:qs('profile').value,scene:qs('scene').value,motion:qs('motion').value};
  let r=await fetch('/start',{method:'POST',headers:{'Content-Type':'application/json','X-Selma-Setup-Token':token},body:JSON.stringify(data)});let j=await r.json();
  if(!r.ok)throw Error(j.error||'Unable to start');
  if(j.status==='launch_pending' && j.ready===false){
+  launchPending=true;qs('start').textContent='Launch requested';
   qs('result').innerHTML='Preferences saved. Selma runtime launch pending; readiness NOT verified. <a href="http://127.0.0.1:8765" target="_blank" rel="noopener">Try Selma chat after startup</a>. If unavailable, check the Termux startup log.';
  }else{
   qs('result').textContent='Unexpected launch response; readiness NOT verified. Check the Termux startup log.';
  }
- }catch(e){qs('result').textContent=e.message;}finally{qs('start').disabled=false;}};
+ }catch(e){qs('result').textContent=e.message;}finally{qs('start').disabled=launchPending;}};
 </script></html>'''
 
 
