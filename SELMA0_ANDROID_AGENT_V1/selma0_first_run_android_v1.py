@@ -212,7 +212,7 @@ class WizardHandler(BaseHTTPRequestHandler):
                     except OSError:
                         return self.reply(503, {"error": "startup failed and setup rollback failed; manual recovery required"})
                     return self.reply(503, {"error": f"startup failed: {exc}; setup remains incomplete"})
-                return self.reply(202, {"ok": True, "launched": True, "url": "http://127.0.0.1:8765", "log": str(log_path)})
+                return self.reply(202, {"ok": True, "launched": True, "ready": False, "status": "launch_pending", "url": "http://127.0.0.1:8765", "log": str(log_path)})
         except (ValueError, TypeError, json.JSONDecodeError) as exc:
             return self.reply(400, {"error": str(exc)})
         except OSError as exc:
