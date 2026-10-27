@@ -123,7 +123,11 @@ qs('start').onclick=async()=>{qs('start').disabled=true;qs('result').textContent
  const data={profile:qs('profile').value,scene:qs('scene').value,motion:qs('motion').value};
  let r=await fetch('/start',{method:'POST',headers:{'Content-Type':'application/json','X-Selma-Setup-Token':token},body:JSON.stringify(data)});let j=await r.json();
  if(!r.ok)throw Error(j.error||'Unable to start');
- qs('result').innerHTML='Preferences saved. Selma runtime launch requested. <a href="http://127.0.0.1:8765" target="_blank" rel="noopener">Open Selma chat</a>. If the chat is unavailable, check the Termux startup log.';
+ if(j.status==='launch_pending' && j.ready===false){
+  qs('result').innerHTML='Preferences saved. Selma runtime launch pending; readiness NOT verified. <a href="http://127.0.0.1:8765" target="_blank" rel="noopener">Try Selma chat after startup</a>. If unavailable, check the Termux startup log.';
+ }else{
+  qs('result').textContent='Unexpected launch response; readiness NOT verified. Check the Termux startup log.';
+ }
  }catch(e){qs('result').textContent=e.message;}finally{qs('start').disabled=false;}};
 </script></html>'''
 
