@@ -192,9 +192,20 @@ class WizardHandler(BaseHTTPRequestHandler):
                 log_path = HOME / "selma0_startup_v1.log"
                 try:
                     with log_path.open("ab") as log:
-                        subprocess.Popen([sys.executable, str(RUNTIME)], cwd=ROOT, env=env,
-                                         stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
-                                         start_new_session=True)
+                        child = subprocess.Popen([sys.executable, str(RUNTIME)], cwd=ROOT, env=env,
+                                                 stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
+                                                 start_new_session=True)
+                        # Detect an immediate crash without claiming HTTP/model readiness.
+                        try:
+                            early_exit = child.wait(timeout=0.25)
+                        except subprocess.TimeoutExpired:
+                            early_exit = None
+                        if early_exit is not None:
+                            try:
+                                PREFS.unlink()
+                            except OSError:
+                                return self.reply(503, {"error": "runtime exited and setup rollback failed; manual recovery required"})
+                            return self.reply(503, {"error": f"runtime exited during startup (code {early_exit}); setup remains incomplete"})
                 except OSError as exc:
                     try:
                         PREFS.unlink()
