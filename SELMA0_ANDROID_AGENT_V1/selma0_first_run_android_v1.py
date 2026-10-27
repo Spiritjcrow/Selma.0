@@ -11,6 +11,7 @@ from pathlib import Path
 import secrets
 import subprocess
 import sys
+from threading import Lock
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = Path(__file__).resolve().parent
@@ -20,6 +21,7 @@ RUNTIME = ROOT / "selma0_runtime_device_crowrf_android_v1.py"
 HOST = "127.0.0.1"
 PORT = 8766
 TOKEN = secrets.token_hex(24)
+START_LOCK = Lock()  # Serialize setup attempts to avoid duplicate launches.
 
 
 def measurements():
@@ -178,18 +180,28 @@ class WizardHandler(BaseHTTPRequestHandler):
             profile = checked_preferences(opts)
             if not RUNTIME.is_file():
                 return self.reply(503, {"error": "runtime script is missing; setup remains incomplete"})
-            save_preferences(opts)
-            env = dict(os.environ)
-            env["SELMA0_BASE_V1"] = str(HOME)
-            env["SELMA0_HOST_V1"] = "127.0.0.1"
-            env["SELMA0_PORT_V1"] = "8765"
-            env["SELMA0_LLM_TIMEOUT_V1"] = "30" if profile["profile"] == "eco" else "45"
-            log_path = HOME / "selma0_startup_v1.log"
-            with log_path.open("ab") as log:
-                subprocess.Popen([sys.executable, str(RUNTIME)], cwd=ROOT, env=env,
-                                 stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
-                                 start_new_session=True)
-            return self.reply(202, {"ok": True, "launched": True, "url": "http://127.0.0.1:8765", "log": str(log_path)})
+            with START_LOCK:
+                if PREFS.exists():
+                    return self.reply(409, {"error": "setup already completed; use the existing launcher"})
+                save_preferences(opts)
+                env = dict(os.environ)
+                env["SELMA0_BASE_V1"] = str(HOME)
+                env["SELMA0_HOST_V1"] = "127.0.0.1"
+                env["SELMA0_PORT_V1"] = "8765"
+                env["SELMA0_LLM_TIMEOUT_V1"] = "30" if profile["profile"] == "eco" else "45"
+                log_path = HOME / "selma0_startup_v1.log"
+                try:
+                    with log_path.open("ab") as log:
+                        subprocess.Popen([sys.executable, str(RUNTIME)], cwd=ROOT, env=env,
+                                         stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
+                                         start_new_session=True)
+                except OSError as exc:
+                    try:
+                        PREFS.unlink()
+                    except OSError:
+                        return self.reply(503, {"error": "startup failed and setup rollback failed; manual recovery required"})
+                    return self.reply(503, {"error": f"startup failed: {exc}; setup remains incomplete"})
+                return self.reply(202, {"ok": True, "launched": True, "url": "http://127.0.0.1:8765", "log": str(log_path)})
         except (ValueError, TypeError, json.JSONDecodeError) as exc:
             return self.reply(400, {"error": str(exc)})
         except OSError as exc:
