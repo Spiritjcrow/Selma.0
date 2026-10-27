@@ -73,6 +73,7 @@ class TestStartRecovery(unittest.TestCase):
                  mock.patch.object(setup, "HOME", Path(temp)), \
                  mock.patch.object(setup, "save_preferences", return_value=setup.checked_preferences(options)) as save, \
                  mock.patch.object(setup.subprocess, "Popen") as spawn:
+                spawn.return_value.wait.side_effect = setup.subprocess.TimeoutExpired("synthetic runtime", 0.25)
                 handler.do_POST()
         self.assertEqual(responses[0][0], 202)
         save.assert_called_once_with(options)
@@ -111,11 +112,32 @@ class TestStartRecovery(unittest.TestCase):
                  mock.patch.object(setup, "save_preferences", side_effect=lambda value: real_save(value, prefs)), \
                  mock.patch.object(setup.subprocess, "Popen") as spawn:
                 handler, responses = self.handler_for(options)
+                spawn.return_value.wait.side_effect = setup.subprocess.TimeoutExpired("synthetic runtime", 0.25)
                 handler.do_POST()
                 self.assertEqual(responses[0][0], 202)
                 self.assertTrue(prefs.is_file())
                 self.assertEqual(prefs.stat().st_mode & 0o777, 0o600)
                 spawn.assert_called_once()
+
+    def test_immediate_child_exit_does_not_mark_setup_complete(self):
+        options = {"profile": "eco", "scene": "coast", "motion": "reduced"}
+        with tempfile.TemporaryDirectory() as temp:
+            prefs = Path(temp) / "selma0_setup_v1.json"
+            real_save = setup.save_preferences
+            with mock.patch.object(setup, "HOME", Path(temp)), \
+                 mock.patch.object(setup, "PREFS", prefs), \
+                 mock.patch.object(setup, "RUNTIME", Path(__file__)), \
+                 mock.patch.object(setup, "save_preferences", side_effect=lambda value: real_save(value, prefs)), \
+                 mock.patch.object(setup.subprocess, "Popen") as spawn:
+                for exit_code in (0, 7):
+                    with self.subTest(exit_code=exit_code):
+                        spawn.return_value.wait.return_value = exit_code
+                        handler, responses = self.handler_for(options)
+                        handler.do_POST()
+                        self.assertEqual(responses[0][0], 503)
+                        self.assertIn("incomplete", responses[0][1]["error"])
+                        self.assertFalse(prefs.exists(), "immediate exit must permit first-run retry")
+                self.assertEqual(spawn.call_count, 2)
 
     def test_completed_setup_rejects_duplicate_launch(self):
         options = {"profile": "eco", "scene": "coast", "motion": "normal"}
