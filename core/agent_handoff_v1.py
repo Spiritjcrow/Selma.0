@@ -18,6 +18,7 @@ import re
 import secrets
 import time
 from dataclasses import dataclass
+from threading import Lock
 from typing import Any
 
 VERSION = 1
@@ -167,11 +168,18 @@ class HandoffVerifier:
         self._session = session
         self._capacity = replay_capacity
         self._seen: dict[str, int] = {}
+        self._lock = Lock()
 
     def verify(self, wire: str, *, now: int | None = None) -> VerifiedHandoff:
         current = _now_seconds(now)
-        if not isinstance(wire, str) or len(wire.encode("utf-8")) > MAX_WIRE_BYTES:
-            raise HandoffRejected("invalid handoff wire size/type")
+        if not isinstance(wire, str):
+            raise HandoffRejected("invalid handoff wire type")
+        try:
+            encoded_size = len(wire.encode("utf-8"))
+        except UnicodeError as exc:
+            raise HandoffRejected("invalid handoff encoding") from exc
+        if encoded_size > MAX_WIRE_BYTES:
+            raise HandoffRejected("invalid handoff wire size")
         try:
             envelope = json.loads(wire, object_pairs_hook=_reject_duplicates)
         except (ValueError, TypeError, UnicodeError) as exc:
@@ -205,12 +213,13 @@ class HandoffVerifier:
             raise HandoffRejected("handoff integrity verification failed")
         # Expired entries can be safely evicted. Live entries are never evicted
         # just to accept another message: capacity exhaustion fails closed.
-        self._seen = {k: expiry for k, expiry in self._seen.items() if expiry > current}
-        if nonce in self._seen:
-            raise HandoffRejected("handoff replay")
-        if len(self._seen) >= self._capacity:
-            raise HandoffRejected("replay cache capacity exhausted")
-        self._seen[nonce] = expires
+        with self._lock:
+            self._seen = {k: expiry for k, expiry in self._seen.items() if expiry > current}
+            if nonce in self._seen:
+                raise HandoffRejected("handoff replay")
+            if len(self._seen) >= self._capacity:
+                raise HandoffRejected("replay cache capacity exhausted")
+            self._seen[nonce] = expires
         payload = envelope["payload"]
         return VerifiedHandoff(
             issuer=envelope["issuer"], recipient=envelope["recipient"],
