@@ -1,5 +1,6 @@
 """Offline negative regression tests for #85. No secrets, network, or device required."""
 
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import hmac
 import json
@@ -164,6 +165,25 @@ class AgentHandoffSecurityTests(unittest.TestCase):
             patch.object(urllib.request, "urlopen", side_effect=AssertionError("network")),
         ):
             self.assertEqual("queued", self.gate().verify(self.wire(), now=1000).status)
+
+    def test_concurrent_consumers_cannot_accept_same_nonce(self):
+        gate = self.gate()
+        wire = self.wire()
+
+        def attempt(_):
+            try:
+                gate.verify(wire, now=1000)
+                return True
+            except HandoffRejected:
+                return False
+
+        with ThreadPoolExecutor(max_workers=16) as workers:
+            results = list(workers.map(attempt, range(64)))
+        self.assertEqual(1, sum(results))
+
+    def test_invalid_unicode_is_handled_as_rejection(self):
+        with self.assertRaises(HandoffRejected):
+            self.gate().verify("\\ud800", now=1000)
 
 
 if __name__ == "__main__":
