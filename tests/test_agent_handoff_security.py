@@ -183,7 +183,7 @@ class AgentHandoffSecurityTests(unittest.TestCase):
 
     def test_invalid_unicode_is_handled_as_rejection(self):
         with self.assertRaises(HandoffRejected):
-            self.gate().verify("\\ud800", now=1000)
+            self.gate().verify("\ud800", now=1000)
 
 
 if __name__ == "__main__":
