@@ -175,9 +175,10 @@ class WizardHandler(BaseHTTPRequestHandler):
             if not 1 <= n <= 2048:
                 raise ValueError("invalid request size")
             opts = json.loads(self.rfile.read(n))
-            profile = save_preferences(opts)
+            profile = checked_preferences(opts)
             if not RUNTIME.is_file():
-                return self.reply(503, {"error": "runtime script is missing; configuration was saved"})
+                return self.reply(503, {"error": "runtime script is missing; setup remains incomplete"})
+            save_preferences(opts)
             env = dict(os.environ)
             env["SELMA0_BASE_V1"] = str(HOME)
             env["SELMA0_HOST_V1"] = "127.0.0.1"
