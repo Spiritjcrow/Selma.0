@@ -89,5 +89,51 @@ class TestStartRecovery(unittest.TestCase):
         save.assert_not_called()
 
 
+    def test_spawn_failure_does_not_mark_setup_complete_and_retry_succeeds(self):
+        options = {"profile": "eco", "scene": "coast", "motion": "reduced"}
+        with tempfile.TemporaryDirectory() as temp:
+            prefs = Path(temp) / "selma0_setup_v1.json"
+            real_save = setup.save_preferences
+            with mock.patch.object(setup, "HOME", Path(temp)), \
+                 mock.patch.object(setup, "PREFS", prefs), \
+                 mock.patch.object(setup, "RUNTIME", Path(__file__)), \
+                 mock.patch.object(setup, "save_preferences", side_effect=lambda value: real_save(value, prefs)), \
+                 mock.patch.object(setup.subprocess, "Popen", side_effect=OSError("synthetic spawn failure")) as spawn:
+                handler, responses = self.handler_for(options)
+                handler.do_POST()
+                self.assertEqual(responses[0][0], 503)
+                self.assertIn("incomplete", responses[0][1]["error"])
+                self.assertFalse(prefs.exists(), "failed spawn must not skip first-run on restart")
+                spawn.assert_called_once()
+            with mock.patch.object(setup, "HOME", Path(temp)), \
+                 mock.patch.object(setup, "PREFS", prefs), \
+                 mock.patch.object(setup, "RUNTIME", Path(__file__)), \
+                 mock.patch.object(setup, "save_preferences", side_effect=lambda value: real_save(value, prefs)), \
+                 mock.patch.object(setup.subprocess, "Popen") as spawn:
+                handler, responses = self.handler_for(options)
+                handler.do_POST()
+                self.assertEqual(responses[0][0], 202)
+                self.assertTrue(prefs.is_file())
+                self.assertEqual(prefs.stat().st_mode & 0o777, 0o600)
+                spawn.assert_called_once()
+
+    def test_completed_setup_rejects_duplicate_launch(self):
+        options = {"profile": "eco", "scene": "coast", "motion": "normal"}
+        with tempfile.TemporaryDirectory() as temp:
+            prefs = Path(temp) / "selma0_setup_v1.json"
+            prefs.write_text('{"version":1}', encoding="utf-8")
+            with mock.patch.object(setup, "PREFS", prefs), \
+                 mock.patch.object(setup, "RUNTIME", Path(__file__)), \
+                 mock.patch.object(setup, "save_preferences") as save, \
+                 mock.patch.object(setup.subprocess, "Popen") as spawn:
+                handler, responses = self.handler_for(options)
+                handler.do_POST()
+                self.assertEqual(responses[0][0], 409)
+                save.assert_not_called()
+                spawn.assert_not_called()
+                self.assertEqual(prefs.read_text(encoding="utf-8"), '{"version":1}')
+
+
+
 if __name__ == "__main__":
     unittest.main()
