@@ -241,13 +241,14 @@ def build_android():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--android", action="store_true", help="Also build the debug Android APK (Java 17 and Android SDK required)")
+    parser.add_argument("--expected-sha", metavar="SHA40", help="Exact commit SHA independently copied from the GitHub PR (not fetched or trusted automatically)")
     args = parser.parse_args()
     os.chdir(ROOT)
     if sys.version_info < (3, 12):
         parser.error("Python 3.12 or newer is required.")
 
     print("Selma local CI | independent of GitHub Actions | no hosted runner charges", flush=True)
-    revision()
+    revision(expected_sha=args.expected_sha)
     run([sys.executable, "-m", "compileall", "-q", "SELMA0_ANDROID_AGENT_V1", "adapters", "core", "tests", "tools"])
     run([sys.executable, "SELMA0_ANDROID_AGENT_V1/tests/test_procurement_gate_v1.py"])
     run([sys.executable, "-m", "unittest", "discover", "-s", "SELMA0_ANDROID_AGENT_V1/tests", "-p", "test_*.py", "-v"])
