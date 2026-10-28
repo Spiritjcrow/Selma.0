@@ -115,6 +115,12 @@ def _evidence_trace(items: tuple[str, ...]) -> str:
             return "ambiguous_unverified"
         if not detail.strip():
             return "unattributed_unverified"
+        # A multiline or invisible-control detail can smuggle a second
+        # provenance label into one evidence item. Keep the raw evidence
+        # (untrusted text), but downgrade its derived trace metadata.
+        if any(unicodedata.category(char) in UNSAFE_IDENTIFIER_CATEGORIES
+               for char in detail):
+            return "ambiguous_unverified"
         found.add(normalized)
     return ("source_labeled_unverified" if found == required
             else "unattributed_unverified")
