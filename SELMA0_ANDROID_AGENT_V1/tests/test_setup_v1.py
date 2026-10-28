@@ -194,5 +194,60 @@ class TestStartRecovery(unittest.TestCase):
 
 
 
+
+class TestStartupLogSafety(unittest.TestCase):
+    """Offline filesystem checks; no Android device or live runtime."""
+
+    def test_symlink_log_rejected_and_first_run_can_retry(self):
+        opts = {"profile": "eco", "scene": "coast", "motion": "reduced"}
+        with tempfile.TemporaryDirectory() as temp:
+            home = Path(temp)
+            prefs = home / "selma0_setup_v1.json"
+            victim = home / "unrelated.txt"
+            victim.write_text("unchanged", encoding="utf-8")
+            log = home / "selma0_startup_v1.log"
+            try:
+                log.symlink_to(victim)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks unavailable on this host")
+            handler, replies = TestStartRecovery.handler_for(opts)
+            real_save = setup.save_preferences
+            with mock.patch.object(setup, "HOME", home), \
+                 mock.patch.object(setup, "PREFS", prefs), \
+                 mock.patch.object(setup, "RUNTIME", Path(__file__)), \
+                 mock.patch.object(setup, "save_preferences",
+                                   side_effect=lambda value: real_save(value, prefs)), \
+                 mock.patch.object(setup.subprocess, "Popen") as spawn:
+                handler.do_POST()
+            self.assertEqual(replies[0][0], 503)
+            self.assertIn("incomplete", replies[0][1]["error"])
+            self.assertFalse(prefs.exists())
+            self.assertEqual(victim.read_text(encoding="utf-8"), "unchanged")
+            spawn.assert_not_called()
+
+    def test_hardlinked_log_rejected_without_writing_target(self):
+        with tempfile.TemporaryDirectory() as temp:
+            home = Path(temp)
+            victim = home / "unrelated.txt"
+            victim.write_bytes(b"unchanged")
+            try:
+                setup.os.link(victim, home / "selma0_startup_v1.log")
+            except (OSError, NotImplementedError):
+                self.skipTest("hardlinks unavailable on this host")
+            with self.assertRaises(OSError):
+                setup.open_startup_log(home / "selma0_startup_v1.log")
+            self.assertEqual(victim.read_bytes(), b"unchanged")
+
+    def test_regular_log_appends_and_uses_private_mode(self):
+        with tempfile.TemporaryDirectory() as temp:
+            log = Path(temp) / "selma0_startup_v1.log"
+            log.write_bytes(b"old")
+            log.chmod(0o644)
+            with setup.open_startup_log(log) as stream:
+                stream.write(b"new")
+            self.assertEqual(log.read_bytes(), b"oldnew")
+            self.assertEqual(log.stat().st_mode & 0o777, 0o600)
+
+
 if __name__ == "__main__":
     unittest.main()
