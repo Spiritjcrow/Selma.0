@@ -27,5 +27,13 @@ class TestFirstRunPendingCopy(unittest.TestCase):
         self.assertIn('"status": "launch_pending"', source)
 
 
+    def test_timeout_does_not_leave_stale_pending_message(self):
+        page = setup.PAGE
+        self.assertIn("if(++attempts>60)", page)
+        self.assertIn("Launch remains unverified after two minutes.", page)
+        self.assertIn("Check the Termux startup log and existing launcher before any retry", page)
+        self.assertIn("clearInterval(watcher);return;", page)
+
+
 if __name__ == "__main__":
     unittest.main()
