@@ -73,3 +73,18 @@ class MappingKeyGuardTests(unittest.TestCase):
 
         self.assertEqual(record()["task_id"],
                          HandoffMessage.from_mapping(UniqueMapping(record())).task_id)
+
+    def test_rejects_list_subclass_that_spoofs_evidence_bound(self):
+        class MisleadingList(list):
+            def __len__(self):
+                return 1
+
+        item = record("tester", "pass")
+        item["evidence"] = MisleadingList([f"note-{n}" for n in range(11)])
+        with self.assertRaisesRegex(ValueError, "at most 10 strings"):
+            HandoffMessage.from_mapping(item)
+
+    def test_exact_list_bound_still_accepts_ten(self):
+        item = record("tester", "pass")
+        item["evidence"] = [f"note-{n}" for n in range(10)]
+        self.assertEqual(10, len(HandoffMessage.from_mapping(item).evidence))
