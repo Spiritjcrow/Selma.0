@@ -106,6 +106,22 @@ class HandoffTests(unittest.TestCase):
             validate_exchange([record(), item])["evidence_trace"],
         )
 
+    def test_structural_identifiers_reject_invisible_or_control_text(self):
+        # Source-only negative cases. A label is never an authenticated actor.
+        unsafe = ("\x00", "\n", "\u202e", "\u200b", "\u2028", "\ud800")
+        for field in ("task_id", "repository", "ref", "actor_role", "status", "artifact"):
+            for char in unsafe:
+                with self.subTest(field=field, codepoint=hex(ord(char))):
+                    item = record()
+                    item[field] += char
+                    with self.assertRaisesRegex(ValueError, "unsafe identifier characters"):
+                        HandoffMessage.from_mapping(item)
+
+    def test_structural_identifier_allows_visible_non_ascii_text(self):
+        item = record()
+        item["task_id"] = "SELMA-Café-001"
+        self.assertEqual("SELMA-Café-001", HandoffMessage.from_mapping(item).task_id)
+
     def test_builder_cannot_claim_verified_state(self):
         with self.assertRaisesRegex(ValueError, "role cannot report"):
             HandoffMessage.from_mapping(record("builder", "pass"))
