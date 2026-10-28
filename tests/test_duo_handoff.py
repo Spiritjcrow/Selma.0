@@ -99,7 +99,7 @@ class HandoffTests(unittest.TestCase):
 
     def test_control_in_provenance_label_is_ambiguous(self):
         # strip() must not conceal controls in source/command/observed labels.
-        for control in ("\\t", "\\r", "\\n", "\\u2028", "\\u2029"):
+        for control in ("\t", "\r", "\n", "\u2028", "\u2029"):
             with self.subTest(control=repr(control)):
                 item = record("tester", "pass")
                 item["evidence"] = [
