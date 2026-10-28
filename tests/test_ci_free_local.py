@@ -71,6 +71,20 @@ class LocalCIFallbackTests(unittest.TestCase):
             with self.assertRaises(subprocess.TimeoutExpired):
                 ci.run([sys.executable, "-c", "import time; time.sleep(10)"], timeout=0.1)
 
+    def test_nonzero_child_process_stops_validation(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(ci, "ROOT", Path(temp)):
+            with self.assertRaises(subprocess.CalledProcessError):
+                ci.run([sys.executable, "-c", "import sys; sys.exit(7)"], timeout=3)
+
+    def test_windows_bash_detection_rejects_wsl_system_bash(self):
+        with patch.object(
+            ci.shutil, "which", side_effect=lambda name: {
+                "git": "/fake/Git/cmd/git.exe",
+                "bash": "/Windows/System32/bash.exe",
+            }.get(name)
+        ), patch.object(Path, "is_file", return_value=False):
+            self.assertIsNone(ci.find_bash(windows=True))
+
     def test_missing_bash_has_honest_partial_result(self):
         with patch.object(ci, "find_bash", return_value=None):
             self.assertFalse(ci.validate_shell())
@@ -86,6 +100,9 @@ class LocalCIFallbackTests(unittest.TestCase):
                 self.assertEqual(2, run_mock.call_count)
                 self.assertEqual(60, run_mock.call_args_list[0].kwargs["timeout"])
                 self.assertEqual(ci.SMOKE_TIMEOUT_SECONDS, run_mock.call_args_list[1].kwargs["timeout"])
+                env = run_mock.call_args_list[1].kwargs["env"]
+                self.assertIn("SELMA0_SMOKE_PORT_V1", env)
+                self.assertTrue(1 <= int(env["SELMA0_SMOKE_PORT_V1"]) <= 65535)
 
     def test_android_requires_actual_sdk(self):
         with tempfile.TemporaryDirectory() as temp:
