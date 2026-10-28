@@ -174,6 +174,31 @@ class HandoffTests(unittest.TestCase):
         item["task_id"] += "Caf\u00e9"
         self.assertEqual(HandoffMessage.from_mapping(item).task_id, item["task_id"])
 
+    def test_nfc_stable_invisible_identifier_modifiers_rejected(self):
+        # NFC alone does not reject these invisible Mn code points.
+        modifiers = ("\u034f", "\ufe0e", "\ufe0f", "\U000e0100", "\U000e01ef")
+        for field in ("task_id", "repository", "ref", "actor_role", "status", "artifact"):
+            for char in modifiers:
+                with self.subTest(field=field, codepoint=hex(ord(char))):
+                    item = record()
+                    item[field] += char
+                    with self.assertRaisesRegex(ValueError, "unsafe identifier characters"):
+                        HandoffMessage.from_mapping(item)
+
+    def test_invisible_provenance_detail_stays_ambiguous(self):
+        # Evidence is free text, but hidden modifiers cannot create clean labels.
+        for char in ("\u034f", "\ufe0f", "\U000e0100"):
+            with self.subTest(codepoint=hex(ord(char))):
+                item = record("tester", "pass")
+                item["evidence"] = [
+                    "source: synthetic fixture" + char,
+                    "command: python3 -m unittest",
+                    "observed: synthetic PASS",
+                ]
+                result = validate_exchange([record(), item])
+                self.assertEqual("ambiguous_unverified", result["evidence_trace"])
+                self.assertNotIn("accepted", result)
+
     def test_structural_identifier_allows_visible_non_ascii_text(self):
         item = record()
         item["task_id"] = "SELMA-Café-001"
