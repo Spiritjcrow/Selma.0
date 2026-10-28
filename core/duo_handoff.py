@@ -127,14 +127,14 @@ def _evidence_trace(items: tuple[str, ...]) -> str:
     found = set()
     for item in items:
         label, separator, detail = item.partition(":")
+        # A hidden modifier can turn a source/command/observed lookalike
+        # into an ignored label. Downgrade before the allowlist check so a
+        # second, clean label cannot conceal that conflicting provenance.
+        if separator and any(_unsafe_identifier_character(char) for char in label):
+            return "ambiguous_unverified"
         normalized = label.strip().lower()
         if not separator or normalized not in required:
             continue
-        # A control character in the label itself may be erased by strip(),
-        # turning visually deceptive provenance into a clean-looking label.
-        if any(_unsafe_identifier_character(char)
-               for char in label):
-            return "ambiguous_unverified"
         # Repeated labels may give incompatible source, command or observations.
         # Never elevate ambiguous free text to a clean provenance label.
         if normalized in found:
