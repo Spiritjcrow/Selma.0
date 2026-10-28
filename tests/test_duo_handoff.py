@@ -65,6 +65,47 @@ class HandoffTests(unittest.TestCase):
                     "unattributed_unverified",
                 )
 
+    def test_duplicate_provenance_labels_stay_ambiguous_and_unverified(self):
+        for repeated in ("source", "command", "observed"):
+            with self.subTest(repeated=repeated):
+                item = record("tester", "pass")
+                item["evidence"] = [
+                    "source: synthetic fixture A",
+                    "command: python3 -m unittest test_duo_handoff",
+                    "observed: synthetic PASS",
+                    f"{repeated.upper()}: conflicting second report",
+                ]
+                result = validate_exchange([record(), item])
+                self.assertEqual("ambiguous_unverified", result["evidence_trace"])
+                self.assertEqual("tester_reported_pass", result["state"])
+                self.assertNotIn("accepted", result)
+
+    def test_duplicate_unrelated_notes_do_not_spoil_source_labels(self):
+        item = record("tester", "pass")
+        item["evidence"] = [
+            "source: synthetic fixture",
+            "command: python3 -m unittest test_duo_handoff",
+            "observed: synthetic PASS",
+            "notes: unverified",
+            "notes: second note",
+        ]
+        self.assertEqual(
+            "source_labeled_unverified",
+            validate_exchange([record(), item])["evidence_trace"],
+        )
+
+    def test_blank_first_label_never_becomes_source_labeled(self):
+        item = record("tester", "pass")
+        item["evidence"] = [
+            "source: ", "source: synthetic fixture",
+            "command: python3 -m unittest test_duo_handoff",
+            "observed: synthetic PASS",
+        ]
+        self.assertEqual(
+            "unattributed_unverified",
+            validate_exchange([record(), item])["evidence_trace"],
+        )
+
     def test_builder_cannot_claim_verified_state(self):
         with self.assertRaisesRegex(ValueError, "role cannot report"):
             HandoffMessage.from_mapping(record("builder", "pass"))
