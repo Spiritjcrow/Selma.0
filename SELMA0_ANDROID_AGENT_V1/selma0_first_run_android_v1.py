@@ -11,6 +11,7 @@ from pathlib import Path
 import secrets
 import subprocess
 import sys
+import tempfile
 from threading import Lock
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -69,18 +70,21 @@ def checked_preferences(value):
 def save_preferences(value, destination=PREFS):
     data = checked_preferences(value)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    temporary = destination.with_name(destination.name + ".tmp")
-    fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    # A fixed .tmp filename can follow an existing symlink and overwrite
+    # unrelated files. mkstemp creates a unique, private (0600) file safely.
+    fd, temporary_name = tempfile.mkstemp(
+        prefix=f".{destination.name}.", suffix=".tmp", dir=destination.parent
+    )
+    temporary = Path(temporary_name)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as stream:
             json.dump(data, stream, indent=2)
             stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
         os.replace(temporary, destination)
     finally:
-        try:
-            temporary.unlink()
-        except FileNotFoundError:
-            pass
+        temporary.unlink(missing_ok=True)
     return data
 
 
