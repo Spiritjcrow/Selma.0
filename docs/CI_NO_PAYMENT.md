@@ -6,25 +6,25 @@ Issue #26 tracks GitHub Actions runs that fail at admission with zero jobs, befo
 **Keep this repository private. Do not add a payment method, raise a spending budget, publish source, or weaken branch protection just to run tests.**
 
 ## Run the core suite locally (Windows 11, Linux, macOS)
-1. Use a complete, trusted **Git checkout** of this private repository on your own computer. Python 3.12+ and Git must be available. The script prints the exact commit; if tracked files are modified, it warns that the commit alone is insufficient provenance.
+1. Use a complete, trusted **Git checkout** of this private repository on your own computer. Python **3.12+** and Git must be available. The validator rejects a parent/nested pseudo-checkout, requires its own script and test file to be Git-tracked, and refuses a dirty checkout (tracked or untracked files; Git-ignored build products excluded). This is *local provenance checking*, not cryptographic proof of GitHub identity.
 2. Install Git Bash on Windows if Bash is missing. No root or phone modifications required.
 3. At the repository root, execute:
 
        python tools/ci_free_local.py
 
-   The script runs Python compilation, procurement gate, both unittest suites (including the local-runner regression tests), support matrix check, **strict JSON validation** (rejects duplicate keys, NaN/Infinity and JSON symlinks), shell syntax checks, and the existing Android-agent loopback smoke test. On Windows it prefers Git Bash over the incompatible WSL Bash launcher.
+   Optionally copy the exact current commit SHA from PR #89 and pin it with `python tools/ci_free_local.py --expected-sha SHA40`, replacing `SHA40` with the 40 hexadecimal characters. This compares against local `HEAD` but does **not** verify signatures, trusted remote identity, or a fresh fetch. The script runs Python compilation, procurement gate, both unittest suites, support matrix check, **strict JSON validation** (rejects duplicate keys, NaN/Infinity and JSON symlinks), shell syntax checks, and the existing Android-agent loopback smoke test. On Windows it prefers Git Bash over the incompatible WSL Bash launcher.
 
-4. An exit code of **0** with a PASS line means those checks ran successfully *on that machine and checkout*. Exit code **1** is failure; code **2** means a partial result with Bash checks not run. Commands are bounded (core steps 300 seconds each, individual shell syntax checks 60 seconds, smoke test 240 seconds). Timed-out descendant processes are terminated to avoid orphaned test services. Never substitute that output for a GitHub Actions job ID or a verified independent review.
+4. An exit code of **0** with a PASS line means those checks ran successfully *on that machine and checkout*. Exit code **1** is failure; code **2** means a partial result with Bash checks not run. Commands are bounded (core 300s, shell syntax 60s each, smoke 240s). Timeouts trigger best-effort process-tree cleanup; smoke nonzero exit additionally cleans its own group. Windows cannot guarantee cleanup of descendants after the parent process exits. Never substitute that output for a GitHub Actions job ID, signed Git history, or independent review.
 
 ## Optional debug APK build
 Requires Java 17 and an installed Android SDK (set ANDROID_HOME or ANDROID_SDK_ROOT). Gradle may need network access for toolchain dependencies, but it does **not** require paid GitHub Actions minutes.
 
        python tools/ci_free_local.py --android
 
-Runs :app:lintDebug, :app:testDebugUnitTest and :app:assembleDebug in SELMA0_ANDROID_NATIVE_V1, using only the checked-in Gradle wrapper (fails closed if its JAR is absent). The Android build has a 1,800-second timeout and streams the debug APK's SHA-256 without loading the whole file into memory. A successful build is **not** a device-installation or offline-behavior pass. Do not distribute the debug APK as a production signed release.
+Runs `:app:lintDebug`, `:app:testDebugUnitTest` and `:app:assembleDebug` in `SELMA0_ANDROID_NATIVE_V1` with the checked-in Gradle wrapper. It removes only the prior generated `app-debug.apk` and `.apk.sha256` before attempting a fresh build, then requires the new APK to parse as a readable ZIP containing `AndroidManifest.xml`, `resources.arsc`, and `classes.dex`. It hashes the APK in chunks and creates `app-debug.apk.sha256` (digest and filename). Build timeout: 1,800 seconds. These lightweight checks **do not authenticate the APK signature, verify the Android manifest's contents, establish installability, or certify offline behavior**. Do not distribute a debug build as a production release.
 
 ## Evidence and next steps
-Record the git commit SHA, whether the checkout had tracked modifications, command, Python version, OS, result, APK SHA-256 (if built), and relevant non-sensitive test output in issue #26 or the relevant PR. Redact local paths, secrets and personal information. Keep #26 open until a real GitHub runner job starts or the owner formally changes the acceptance gates.
+Record the local Git commit SHA, independent expected SHA source (if provided), whether the checkout was clean, command, Python version, OS, exit status, APK SHA-256 and sidecar (if built), and non-sensitive logs in issue #26 or the relevant PR. A summarized three-line PASS message without actual command output and the full 40-character SHA is insufficient to confirm independent execution. Redact local paths, secrets and personal information. Keep #26 open until a real GitHub runner job starts or the owner formally changes the acceptance gates.
 
 If the goal is free automated jobs, a **self-hosted runner** on a dedicated low-privilege, trusted machine may be evaluated; GitHub currently describes self-hosted runner usage as free. It still depends on GitHub admitting jobs, so it is *not* a guaranteed fix for account-wide billing restrictions. Do not register a personal interactive machine as a runner for untrusted PRs.
 
