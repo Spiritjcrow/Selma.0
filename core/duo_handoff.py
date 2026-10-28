@@ -35,11 +35,14 @@ def _required_text(value: Any, field: str) -> str:
     # Newlines, NULs, bidi overrides, zero-width formatters and surrogates
     # can visually spoof the task/ref/artifact shown in a GitHub handoff.
     # Reject them before strip(), which would otherwise hide edge controls.
-    if field in STRUCTURAL_FIELDS and any(
-        unicodedata.category(char) in UNSAFE_IDENTIFIER_CATEGORIES
-        for char in value
-    ):
-        raise ValueError(f"{field} contains unsafe identifier characters")
+    if field in STRUCTURAL_FIELDS:
+        # Never silently canonicalize a structural ID. Leading/trailing
+        # whitespace can make distinct submitted refs look identical.
+        if any(unicodedata.category(char) in UNSAFE_IDENTIFIER_CATEGORIES
+               for char in value):
+            raise ValueError(f"{field} contains unsafe identifier characters")
+        if value != value.strip():
+            raise ValueError(f"{field} contains surrounding whitespace")
     return value.strip()
 
 
