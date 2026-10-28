@@ -152,7 +152,7 @@ class LocalCIFallbackTests(unittest.TestCase):
                 digest = hashlib.sha256(apk.read_bytes()).hexdigest()
                 self.assertIn(digest, capture.getvalue())
                 self.assertEqual(
-                    digest + "  app-debug.apk\\n",
+                    digest + "  app-debug.apk\n",
                     apk.with_suffix(".apk.sha256").read_text(encoding="ascii"),
                 )
 
