@@ -84,6 +84,11 @@ class HandoffMessage:
         if any(type(key) is not str for key in keys):
             raise ValueError("message field names must be strings")
         key_set = set(keys)
+        # Mapping implementations can enumerate the same key twice even
+        # though ordinary dicts cannot. Reject ambiguous in-process records
+        # just as the JSON CLI rejects duplicate object keys.
+        if len(keys) != len(key_set):
+            raise ValueError("duplicate message field names")
         if key_set != FIELDS:
             raise ValueError(
                 f"message fields mismatch: missing={sorted(FIELDS - key_set)}, "
