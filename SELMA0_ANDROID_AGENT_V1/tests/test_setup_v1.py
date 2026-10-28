@@ -249,5 +249,49 @@ class TestStartupLogSafety(unittest.TestCase):
             self.assertEqual(log.stat().st_mode & 0o777, 0o600)
 
 
+class TestLaunchObservation(unittest.TestCase):
+    """Read-only, process-local launch observation; no real child or device."""
+
+    def test_untracked_does_not_claim_readiness(self):
+        with mock.patch.object(setup, "LAUNCHED_CHILD", None):
+            self.assertEqual(setup.observed_launch_state(), "untracked")
+
+    def test_running_child_is_pending_without_restarting(self):
+        child = mock.Mock()
+        child.poll.return_value = None
+        with mock.patch.object(setup, "LAUNCHED_CHILD", child):
+            self.assertEqual(setup.observed_launch_state(), "launch_pending")
+        child.poll.assert_called_once_with()
+        child.wait.assert_not_called()
+        child.terminate.assert_not_called()
+
+    def test_late_exit_preserves_preferences_and_does_not_restart(self):
+        child = mock.Mock()
+        child.poll.return_value = 7
+        with tempfile.TemporaryDirectory() as temp:
+            prefs = Path(temp) / "selma0_setup_v1.json"
+            prefs.write_text("original", encoding="utf-8")
+            with mock.patch.object(setup, "LAUNCHED_CHILD", child):
+                self.assertEqual(setup.observed_launch_state(), "exited_after_launch")
+            self.assertEqual(prefs.read_text(encoding="utf-8"), "original")
+        child.wait.assert_not_called()
+        child.terminate.assert_not_called()
+
+    def test_launch_status_route_reports_not_ready_without_launch(self):
+        handler = object.__new__(setup.WizardHandler)
+        handler.path = "/launch-status"
+        handler.headers = {"Host": "127.0.0.1:8766"}
+        responses = []
+        handler.reply = lambda code, payload: responses.append((code, payload))
+        child = mock.Mock()
+        child.poll.return_value = 9
+        with mock.patch.object(setup, "LAUNCHED_CHILD", child):
+            handler.do_GET()
+        self.assertEqual(responses, [(200, {"status": "exited_after_launch", "ready": False})])
+        child.wait.assert_not_called()
+        child.terminate.assert_not_called()
+
+
+
 if __name__ == "__main__":
     unittest.main()
