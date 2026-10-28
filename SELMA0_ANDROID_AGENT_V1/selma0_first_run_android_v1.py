@@ -24,6 +24,19 @@ HOST = "127.0.0.1"
 PORT = 8766
 TOKEN = secrets.token_hex(24)
 START_LOCK = Lock()  # Serialize setup attempts to avoid duplicate launches.
+LAUNCHED_CHILD = None  # Process-local observation only; never a readiness proof.
+
+
+def observed_launch_state():
+    """Observe only the child launched by this wizard process.
+
+    A restarted wizard cannot verify an older child. Unknown is not dead or
+    ready; callers must not use this endpoint to authorize a retry.
+    """
+    child = LAUNCHED_CHILD
+    if child is None:
+        return "untracked"
+    return "launch_pending" if child.poll() is None else "exited_after_launch"
 
 
 def measurements():
@@ -151,6 +164,20 @@ qs('start').onclick=async()=>{qs('start').disabled=true;qs('result').textContent
  if(j.status==='launch_pending' && j.ready===false){
   launchPending=true;qs('start').textContent='Launch requested';
   qs('result').innerHTML='Preferences saved. Selma runtime launch pending; readiness NOT verified. <a href="http://127.0.0.1:8765" target="_blank" rel="noopener">Try Selma chat after startup</a>. If unavailable, check the Termux startup log.';
+  let attempts=0;
+  const watcher=setInterval(async()=>{
+   if(++attempts>60){clearInterval(watcher);return;}
+   try{const response=await fetch('/launch-status');if(!response.ok)return;
+    const state=await response.json();
+    if(state.status==='exited_after_launch'){
+     qs('result').textContent='Selma process exited after launch. Read the Termux startup log and use the documented manual recovery procedure; do not retry blindly. Readiness NOT verified.';
+     clearInterval(watcher);
+    }else if(state.status==='untracked'){
+     qs('result').textContent='Launch process is no longer tracked by this wizard. Check the existing launcher and startup log; readiness NOT verified.';
+     clearInterval(watcher);
+    }
+   }catch(e){/* Loopback observation is best effort; never claim ready. */}
+  },2000);
  }else{
   qs('result').textContent='Unexpected launch response; readiness NOT verified. Check the Termux startup log.';
  }
@@ -178,6 +205,8 @@ class WizardHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self.headers_ok():
             return self.reply(403, {"error": "invalid host"})
+        if self.path == "/launch-status":
+            return self.reply(200, {"status": observed_launch_state(), "ready": False})
         if self.path == "/diagnostics":
             s = measurements()
             return self.reply(200, dict(s, recommended=recommended_profile(s)))
@@ -194,6 +223,7 @@ class WizardHandler(BaseHTTPRequestHandler):
         self.wfile.write(raw)
 
     def do_POST(self):
+        global LAUNCHED_CHILD
         if not self.headers_ok():
             return self.reply(403, {"error": "invalid host"})
         if self.headers.get("Origin") not in {None, "http://127.0.0.1:8766", "http://localhost:8766"}:
@@ -242,6 +272,7 @@ class WizardHandler(BaseHTTPRequestHandler):
                     except OSError:
                         return self.reply(503, {"error": "startup failed and setup rollback failed; manual recovery required"})
                     return self.reply(503, {"error": f"startup failed: {exc}; setup remains incomplete"})
+                LAUNCHED_CHILD = child  # Observe late exit; do not auto-delete preferences or retry.
                 return self.reply(202, {"ok": True, "launched": True, "ready": False, "status": "launch_pending", "url": "http://127.0.0.1:8765", "log": str(log_path)})
         except (ValueError, TypeError, json.JSONDecodeError) as exc:
             return self.reply(400, {"error": str(exc)})
