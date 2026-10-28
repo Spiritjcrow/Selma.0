@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import shutil
 import signal
+import socket
 import subprocess
 import sys
 
@@ -23,7 +24,7 @@ SMOKE_TIMEOUT_SECONDS = 240
 ANDROID_TIMEOUT_SECONDS = 1800
 
 
-def run(command, cwd=ROOT, *, timeout=CORE_TIMEOUT_SECONDS):
+def run(command, cwd=ROOT, *, timeout=CORE_TIMEOUT_SECONDS, env=None):
     """Run a bounded process without shell expansion or automatic retry."""
     cmd = [str(x) for x in command]
     print("+", " ".join(cmd), flush=True)
@@ -33,7 +34,7 @@ def run(command, cwd=ROOT, *, timeout=CORE_TIMEOUT_SECONDS):
         {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
         if os.name == "nt" else {"start_new_session": True}
     )
-    with subprocess.Popen(cmd, cwd=cwd, **opts) as process:
+    with subprocess.Popen(cmd, cwd=cwd, env=env, **opts) as process:
         try:
             returncode = process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
@@ -93,9 +94,11 @@ def reject_non_json_constant(value):
     raise ValueError(f"non-JSON numeric constant: {value}")
 
 
-def find_bash():
+def find_bash(*, windows=None):
     """On Windows avoid WSL's bash.exe when Git Bash is required."""
-    if os.name != "nt":
+    if windows is None:
+        windows = os.name == "nt"
+    if not windows:
         return shutil.which("bash")
     git_exe = shutil.which("git")
     if git_exe:
@@ -126,6 +129,13 @@ def validate_json():
     print(f"JSON validated: {checked} file(s)")
 
 
+def isolated_smoke_port():
+    """Select a short-lived local port rather than probing an existing Selma server."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
+
+
 def validate_shell():
     bash = find_bash()
     if not bash:
@@ -138,9 +148,11 @@ def validate_shell():
     )
     for script in scripts:
         run([bash, "-n", script.relative_to(ROOT)], timeout=60)
+    smoke_env = os.environ.copy()
+    smoke_env["SELMA0_SMOKE_PORT_V1"] = str(isolated_smoke_port())
     run(
         [bash, "SELMA0_ANDROID_AGENT_V1/selma0_smoke_test_android_v1.sh"],
-        timeout=SMOKE_TIMEOUT_SECONDS,
+        timeout=SMOKE_TIMEOUT_SECONDS, env=smoke_env,
     )
     print(f"Bash syntax validated: {len(scripts)} file(s)")
     return True
