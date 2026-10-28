@@ -156,6 +156,30 @@ class TestStartRecovery(unittest.TestCase):
                 self.assertEqual(prefs.stat().st_mode & 0o777, 0o600)
                 spawn.assert_called_once()
 
+    def test_wait_observation_failure_preserves_spawn_guard(self):
+        # A spawned child may still be running when waitpid fails. Do not
+        # remove the first-run guard or allow a duplicate launch.
+        options = {"profile": "eco", "scene": "coast", "motion": "reduced"}
+        with tempfile.TemporaryDirectory() as temp:
+            prefs = Path(temp) / "selma0_setup_v1.json"
+            real_save = setup.save_preferences
+            with mock.patch.object(setup, "HOME", Path(temp)), \
+                 mock.patch.object(setup, "PREFS", prefs), \
+                 mock.patch.object(setup, "RUNTIME", Path(__file__)), \
+                 mock.patch.object(setup, "save_preferences", side_effect=lambda value: real_save(value, prefs)), \
+                 mock.patch.object(setup.subprocess, "Popen") as spawn:
+                spawn.return_value.wait.side_effect = OSError("synthetic waitpid failure")
+                handler, responses = self.handler_for(options)
+                handler.do_POST()
+                self.assertEqual(responses[0][0], 202)
+                self.assertIs(responses[0][1]["ready"], False)
+                self.assertEqual(responses[0][1]["status"], "launch_pending")
+                self.assertTrue(prefs.is_file())
+                handler2, responses2 = self.handler_for(options)
+                handler2.do_POST()
+                self.assertEqual(responses2[0][0], 409)
+                spawn.assert_called_once()
+
     def test_immediate_child_exit_does_not_mark_setup_complete(self):
         options = {"profile": "eco", "scene": "coast", "motion": "reduced"}
         with tempfile.TemporaryDirectory() as temp:
@@ -274,6 +298,14 @@ class TestLaunchObservation(unittest.TestCase):
             with mock.patch.object(setup, "LAUNCHED_CHILD", child):
                 self.assertEqual(setup.observed_launch_state(), "exited_after_launch")
             self.assertEqual(prefs.read_text(encoding="utf-8"), "original")
+        child.wait.assert_not_called()
+        child.terminate.assert_not_called()
+
+    def test_poll_observation_failure_is_explicitly_unverified(self):
+        child = mock.Mock()
+        child.poll.side_effect = OSError("synthetic poll failure")
+        with mock.patch.object(setup, "LAUNCHED_CHILD", child):
+            self.assertEqual(setup.observed_launch_state(), "observation_unavailable")
         child.wait.assert_not_called()
         child.terminate.assert_not_called()
 
