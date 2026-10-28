@@ -17,12 +17,66 @@ import sys
 
 ROOT = Path(__file__).resolve().parent.parent
 EXCLUDE = {".git", ".venv", "venv", "node_modules", "build", "dist", ".gradle"}
+CORE_TIMEOUT_SECONDS = 300
+SMOKE_TIMEOUT_SECONDS = 240
+ANDROID_TIMEOUT_SECONDS = 1800
 
 
-def run(command, cwd=ROOT):
+def run(command, cwd=ROOT, *, timeout=CORE_TIMEOUT_SECONDS):
+    """Run a bounded process without shell expansion or automatic retry."""
     cmd = [str(x) for x in command]
     print("+", " ".join(cmd), flush=True)
-    subprocess.run(cmd, cwd=cwd, check=True)
+    subprocess.run(cmd, cwd=cwd, check=True, timeout=timeout)
+
+
+def revision():
+    """Require a full Git checkout so reported results have a source revision."""
+    if not shutil.which("git"):
+        raise RuntimeError("Git is required to identify the tested source revision.")
+    head = subprocess.run(
+        ["git", "rev-parse", "--verify", "HEAD"],
+        cwd=ROOT, check=True, capture_output=True, text=True, timeout=15,
+    ).stdout.strip()
+    if len(head) != 40 or any(ch not in "0123456789abcdef" for ch in head.lower()):
+        raise RuntimeError("Unable to determine exact Git commit.")
+    status = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=no"],
+        cwd=ROOT, check=True, capture_output=True, text=True, timeout=15,
+    ).stdout.strip()
+    print(f"REVISION: {head}")
+    if status:
+        print("WARNING: tracked checkout contains local changes; revision alone is not complete provenance.")
+    return head
+
+
+def reject_duplicate_json_keys(pairs):
+    """Reject ambiguous duplicate keys at every object nesting level."""
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key!r}")
+        result[key] = value
+    return result
+
+
+def reject_non_json_constant(value):
+    raise ValueError(f"non-JSON numeric constant: {value}")
+
+
+def find_bash():
+    """On Windows avoid WSL's bash.exe when Git Bash is required."""
+    if os.name != "nt":
+        return shutil.which("bash")
+    git_exe = shutil.which("git")
+    if git_exe:
+        git_root = Path(git_exe).resolve().parent.parent
+        candidate = git_root / "bin" / "bash.exe"
+        if candidate.is_file():
+            return str(candidate)
+    bash = find_bash()
+    if bash and "system32" not in str(Path(bash)).lower():
+        return bash
+    return None
 
 
 def validate_json():
@@ -30,8 +84,14 @@ def validate_json():
     for path in sorted(ROOT.rglob("*.json")):
         if EXCLUDE.intersection(path.relative_to(ROOT).parts):
             continue
+        if path.is_symlink():
+            raise ValueError(f"JSON symlink not allowed: {path.relative_to(ROOT)}")
         with path.open(encoding="utf-8") as stream:
-            json.load(stream)
+            json.load(
+                stream,
+                object_pairs_hook=reject_duplicate_json_keys,
+                parse_constant=reject_non_json_constant,
+            )
         checked += 1
     print(f"JSON validated: {checked} file(s)")
 
@@ -47,8 +107,11 @@ def validate_shell():
         if not EXCLUDE.intersection(p.relative_to(ROOT).parts)
     )
     for script in scripts:
-        run([bash, "-n", script.relative_to(ROOT)])
-    run([bash, "SELMA0_ANDROID_AGENT_V1/selma0_smoke_test_android_v1.sh"])
+        run([bash, "-n", script.relative_to(ROOT)], timeout=60)
+    run(
+        [bash, "SELMA0_ANDROID_AGENT_V1/selma0_smoke_test_android_v1.sh"],
+        timeout=SMOKE_TIMEOUT_SECONDS,
+    )
     print(f"Bash syntax validated: {len(scripts)} file(s)")
     return True
 
@@ -59,19 +122,25 @@ def build_android():
         raise RuntimeError("Native Android project is missing.")
     if not shutil.which("java"):
         raise RuntimeError("Java 17 is needed on PATH for Android Gradle build.")
-    if not (os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")):
+    sdk = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT")
+    if not sdk or not Path(sdk).is_dir():
         raise RuntimeError("Set ANDROID_HOME or ANDROID_SDK_ROOT to an installed Android SDK.")
+    if not (project / "gradle/wrapper/gradle-wrapper.jar").is_file():
+        raise RuntimeError("Trusted Gradle wrapper JAR is missing; refuse to substitute system Gradle.")
     tasks = [":app:lintDebug", ":app:testDebugUnitTest", ":app:assembleDebug"]
     if os.name == "nt":
         command = ["cmd", "/c", "gradlew.bat", "--no-daemon", *tasks]
     else:
         command = ["./gradlew", "--no-daemon", *tasks]
-    run(command, cwd=project)
+    run(command, cwd=project, timeout=ANDROID_TIMEOUT_SECONDS)
     apk = project / "app/build/outputs/apk/debug/app-debug.apk"
     if not apk.is_file():
         raise RuntimeError("Gradle returned without the expected debug APK.")
-    digest = hashlib.sha256(apk.read_bytes()).hexdigest()
-    print(f"APK: {apk}\nSHA256: {digest}")
+    digest = hashlib.sha256()
+    with apk.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    print(f"APK: {apk}\nSHA256: {digest.hexdigest()}")
     print("APK assembled. Physical-device install, security review and offline behavior remain NOT_VERIFIED.")
 
 
@@ -84,6 +153,7 @@ def main():
         parser.error("Python 3.12 or newer is required.")
 
     print("Selma local CI | independent of GitHub Actions | no hosted runner charges", flush=True)
+    revision()
     run([sys.executable, "-m", "compileall", "-q", "SELMA0_ANDROID_AGENT_V1", "adapters", "core", "tests", "tools"])
     run([sys.executable, "SELMA0_ANDROID_AGENT_V1/tests/test_procurement_gate_v1.py"])
     run([sys.executable, "-m", "unittest", "discover", "-s", "SELMA0_ANDROID_AGENT_V1/tests", "-p", "test_*.py", "-v"])
@@ -103,6 +173,6 @@ def main():
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
-    except (subprocess.CalledProcessError, OSError, ValueError, RuntimeError) as error:
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError, ValueError, RuntimeError) as error:
         print(f"FAIL: {error}", file=sys.stderr)
         raise SystemExit(1)
