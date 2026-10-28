@@ -17,6 +17,7 @@ import socket
 import subprocess
 import sys
 import time
+import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent
 EXCLUDE = {".git", ".venv", "venv", "node_modules", "build", "dist", ".gradle"}
@@ -198,21 +199,43 @@ def build_android():
         raise RuntimeError("Set ANDROID_HOME or ANDROID_SDK_ROOT to an installed Android SDK.")
     if not (project / "gradle/wrapper/gradle-wrapper.jar").is_file():
         raise RuntimeError("Trusted Gradle wrapper JAR is missing; refuse to substitute system Gradle.")
+    apk = project / "app/build/outputs/apk/debug/app-debug.apk"
+    checksum = apk.with_suffix(apk.suffix + ".sha256")
+    if apk.is_symlink() or checksum.is_symlink():
+        raise RuntimeError("APK or checksum output must not be a symlink.")
+    # Remove only the prior generated debug artifact: a no-op build must not
+    # count an old APK as a newly produced result.
+    if apk.exists():
+        if not apk.is_file():
+            raise RuntimeError("Expected debug APK output path is not a file.")
+        apk.unlink()
+    if checksum.exists():
+        checksum.unlink()
     tasks = [":app:lintDebug", ":app:testDebugUnitTest", ":app:assembleDebug"]
     if os.name == "nt":
         command = ["cmd", "/c", "gradlew.bat", "--no-daemon", *tasks]
     else:
         command = ["./gradlew", "--no-daemon", *tasks]
     run(command, cwd=project, timeout=ANDROID_TIMEOUT_SECONDS)
-    apk = project / "app/build/outputs/apk/debug/app-debug.apk"
-    if not apk.is_file():
-        raise RuntimeError("Gradle returned without the expected debug APK.")
+    if apk.is_symlink() or not apk.is_file():
+        raise RuntimeError("Gradle returned without a newly generated regular debug APK.")
+    try:
+        with zipfile.ZipFile(apk) as archive:
+            names = set(archive.namelist())
+            required = {"AndroidManifest.xml", "resources.arsc", "classes.dex"}
+            if not required.issubset(names):
+                raise RuntimeError("APK is missing Android package components.")
+            if archive.testzip() is not None:
+                raise RuntimeError("APK ZIP integrity test failed.")
+    except (zipfile.BadZipFile, zipfile.LargeZipFile) as error:
+        raise RuntimeError("APK is not a valid ZIP package.") from error
     digest = hashlib.sha256()
     with apk.open("rb") as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
-    print(f"APK: {apk}\nSHA256: {digest.hexdigest()}")
-    print("APK assembled. Physical-device install, security review and offline behavior remain NOT_VERIFIED.")
+    checksum.write_text(f"{digest.hexdigest()}  {apk.name}\n", encoding="ascii")
+    print(f"APK: {apk}\nSHA256: {digest.hexdigest()}\nChecksum: {checksum}")
+    print("APK ZIP/entries/hash validated; signature, installability, security and offline operation remain NOT_VERIFIED.")
 
 
 def main():
