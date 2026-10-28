@@ -219,6 +219,36 @@ class TestStartRecovery(unittest.TestCase):
 
 
 
+    def test_log_finalization_error_after_spawn_keeps_duplicate_guard(self):
+        # Synthetic context-manager exit failure after a successful Popen.
+        # The child might still be running: never roll back preferences.
+        opts = {"profile": "eco", "scene": "coast", "motion": "reduced"}
+        with tempfile.TemporaryDirectory() as temp:
+            prefs = Path(temp) / "selma0_setup_v1.json"
+            real_save = setup.save_preferences
+            with mock.patch.object(setup, "HOME", Path(temp)), \
+                 mock.patch.object(setup, "PREFS", prefs), \
+                 mock.patch.object(setup, "RUNTIME", Path(__file__)), \
+                 mock.patch.object(setup, "LAUNCHED_CHILD", None), \
+                 mock.patch.object(setup, "save_preferences",
+                                   side_effect=lambda value: real_save(value, prefs)), \
+                 mock.patch.object(setup, "open_startup_log") as open_log, \
+                 mock.patch.object(setup.subprocess, "Popen") as spawn:
+                open_log.return_value.__enter__.return_value = io.BytesIO()
+                open_log.return_value.__exit__.side_effect = OSError("synthetic log close failure")
+                spawn.return_value.wait.side_effect = setup.subprocess.TimeoutExpired("synthetic", 1.5)
+                handler, responses = self.handler_for(opts)
+                handler.do_POST()
+                self.assertEqual(responses[0][0], 503)
+                self.assertIn("manual recovery", responses[0][1]["error"])
+                self.assertTrue(prefs.is_file())
+                self.assertIs(setup.LAUNCHED_CHILD, spawn.return_value)
+                handler2, responses2 = self.handler_for(opts)
+                handler2.do_POST()
+                self.assertEqual(responses2[0][0], 409)
+                spawn.assert_called_once()
+
+
 class TestStartupLogSafety(unittest.TestCase):
     """Offline filesystem checks; no Android device or live runtime."""
 
