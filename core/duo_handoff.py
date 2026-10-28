@@ -80,6 +80,23 @@ class HandoffMessage:
         )
 
 
+def _evidence_trace(items: tuple[str, ...]) -> str:
+    """Describe source labeling only; labels never authenticate a test or actor.
+
+    v0.1 evidence remains free text for compatibility. This metadata helps a
+    coordinator distinguish unattributed reports from source-labeled reports
+    without upgrading either to independently verified acceptance.
+    """
+    required = {"source", "command", "observed"}
+    found = set()
+    for item in items:
+        label, separator, detail = item.partition(":")
+        if separator and detail.strip() and label.strip().lower() in required:
+            found.add(label.strip().lower())
+    return ("source_labeled_unverified" if found == required
+            else "unattributed_unverified")
+
+
 def validate_exchange(raw_messages: Sequence[Mapping[str, Any]]) -> dict[str, str]:
     """Check one builder submission and at most one independent tester report.
 
@@ -100,4 +117,8 @@ def validate_exchange(raw_messages: Sequence[Mapping[str, Any]]) -> dict[str, st
     for field in ("task_id", "repository", "ref", "artifact"):
         if getattr(builder, field) != getattr(tester, field):
             raise ValueError(f"tester {field} does not match builder submission")
-    return {"state": f"tester_reported_{tester.status}", "task_id": builder.task_id}
+    return {
+        "state": f"tester_reported_{tester.status}",
+        "task_id": builder.task_id,
+        "evidence_trace": _evidence_trace(tester.evidence),
+    }
