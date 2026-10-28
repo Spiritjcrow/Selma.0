@@ -146,6 +146,19 @@ class HandoffTests(unittest.TestCase):
                         with self.assertRaisesRegex(ValueError, "surrounding whitespace"):
                             HandoffMessage.from_mapping(item)
 
+    def test_structural_identifiers_reject_decomposed_unicode_aliases(self):
+        # Visually identical NFC and NFD spellings must not silently alias.
+        for field in ("task_id", "repository", "ref", "actor_role", "status", "artifact"):
+            with self.subTest(field=field):
+                item = record()
+                item[field] += "Cafe\u0301"  # decomposed e + combining acute
+                with self.assertRaisesRegex(ValueError, "non-NFC"):
+                    HandoffMessage.from_mapping(item)
+        # Preserve legitimate precomposed Unicode in structural IDs.
+        item = record()
+        item["task_id"] += "Caf\u00e9"
+        self.assertEqual(HandoffMessage.from_mapping(item).task_id, item["task_id"])
+
     def test_structural_identifier_allows_visible_non_ascii_text(self):
         item = record()
         item["task_id"] = "SELMA-Café-001"
