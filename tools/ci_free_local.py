@@ -16,6 +16,7 @@ import signal
 import socket
 import subprocess
 import sys
+import time
 
 ROOT = Path(__file__).resolve().parent.parent
 EXCLUDE = {".git", ".venv", "venv", "node_modules", "build", "dist", ".gradle"}
@@ -24,14 +25,37 @@ SMOKE_TIMEOUT_SECONDS = 240
 ANDROID_TIMEOUT_SECONDS = 1800
 
 
-def run(command, cwd=None, *, timeout=CORE_TIMEOUT_SECONDS, env=None):
-    """Run a bounded process without shell expansion or automatic retry."""
+def terminate_group(process):
+    """Best-effort teardown of only this runner's dedicated process group."""
+    if os.name == "nt":
+        # Windows taskkill cannot always find descendants once a parent exited.
+        try:
+            subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                check=False, timeout=10,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    else:
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+            time.sleep(0.2)
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    if process.poll() is None:
+        process.kill()
+    process.wait()
+
+
+def run(command, cwd=None, *, timeout=CORE_TIMEOUT_SECONDS, env=None,
+        cleanup_on_failure=False):
+    """Bound subprocesses, with opt-in descendant cleanup for smoke launchers."""
     if cwd is None:
         cwd = ROOT
     cmd = [str(x) for x in command]
     print("+", " ".join(cmd), flush=True)
-    # A timed-out smoke test may have spawned a runtime. Kill its entire
-    # dedicated process tree; otherwise that orphan can hold the next test port.
     opts = (
         {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
         if os.name == "nt" else {"start_new_session": True}
@@ -40,25 +64,11 @@ def run(command, cwd=None, *, timeout=CORE_TIMEOUT_SECONDS, env=None):
         try:
             returncode = process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
-            if os.name == "nt":
-                try:
-                    subprocess.run(
-                        ["taskkill", "/PID", str(process.pid), "/T", "/F"],
-                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                        check=False, timeout=10,
-                    )
-                except (OSError, subprocess.TimeoutExpired):
-                    pass
-            else:
-                try:
-                    os.killpg(process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-            if process.poll() is None:
-                process.kill()
-            process.wait()
+            terminate_group(process)
             raise
         if returncode:
+            if cleanup_on_failure:
+                terminate_group(process)
             raise subprocess.CalledProcessError(returncode, cmd)
 
 
@@ -171,6 +181,7 @@ def validate_shell():
     run(
         [bash, "SELMA0_ANDROID_AGENT_V1/selma0_smoke_test_android_v1.sh"],
         timeout=SMOKE_TIMEOUT_SECONDS, env=smoke_env,
+        cleanup_on_failure=True,
     )
     print(f"Bash syntax validated: {len(scripts)} file(s)")
     return True
