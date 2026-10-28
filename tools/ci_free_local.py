@@ -62,23 +62,39 @@ def run(command, cwd=None, *, timeout=CORE_TIMEOUT_SECONDS, env=None):
             raise subprocess.CalledProcessError(returncode, cmd)
 
 
-def revision():
-    """Require a full Git checkout so reported results have a source revision."""
+def git_stdout(*args):
+    """Read bounded local Git metadata, never treating a nested parent repo as ours."""
+    return subprocess.run(
+        ["git", *args], cwd=ROOT, check=True, capture_output=True,
+        text=True, timeout=20,
+    ).stdout.strip()
+
+
+def revision(expected_sha=None):
+    """Require a clean, source-bound checkout; do not claim remote authenticity.
+
+    A locally matching SHA is not proof of GitHub identity or signature trust.
+    An owner may supply an independently obtained exact PR commit as expected_sha.
+    """
     if not shutil.which("git"):
         raise RuntimeError("Git is required to identify the tested source revision.")
-    head = subprocess.run(
-        ["git", "rev-parse", "--verify", "HEAD"],
-        cwd=ROOT, check=True, capture_output=True, text=True, timeout=15,
-    ).stdout.strip()
-    if len(head) != 40 or any(ch not in "0123456789abcdef" for ch in head.lower()):
+    top = Path(git_stdout("rev-parse", "--show-toplevel")).resolve()
+    if os.path.normcase(str(top)) != os.path.normcase(str(ROOT.resolve())):
+        raise RuntimeError("Not executing from the root of the intended Git checkout.")
+    head = git_stdout("rev-parse", "--verify", "HEAD^{commit}").lower()
+    if len(head) != 40 or any(ch not in "0123456789abcdef" for ch in head):
         raise RuntimeError("Unable to determine exact Git commit.")
-    status = subprocess.run(
-        ["git", "status", "--porcelain", "--untracked-files=no"],
-        cwd=ROOT, check=True, capture_output=True, text=True, timeout=15,
-    ).stdout.strip()
-    print(f"REVISION: {head}")
+    if expected_sha is not None:
+        if len(expected_sha) != 40 or any(ch not in "0123456789abcdef" for ch in expected_sha.lower()):
+            raise ValueError("Expected commit SHA must be 40 hexadecimal characters.")
+        if head != expected_sha.lower():
+            raise RuntimeError("Checkout HEAD does not match the independently supplied commit SHA.")
+    for path in ("tools/ci_free_local.py", "tests/test_ci_free_local.py"):
+        git_stdout("ls-files", "--error-unmatch", "--", path)
+    status = git_stdout("status", "--porcelain", "--untracked-files=all")
     if status:
-        print("WARNING: tracked checkout contains local changes; revision alone is not complete provenance.")
+        raise RuntimeError("Checkout is not clean; tracked/untracked changes must be reviewed before validation.")
+    print(f"REVISION: {head} (clean checkout; remote authenticity NOT_VERIFIED)")
     return head
 
 
