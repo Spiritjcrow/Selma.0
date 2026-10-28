@@ -97,6 +97,21 @@ class HandoffTests(unittest.TestCase):
                 self.assertEqual("tester_reported_pass", result["state"])
                 self.assertNotIn("accepted", result)
 
+    def test_control_in_provenance_label_is_ambiguous(self):
+        # strip() must not conceal controls in source/command/observed labels.
+        for control in ("\\t", "\\r", "\\n", "\\u2028", "\\u2029"):
+            with self.subTest(control=repr(control)):
+                item = record("tester", "pass")
+                item["evidence"] = [
+                    f"source{control}: synthetic fixture",
+                    "command: python3 -m unittest",
+                    "observed: synthetic PASS",
+                ]
+                result = validate_exchange([record(), item])
+                self.assertEqual("ambiguous_unverified", result["evidence_trace"])
+                self.assertEqual("tester_reported_pass", result["state"])
+                self.assertNotIn("accepted", result)
+
     def test_duplicate_unrelated_notes_do_not_spoil_source_labels(self):
         item = record("tester", "pass")
         item["evidence"] = [
