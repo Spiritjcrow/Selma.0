@@ -27,6 +27,20 @@ ALLOWED_STATUSES = {
 }
 
 
+def _unsafe_identifier_character(char: str) -> bool:
+    """Reject invisible Unicode modifiers even when NFC-stable.
+
+    Variation selectors and CGJ are Mn, not Cf, and can silently change how
+    an identifier appears without changing its exact code-point sequence.
+    This is a display/spoofing guard, not identity authentication.
+    """
+    codepoint = ord(char)
+    return (unicodedata.category(char) in UNSAFE_IDENTIFIER_CATEGORIES
+            or codepoint == 0x034F
+            or 0xFE00 <= codepoint <= 0xFE0F
+            or 0xE0100 <= codepoint <= 0xE01EF)
+
+
 def _required_text(value: Any, field: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{field} must be a non-empty string")
@@ -38,7 +52,7 @@ def _required_text(value: Any, field: str) -> str:
     if field in STRUCTURAL_FIELDS:
         # Never silently canonicalize a structural ID. Leading/trailing
         # whitespace can make distinct submitted refs look identical.
-        if any(unicodedata.category(char) in UNSAFE_IDENTIFIER_CATEGORIES
+        if any(_unsafe_identifier_character(char)
                for char in value):
             raise ValueError(f"{field} contains unsafe identifier characters")
         if value != value.strip():
@@ -118,7 +132,7 @@ def _evidence_trace(items: tuple[str, ...]) -> str:
             continue
         # A control character in the label itself may be erased by strip(),
         # turning visually deceptive provenance into a clean-looking label.
-        if any(unicodedata.category(char) in UNSAFE_IDENTIFIER_CATEGORIES
+        if any(_unsafe_identifier_character(char)
                for char in label):
             return "ambiguous_unverified"
         # Repeated labels may give incompatible source, command or observations.
@@ -130,7 +144,7 @@ def _evidence_trace(items: tuple[str, ...]) -> str:
         # A multiline or invisible-control detail can smuggle a second
         # provenance label into one evidence item. Keep the raw evidence
         # (untrusted text), but downgrade its derived trace metadata.
-        if any(unicodedata.category(char) in UNSAFE_IDENTIFIER_CATEGORIES
+        if any(_unsafe_identifier_character(char)
                for char in detail):
             return "ambiguous_unverified"
         found.add(normalized)
