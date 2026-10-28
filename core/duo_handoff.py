@@ -101,7 +101,10 @@ class HandoffMessage:
         if actor_role not in ALLOWED_STATUSES or status not in ALLOWED_STATUSES[actor_role]:
             raise ValueError("role cannot report this status")
         evidence = raw["evidence"]
-        if not isinstance(evidence, list) or len(evidence) > 10:
+        # JSON decoding produces an exact built-in list. A list subclass can
+        # spoof __len__ or __iter__, bypassing the ten-item bound in direct
+        # in-process Mapping calls. Reject it rather than trusting its methods.
+        if type(evidence) is not list or len(evidence) > 10:
             raise ValueError("evidence must be a JSON array of at most 10 strings")
         validated_evidence = tuple(
             _required_text(item, "evidence item") for item in evidence
