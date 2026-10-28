@@ -134,6 +134,18 @@ class HandoffTests(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, "unsafe identifier characters"):
                         HandoffMessage.from_mapping(item)
 
+    def test_structural_identifiers_reject_surrounding_whitespace(self):
+        # Do not turn distinct supplied refs/IDs into the same normalized ID.
+        for field in ("task_id", "repository", "ref", "actor_role", "status", "artifact"):
+            for padding in (" ", "\u00a0"):
+                for side in ("left", "right"):
+                    with self.subTest(field=field, padding=repr(padding), side=side):
+                        item = record()
+                        item[field] = (padding + item[field] if side == "left"
+                                       else item[field] + padding)
+                        with self.assertRaisesRegex(ValueError, "surrounding whitespace"):
+                            HandoffMessage.from_mapping(item)
+
     def test_structural_identifier_allows_visible_non_ascii_text(self):
         item = record()
         item["task_id"] = "SELMA-Café-001"
