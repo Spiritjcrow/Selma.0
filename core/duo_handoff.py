@@ -116,6 +116,11 @@ def _evidence_trace(items: tuple[str, ...]) -> str:
         normalized = label.strip().lower()
         if not separator or normalized not in required:
             continue
+        # A control character in the label itself may be erased by strip(),
+        # turning visually deceptive provenance into a clean-looking label.
+        if any(unicodedata.category(char) in UNSAFE_IDENTIFIER_CATEGORIES
+               for char in label):
+            return "ambiguous_unverified"
         # Repeated labels may give incompatible source, command or observations.
         # Never elevate ambiguous free text to a clean provenance label.
         if normalized in found:
