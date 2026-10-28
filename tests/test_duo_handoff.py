@@ -80,6 +80,23 @@ class HandoffTests(unittest.TestCase):
                 self.assertEqual("tester_reported_pass", result["state"])
                 self.assertNotIn("accepted", result)
 
+    def test_embedded_control_in_provenance_detail_is_ambiguous(self):
+        # Free-text evidence remains allowed, but source labels with hidden
+        # lines or directional/zero-width controls are not clean provenance.
+        for control in ("\\n", "\\r", "\\u2028", "\\u2029",
+                        "\\u202e", "\\u200b", "\\x00", "\\t"):
+            with self.subTest(control=repr(control)):
+                item = record("tester", "pass")
+                item["evidence"] = [
+                    "source: synthetic fixture" + control + "source: conflicting",
+                    "command: python3 -m unittest",
+                    "observed: synthetic PASS",
+                ]
+                result = validate_exchange([record(), item])
+                self.assertEqual("ambiguous_unverified", result["evidence_trace"])
+                self.assertEqual("tester_reported_pass", result["state"])
+                self.assertNotIn("accepted", result)
+
     def test_duplicate_unrelated_notes_do_not_spoil_source_labels(self):
         item = record("tester", "pass")
         item["evidence"] = [
