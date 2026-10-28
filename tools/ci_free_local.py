@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import sys
 
@@ -26,7 +27,36 @@ def run(command, cwd=ROOT, *, timeout=CORE_TIMEOUT_SECONDS):
     """Run a bounded process without shell expansion or automatic retry."""
     cmd = [str(x) for x in command]
     print("+", " ".join(cmd), flush=True)
-    subprocess.run(cmd, cwd=cwd, check=True, timeout=timeout)
+    # A timed-out smoke test may have spawned a runtime. Kill its entire
+    # dedicated process tree; otherwise that orphan can hold the next test port.
+    opts = (
+        {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+        if os.name == "nt" else {"start_new_session": True}
+    )
+    with subprocess.Popen(cmd, cwd=cwd, **opts) as process:
+        try:
+            returncode = process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            if os.name == "nt":
+                try:
+                    subprocess.run(
+                        ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                        check=False, timeout=10,
+                    )
+                except (OSError, subprocess.TimeoutExpired):
+                    pass
+            else:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+            if process.poll() is None:
+                process.kill()
+            process.wait()
+            raise
+        if returncode:
+            raise subprocess.CalledProcessError(returncode, cmd)
 
 
 def revision():
