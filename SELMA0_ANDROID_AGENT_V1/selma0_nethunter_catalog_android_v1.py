@@ -9,12 +9,15 @@ or a signature-verifying F-Droid client instead.
 """
 from __future__ import annotations
 
+import io
 import json
 import os
 import re
 import tempfile
+import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.parse import urlsplit
 from urllib.request import urlopen
 
@@ -74,14 +77,29 @@ def _normalize_index(index):
 
 
 def _download_index():
-    with urlopen(INDEX_URL, timeout=15) as response:
-        final = urlsplit(response.geturl())
-        if final.scheme != "https" or final.hostname != "store.nethunter.com":
-            raise ValueError("Unexpected NetHunter repository redirect")
-        raw = response.read(MAX_DOWNLOAD_BYTES + 1)
-    if len(raw) > MAX_DOWNLOAD_BYTES:
-        raise ValueError("NetHunter index exceeds configured size limit")
-    return json.loads(raw.decode("utf-8"))
+    # F-Droid repositories may publish the JSON directly or in a signed JAR.
+    # Parsing a JAR is NOT the same as verifying its signing certificate.
+    for url in (INDEX_URL, REPO_URL + "index-v1.jar"):
+        try:
+            with urlopen(url, timeout=15) as response:
+                final = urlsplit(response.geturl())
+                if final.scheme != "https" or final.hostname != "store.nethunter.com":
+                    raise ValueError("Unexpected NetHunter repository redirect")
+                raw = response.read(MAX_DOWNLOAD_BYTES + 1)
+        except HTTPError as exc:
+            if exc.code == 404 and url == INDEX_URL:
+                continue
+            raise
+        if len(raw) > MAX_DOWNLOAD_BYTES:
+            raise ValueError("NetHunter index exceeds configured size limit")
+        if url.endswith(".jar"):
+            with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                info = archive.getinfo("index-v1.json")
+                if info.file_size > MAX_DOWNLOAD_BYTES:
+                    raise ValueError("NetHunter packaged index exceeds size limit")
+                raw = archive.read(info)
+        return json.loads(raw.decode("utf-8"))
+    raise ValueError("No compatible NetHunter repository index found")
 
 
 def sync_catalog():
