@@ -83,8 +83,8 @@ class HandoffTests(unittest.TestCase):
     def test_embedded_control_in_provenance_detail_is_ambiguous(self):
         # Free-text evidence remains allowed, but source labels with hidden
         # lines or directional/zero-width controls are not clean provenance.
-        for control in ("\\n", "\\r", "\\u2028", "\\u2029",
-                        "\\u202e", "\\u200b", "\\x00", "\\t"):
+        for control in ("\n", "\r", "\u2028", "\u2029",
+                        "\u202e", "\u200b", "\x00", "\t"):
             with self.subTest(control=repr(control)):
                 item = record("tester", "pass")
                 item["evidence"] = [
