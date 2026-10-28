@@ -166,7 +166,7 @@ qs('start').onclick=async()=>{qs('start').disabled=true;qs('result').textContent
   qs('result').innerHTML='Preferences saved. Selma runtime launch pending; readiness NOT verified. <a href="http://127.0.0.1:8765" target="_blank" rel="noopener">Try Selma chat after startup</a>. If unavailable, check the Termux startup log.';
   let attempts=0;
   const watcher=setInterval(async()=>{
-   if(++attempts>60){clearInterval(watcher);return;}
+   if(++attempts>60){qs('result').textContent='Launch remains unverified after two minutes. Check the Termux startup log and existing launcher before any retry; do not assume readiness.';clearInterval(watcher);return;}
    try{const response=await fetch('/launch-status');if(!response.ok)return;
     const state=await response.json();
     if(state.status==='exited_after_launch'){
