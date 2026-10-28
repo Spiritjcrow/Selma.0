@@ -91,8 +91,16 @@ def _evidence_trace(items: tuple[str, ...]) -> str:
     found = set()
     for item in items:
         label, separator, detail = item.partition(":")
-        if separator and detail.strip() and label.strip().lower() in required:
-            found.add(label.strip().lower())
+        normalized = label.strip().lower()
+        if not separator or normalized not in required:
+            continue
+        # Repeated labels may give incompatible source, command or observations.
+        # Never elevate ambiguous free text to a clean provenance label.
+        if normalized in found:
+            return "ambiguous_unverified"
+        if not detail.strip():
+            return "unattributed_unverified"
+        found.add(normalized)
     return ("source_labeled_unverified" if found == required
             else "unattributed_unverified")
 
