@@ -8,12 +8,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
+import unicodedata
 
 SCHEMA_VERSION = 1
 FIELDS = frozenset({
     "schema_version", "task_id", "repository", "ref", "actor_role",
     "status", "artifact", "evidence", "summary",
 })
+# Only structural identifiers are constrained. Human-readable evidence and
+# summaries remain untrusted free text; this does not authenticate an actor.
+STRUCTURAL_FIELDS = frozenset({
+    "task_id", "repository", "ref", "actor_role", "status", "artifact",
+})
+UNSAFE_IDENTIFIER_CATEGORIES = frozenset({"Cc", "Cf", "Cs", "Zl", "Zp"})
 ALLOWED_STATUSES = {
     "builder": frozenset({"submitted"}),
     "tester": frozenset({"pass", "fail", "blocked"}),
@@ -25,6 +32,14 @@ def _required_text(value: Any, field: str) -> str:
         raise ValueError(f"{field} must be a non-empty string")
     if len(value) > 4096:
         raise ValueError(f"{field} is too long")
+    # Newlines, NULs, bidi overrides, zero-width formatters and surrogates
+    # can visually spoof the task/ref/artifact shown in a GitHub handoff.
+    # Reject them before strip(), which would otherwise hide edge controls.
+    if field in STRUCTURAL_FIELDS and any(
+        unicodedata.category(char) in UNSAFE_IDENTIFIER_CATEGORIES
+        for char in value
+    ):
+        raise ValueError(f"{field} contains unsafe identifier characters")
     return value.strip()
 
 
