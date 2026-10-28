@@ -24,8 +24,10 @@ SMOKE_TIMEOUT_SECONDS = 240
 ANDROID_TIMEOUT_SECONDS = 1800
 
 
-def run(command, cwd=ROOT, *, timeout=CORE_TIMEOUT_SECONDS, env=None):
+def run(command, cwd=None, *, timeout=CORE_TIMEOUT_SECONDS, env=None):
     """Run a bounded process without shell expansion or automatic retry."""
+    if cwd is None:
+        cwd = ROOT
     cmd = [str(x) for x in command]
     print("+", " ".join(cmd), flush=True)
     # A timed-out smoke test may have spawned a runtime. Kill its entire
