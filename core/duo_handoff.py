@@ -166,7 +166,9 @@ def validate_exchange(raw_messages: Sequence[Mapping[str, Any]]) -> dict[str, st
     Status is a statement about supplied records, not a verified phone/session
     identity, real device test, or authorization decision.
     """
-    if not isinstance(raw_messages, list) or not 1 <= len(raw_messages) <= 2:
+    # Direct Python callers can pass list subclasses with spoofed __len__.
+    # Require the exact JSON-decoder list type so a third record is never ignored.
+    if type(raw_messages) is not list or not 1 <= len(raw_messages) <= 2:
         raise ValueError("exchange must be a JSON array of 1 or 2 messages")
     messages = [HandoffMessage.from_mapping(item) for item in raw_messages]
     builder = messages[0]
