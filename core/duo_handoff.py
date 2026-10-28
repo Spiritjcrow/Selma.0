@@ -43,6 +43,10 @@ def _required_text(value: Any, field: str) -> str:
             raise ValueError(f"{field} contains unsafe identifier characters")
         if value != value.strip():
             raise ValueError(f"{field} contains surrounding whitespace")
+        # Distinct NFC/NFD spellings can display as the same identifier.
+        # Reject noncanonical forms instead of silently rewriting task/ref IDs.
+        if unicodedata.normalize("NFC", value) != value:
+            raise ValueError(f"{field} contains non-NFC Unicode text")
     return value.strip()
 
 
