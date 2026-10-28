@@ -112,6 +112,23 @@ class HandoffTests(unittest.TestCase):
                 self.assertEqual("tester_reported_pass", result["state"])
                 self.assertNotIn("accepted", result)
 
+    def test_hidden_label_lookalikes_downgrade_provenance(self):
+        # Unrecognized labels must not hide contradictory source claims.
+        # Free-text evidence is retained, but derived labels stay unverified.
+        for hidden_label in ("sour\u200bce", "source\u034f", "comm\u200band", "observed\u202e"):
+            with self.subTest(hidden_label=repr(hidden_label)):
+                item = record("tester", "pass")
+                item["evidence"] = [
+                    "source: synthetic fixture A",
+                    "command: python3 -m unittest",
+                    "observed: synthetic PASS",
+                    f"{hidden_label}: contradictory fixture B",
+                ]
+                result = validate_exchange([record(), item])
+                self.assertEqual("ambiguous_unverified", result["evidence_trace"])
+                self.assertEqual("tester_reported_pass", result["state"])
+                self.assertNotIn("accepted", result)
+
     def test_duplicate_unrelated_notes_do_not_spoil_source_labels(self):
         item = record("tester", "pass")
         item["evidence"] = [
