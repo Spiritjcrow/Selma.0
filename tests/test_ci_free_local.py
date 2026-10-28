@@ -71,6 +71,11 @@ class LocalCIFallbackTests(unittest.TestCase):
             with self.assertRaises(subprocess.TimeoutExpired):
                 ci.run([sys.executable, "-c", "import time; time.sleep(10)"], timeout=0.1)
 
+    def test_subprocess_uses_current_repository_root(self):
+        with tempfile.TemporaryDirectory() as temp, patch.object(ci, "ROOT", Path(temp)):
+            ci.run([sys.executable, "-c", "from pathlib import Path; Path('cwd-proof').write_text('ok')"], timeout=3)
+            self.assertEqual('ok', (Path(temp) / 'cwd-proof').read_text())
+
     def test_nonzero_child_process_stops_validation(self):
         with tempfile.TemporaryDirectory() as temp, patch.object(ci, "ROOT", Path(temp)):
             with self.assertRaises(subprocess.CalledProcessError):
