@@ -75,7 +75,9 @@ python3 -m unittest discover -s tests -p 'test_duo_handoff.py' -v
 ```
 
 Expected example JSON output:
-`{"ok": true, "state": "tester_reported_blocked", "task_id": "SELMA49-001"}`.
+`{"evidence_trace": "unattributed_unverified", "ok": true, "state": "tester_reported_blocked", "task_id": "SELMA49-001"}`.
+
+`evidence_trace` is advisory metadata: `unattributed_unverified` for free-text reports, or `source_labeled_unverified` only when separate nonempty `source:`, `command:` and `observed:` evidence entries exist. Both remain **unverified**; labels, command strings and `tester_reported_pass` do not authenticate a person, phone, executed test, or permission. The v0.1 message schema is unchanged.
 
 This is a **protocol contract demonstration**. It does not copy messages between the two phones. Neither app session can be assumed to read the other's active chat or directly control it. A future transport requires scoped auth, encrypted/safe storage, bounded retries, audit and approvals (see #24, #33, #39, #43 and #44).
 
