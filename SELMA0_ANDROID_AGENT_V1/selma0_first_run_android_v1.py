@@ -257,11 +257,13 @@ class WizardHandler(BaseHTTPRequestHandler):
                 env["SELMA0_PORT_V1"] = "8765"
                 env["SELMA0_LLM_TIMEOUT_V1"] = "30" if profile["profile"] == "eco" else "45"
                 log_path = HOME / "selma0_startup_v1.log"
+                spawned_child = None
                 try:
                     with open_startup_log(log_path) as log:
                         child = subprocess.Popen([sys.executable, str(RUNTIME)], cwd=ROOT, env=env,
                                                  stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
                                                  start_new_session=True)
+                        spawned_child = child
                         # Detect an immediate crash without claiming HTTP/model readiness.
                         try:
                             early_exit = child.wait(timeout=1.5)
@@ -279,6 +281,12 @@ class WizardHandler(BaseHTTPRequestHandler):
                                 return self.reply(503, {"error": "runtime exited and setup rollback failed; manual recovery required"})
                             return self.reply(503, {"error": f"runtime exited during startup (code {early_exit}); setup remains incomplete"})
                 except OSError as exc:
+                    if spawned_child is not None:
+                        # A log finalization/observation error after Popen is
+                        # not proof the child exited. Keep the saved guard so
+                        # a retry cannot silently spawn a duplicate process.
+                        LAUNCHED_CHILD = spawned_child
+                        return self.reply(503, {"error": "startup observation failed after spawn; process state unverified; manual recovery required"})
                     try:
                         PREFS.unlink()
                     except OSError:
