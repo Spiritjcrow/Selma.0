@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import stat
 import subprocess
 import sys
 import tempfile
@@ -86,6 +87,26 @@ def save_preferences(value, destination=PREFS):
     finally:
         temporary.unlink(missing_ok=True)
     return data
+
+
+def open_startup_log(path):
+    """Append to a private regular log without following a final symlink.
+
+    Android/Termux provides O_NOFOLLOW; unsupported hosts fail closed.
+    """
+    if not hasattr(os, "O_NOFOLLOW"):
+        raise OSError("secure startup log opening is unsupported")
+    flags = os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW | os.O_NONBLOCK
+    fd = os.open(path, flags, 0o600)
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise OSError("startup log must be a single-link regular file")
+        os.fchmod(fd, 0o600)
+        return os.fdopen(fd, "ab")
+    except BaseException:
+        os.close(fd)
+        raise
 
 
 PAGE = r'''<!doctype html><html lang="en"><meta charset="utf-8">
@@ -200,7 +221,7 @@ class WizardHandler(BaseHTTPRequestHandler):
                 env["SELMA0_LLM_TIMEOUT_V1"] = "30" if profile["profile"] == "eco" else "45"
                 log_path = HOME / "selma0_startup_v1.log"
                 try:
-                    with log_path.open("ab") as log:
+                    with open_startup_log(log_path) as log:
                         child = subprocess.Popen([sys.executable, str(RUNTIME)], cwd=ROOT, env=env,
                                                  stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
                                                  start_new_session=True)
