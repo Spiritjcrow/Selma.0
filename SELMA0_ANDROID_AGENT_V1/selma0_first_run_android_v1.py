@@ -36,7 +36,11 @@ def observed_launch_state():
     child = LAUNCHED_CHILD
     if child is None:
         return "untracked"
-    return "launch_pending" if child.poll() is None else "exited_after_launch"
+    try:
+        return "launch_pending" if child.poll() is None else "exited_after_launch"
+    except OSError:
+        # Observation failure cannot establish that a spawned child exited.
+        return "observation_unavailable"
 
 
 def measurements():
@@ -175,6 +179,9 @@ qs('start').onclick=async()=>{qs('start').disabled=true;qs('result').textContent
     }else if(state.status==='untracked'){
      qs('result').textContent='Launch process is no longer tracked by this wizard. Check the existing launcher and startup log; readiness NOT verified.';
      clearInterval(watcher);
+    }else if(state.status==='observation_unavailable'){
+     qs('result').textContent='Launch status could not be observed. Check the existing launcher and startup log before any retry; readiness NOT verified.';
+     clearInterval(watcher);
     }
    }catch(e){/* Loopback observation is best effort; never claim ready. */}
   },2000);
@@ -259,6 +266,11 @@ class WizardHandler(BaseHTTPRequestHandler):
                         try:
                             early_exit = child.wait(timeout=1.5)
                         except subprocess.TimeoutExpired:
+                            early_exit = None
+                        except OSError:
+                            # Child was spawned; an observation error is not
+                            # proof of exit. Keep preferences to prevent a
+                            # duplicate launch on a blind first-run retry.
                             early_exit = None
                         if early_exit is not None:
                             try:
