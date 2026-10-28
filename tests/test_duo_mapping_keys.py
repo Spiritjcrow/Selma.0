@@ -84,6 +84,26 @@ class MappingKeyGuardTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "at most 10 strings"):
             HandoffMessage.from_mapping(item)
 
+    def test_rejects_exchange_list_subclass_spoofing_length(self):
+        class MisleadingExchange(list):
+            def __len__(self):
+                return 2
+
+        # A third report must not be ignored when __len__ lies.
+        payload = MisleadingExchange([
+            record(), record("tester", "pass"), record("tester", "pass"),
+        ])
+        self.assertEqual(3, len(list(payload)))
+        with self.assertRaisesRegex(ValueError, "exchange must be a JSON array"):
+            validate_exchange(payload)
+
+    def test_rejects_exchange_list_subclass_with_two_items(self):
+        class ExchangeList(list):
+            pass
+
+        with self.assertRaisesRegex(ValueError, "exchange must be a JSON array"):
+            validate_exchange(ExchangeList([record(), record("tester", "pass")]))
+
     def test_exact_list_bound_still_accepts_ten(self):
         item = record("tester", "pass")
         item["evidence"] = [f"note-{n}" for n in range(10)]
