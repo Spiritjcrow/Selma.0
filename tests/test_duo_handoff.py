@@ -33,6 +33,38 @@ class HandoffTests(unittest.TestCase):
                 result = validate_exchange([record(), record("tester", status)])
                 self.assertEqual(f"tester_reported_{status}", result["state"])
 
+    def test_unattributed_tester_pass_stays_unverified(self):
+        result = validate_exchange([record(), record("tester", "pass")])
+        self.assertEqual(result["state"], "tester_reported_pass")
+        self.assertEqual(result["evidence_trace"], "unattributed_unverified")
+
+    def test_source_labels_do_not_claim_independent_verification(self):
+        item = record("tester", "pass")
+        item["evidence"] = [
+            "source: synthetic fixture (not a device)",
+            "command: python3 -m unittest test_duo_handoff",
+            "observed: 11 local checks PASS; no independent device",
+        ]
+        result = validate_exchange([record(), item])
+        self.assertEqual(result["evidence_trace"], "source_labeled_unverified")
+        self.assertEqual(result["state"], "tester_reported_pass")
+        self.assertNotIn("accepted", result)
+
+    def test_empty_and_embedded_labels_are_not_source_labeled(self):
+        for evidence in (
+            ["source:", "command: test", "observed: PASS"],
+            ["notes source: fake", "command: test", "observed: PASS"],
+            ["source: fixture", "command: ", "observed: PASS"],
+            ["source: fixture", "command: test"],
+        ):
+            with self.subTest(evidence=evidence):
+                item = record("tester", "pass")
+                item["evidence"] = evidence
+                self.assertEqual(
+                    validate_exchange([record(), item])["evidence_trace"],
+                    "unattributed_unverified",
+                )
+
     def test_builder_cannot_claim_verified_state(self):
         with self.assertRaisesRegex(ValueError, "role cannot report"):
             HandoffMessage.from_mapping(record("builder", "pass"))
