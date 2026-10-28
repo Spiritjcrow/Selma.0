@@ -73,7 +73,7 @@ def find_bash():
         candidate = git_root / "bin" / "bash.exe"
         if candidate.is_file():
             return str(candidate)
-    bash = find_bash()
+    bash = shutil.which("bash")
     if bash and "system32" not in str(Path(bash)).lower():
         return bash
     return None
@@ -97,7 +97,7 @@ def validate_json():
 
 
 def validate_shell():
-    bash = shutil.which("bash")
+    bash = find_bash()
     if not bash:
         print("INCOMPLETE: Bash missing; shell checks and agent smoke test NOT_RUN.")
         print("Install Git Bash (Windows) or Bash, then rerun for full core verification.")
