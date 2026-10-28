@@ -34,6 +34,43 @@ class TestSetup(unittest.TestCase):
             self.assertEqual(__import__("json").loads(file.read_text())["scene"], "forest")
 
 
+    def test_existing_fixed_temp_symlink_cannot_overwrite_other_file(self):
+        # Source-only regression; never touches an external path or device.
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            victim = root / "unrelated.txt"
+            victim.write_text("unchanged", encoding="utf-8")
+            fixed_temp = root / "prefs.json.tmp"
+            try:
+                fixed_temp.symlink_to(victim)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks unavailable on this test host")
+            prefs = root / "prefs.json"
+            setup.save_preferences({"profile": "eco", "scene": "forest", "motion": "normal"}, prefs)
+            self.assertEqual(victim.read_text(encoding="utf-8"), "unchanged")
+            self.assertEqual(json.loads(prefs.read_text(encoding="utf-8"))["scene"], "forest")
+            self.assertEqual(prefs.stat().st_mode & 0o777, 0o600)
+            self.assertTrue(fixed_temp.is_symlink())
+            self.assertFalse(list(root.glob(".prefs.json.*.tmp")))
+
+    def test_replace_failure_preserves_previous_preferences_and_cleans_temp(self):
+        with tempfile.TemporaryDirectory() as t:
+            prefs = Path(t) / "prefs.json"
+            prefs.write_text("prior", encoding="utf-8")
+            with mock.patch.object(setup.os, "replace", side_effect=OSError("synthetic replace failure")):
+                with self.assertRaises(OSError):
+                    setup.save_preferences({"profile": "eco", "scene": "coast", "motion": "reduced"}, prefs)
+            self.assertEqual(prefs.read_text(encoding="utf-8"), "prior")
+            self.assertFalse(list(Path(t).glob(".prefs.json.*.tmp")))
+
+    def test_repeated_atomic_saves_preserve_private_file_mode(self):
+        with tempfile.TemporaryDirectory() as t:
+            prefs = Path(t) / "prefs.json"
+            for scene in ("coast", "city"):
+                setup.save_preferences({"profile": "eco", "scene": scene, "motion": "reduced"}, prefs)
+            self.assertEqual(prefs.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(json.loads(prefs.read_text(encoding="utf-8"))["scene"], "city")
+
 
 class TestStartRecovery(unittest.TestCase):
     """Offline HTTP-handler simulation; no real process, port, or Android device."""
