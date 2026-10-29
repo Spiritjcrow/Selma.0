@@ -2,11 +2,36 @@
 """Structure/hash inspection of a locally built debug APK, NOT install or sensor QA."""
 import hashlib
 import json
+import os
 import pathlib
 import shutil
 import subprocess
 import sys
 import zipfile
+
+
+def find_apksigner():
+    signer = shutil.which("apksigner")
+    if signer:
+        return signer
+    sdk = os.environ.get("ANDROID_SDK_ROOT") or os.environ.get("ANDROID_HOME")
+    if not sdk:
+        return None
+    build_tools = pathlib.Path(sdk) / "build-tools" / "35.0.0"
+    for name in ("apksigner", "apksigner.bat"):
+        candidate = build_tools / name
+        if candidate.is_file():
+            return str(candidate)
+    return None
+
+
+def sha256_file(path):
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
 
 def main(argv):
     if len(argv) != 2:
@@ -30,22 +55,24 @@ def main(argv):
     result = {
         "apk": path.name,
         "size_bytes": path.stat().st_size,
-        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "sha256": sha256_file(path),
         "archive_test": "PASS",
         "device_install": "NOT_RUN",
         "radio_observations": "NOT_RUN",
         "signature": "NOT_VERIFIED",
     }
-    signer = shutil.which("apksigner")
-    if signer:
-        proc = subprocess.run([signer, "verify", "--verbose", str(path)],
-                              text=True, capture_output=True, timeout=25, check=False)
-        result["signature"] = "PASS" if proc.returncode == 0 else "FAIL"
-        if proc.returncode:
-            print(json.dumps(result, indent=2))
-            return 1
+    signer = find_apksigner()
+    if not signer:
+        result["signature"] = "BLOCKED"
+        print(json.dumps(result, indent=2))
+        print("BLOCKED: apksigner is required for APK evidence", file=sys.stderr)
+        return 75
+    proc = subprocess.run([signer, "verify", "--verbose", str(path)],
+                          text=True, capture_output=True, timeout=25, check=False)
+    result["signature"] = "PASS" if proc.returncode == 0 else "FAIL"
     print(json.dumps(result, indent=2))
-    return 0
+    return 0 if proc.returncode == 0 else 1
+
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
