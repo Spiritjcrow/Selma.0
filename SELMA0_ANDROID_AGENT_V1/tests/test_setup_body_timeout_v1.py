@@ -37,7 +37,7 @@ class TestSetupBodyTimeout(unittest.TestCase):
         handler, replies = self.make_handler()
         handler.rfile = mock.Mock()
         handler.rfile.read.side_effect = TimeoutError("SYNTHETIC_CLIENT_PATH_91")
-        with mock.patch.object(setup, "save_preferences") as save, \\
+        with mock.patch.object(setup, "save_preferences") as save, \
              mock.patch.object(setup.subprocess, "Popen") as spawn:
             handler.do_POST()
         self.assertEqual(replies, [(408, {"error": "request body timed out"})])
@@ -48,9 +48,9 @@ class TestSetupBodyTimeout(unittest.TestCase):
 
     def test_complete_body_sets_timeout_and_reaches_runtime_preflight(self):
         handler, replies = self.make_handler()
-        with tempfile.TemporaryDirectory() as temp, \\
-             mock.patch.object(setup, "RUNTIME", Path(temp) / "missing.py"), \\
-             mock.patch.object(setup, "save_preferences") as save, \\
+        with tempfile.TemporaryDirectory() as temp, \
+             mock.patch.object(setup, "RUNTIME", Path(temp) / "missing.py"), \
+             mock.patch.object(setup, "save_preferences") as save, \
              mock.patch.object(setup.subprocess, "Popen") as spawn:
             handler.do_POST()
         self.assertEqual(replies[0][0], 503)
@@ -62,7 +62,7 @@ class TestSetupBodyTimeout(unittest.TestCase):
     def test_short_body_is_not_confused_with_timeout(self):
         handler, replies = self.make_handler()
         handler.rfile = io.BytesIO(b"{}")
-        with mock.patch.object(setup, "save_preferences") as save, \\
+        with mock.patch.object(setup, "save_preferences") as save, \
              mock.patch.object(setup.subprocess, "Popen") as spawn:
             handler.do_POST()
         self.assertEqual(replies, [(400, {"error": "incomplete request body"})])
