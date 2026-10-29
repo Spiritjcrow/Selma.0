@@ -112,6 +112,37 @@ class HandoffTests(unittest.TestCase):
                 self.assertEqual("tester_reported_pass", result["state"])
                 self.assertNotIn("accepted", result)
 
+    def test_evidence_edge_controls_downgrade_without_trimming(self):
+        # Validated free text must preserve edge controls for trace analysis.
+        # These are synthetic reports, never independently verified tests.
+        for control in ("\\t", "\\r", "\\n", "\\u2028", "\\u2029",
+                        "\\x00", "\\u200b"):
+            for side in ("leading", "trailing"):
+                with self.subTest(control=repr(control), side=side):
+                    item = record("tester", "pass")
+                    source = ("source: synthetic fixture" + control if side == "trailing"
+                              else control + "source: synthetic fixture")
+                    item["evidence"] = [
+                        source, "command: python3 -m unittest",
+                        "observed: synthetic PASS",
+                    ]
+                    self.assertEqual(
+                        source, HandoffMessage.from_mapping(item).evidence[0]
+                    )
+                    result = validate_exchange([record(), item])
+                    self.assertEqual("ambiguous_unverified", result["evidence_trace"])
+                    self.assertNotIn("accepted", result)
+
+    def test_plain_edge_spaces_remain_source_labeled_unverified(self):
+        item = record("tester", "pass")
+        item["evidence"] = [
+            " source: synthetic fixture ", "command: python3 -m unittest",
+            "observed: synthetic PASS",
+        ]
+        result = validate_exchange([record(), item])
+        self.assertEqual("source_labeled_unverified", result["evidence_trace"])
+        self.assertNotIn("accepted", result)
+
     def test_hidden_label_lookalikes_downgrade_provenance(self):
         # Unrecognized labels must not hide contradictory source claims.
         # Free-text evidence is retained, but derived labels stay unverified.
