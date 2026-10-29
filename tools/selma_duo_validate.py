@@ -51,7 +51,12 @@ def main(argv: list[str] | None = None) -> int:
             with open(args.path, "rb") as file:
                 payload = _load_bounded_json(file)
         result = validate_exchange(payload)
-    except (OSError, json.JSONDecodeError, TypeError, ValueError) as exc:
+    except OSError:
+        # OSError text includes the supplied path, which can contain private
+        # filenames or directories. Do not echo it into captured CLI logs.
+        print(json.dumps({"ok": False, "error": "input read failed"}))
+        return 2
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
         print(json.dumps({"ok": False, "error": str(exc)}))
         return 2
     print(json.dumps({"ok": True, **result}, sort_keys=True))
