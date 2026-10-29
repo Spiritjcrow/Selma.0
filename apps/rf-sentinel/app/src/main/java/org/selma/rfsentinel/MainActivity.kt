@@ -79,6 +79,7 @@ class MainActivity : Activity() {
             scanningBle = false
             handler.removeCallbacks(stopTask)
             scanner = null
+            bleSamples.clear()
             notice = "BLE scan failed, Android error code " + errorCode
             render()
         }
@@ -266,6 +267,7 @@ class MainActivity : Activity() {
         }
         bleCount = bleSamples.size
         bleMean = bleSamples.values.map { it.toDouble() }.average().takeIf { !it.isNaN() }
+        bleSamples.clear()
         bleStatus = "BLE: " + bleCount + " distinct radio devices this scan, not people."
         notice = "BLE scan stopped."
         saveRow()

@@ -96,6 +96,24 @@ class ProjectContracts(unittest.TestCase):
         self.assertLess(callback.index(guard), callback.index("scanningBle = false"))
         self.assertLess(callback.index(guard), callback.index("render()"))
 
+    def test_ble_device_keys_are_erased_when_scan_ends(self):
+        code = (ROOT / "app/src/main/java/org/selma/rfsentinel/MainActivity.kt").read_text()
+        failed = code[
+            code.index("override fun onScanFailed"):
+            code.index("override fun onCreate")
+        ]
+        self.assertIn("bleSamples.clear()", failed)
+        self.assertLess(failed.index("bleSamples.clear()"), failed.index("render()"))
+
+        stop_ble = code[
+            code.index("private fun stopBle"):
+            code.index("private fun snapshot")
+        ]
+        aggregate_end = stop_ble.index("bleMean =")
+        save_row = stop_ble.index("saveRow()")
+        clear_after_aggregate = stop_ble.index("bleSamples.clear()", aggregate_end)
+        self.assertLess(clear_after_aggregate, save_row)
+
     def test_no_danger_inference(self):
         code = (ROOT / "app/src/main/java/org/selma/rfsentinel/RfMetrics.kt").read_text()
         self.assertIn("radio change index", code)
