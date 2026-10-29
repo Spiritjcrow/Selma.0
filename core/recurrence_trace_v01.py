@@ -53,7 +53,7 @@ def review_trace(records: list[dict[str, Any]]) -> dict[str, Any]:
     if type(records) is not list or len(records) > 128:
         raise ValueError("trace must be an array of at most 128 checkpoints")
     event_ids: set[str] = set()
-    snapshots: set[tuple[str, str, str, str]] = set()
+    snapshots: set[tuple[str, str, str, str, str]] = set()
     prior_hash = None
     duplicate_ids: list[int] = []
     unchanged_revisits: list[int] = []
@@ -67,7 +67,9 @@ def review_trace(records: list[dict[str, Any]]) -> dict[str, Any]:
         if record["event_id"] in event_ids:
             duplicate_ids.append(index)
         event_ids.add(record["event_id"])
-        snapshot = (record["task_id"], record["state"],
+        # A handoff to a different role is not an unchanged revisit:
+        # ownership is part of the checkpoint's observable state.
+        snapshot = (record["task_id"], record["owner_role"], record["state"],
                     record["artifact_sha256"], record["evidence_sha256"])
         if snapshot in snapshots:
             unchanged_revisits.append(index)
