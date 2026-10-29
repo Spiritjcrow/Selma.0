@@ -115,8 +115,8 @@ class HandoffTests(unittest.TestCase):
     def test_evidence_edge_controls_downgrade_without_trimming(self):
         # Validated free text must preserve edge controls for trace analysis.
         # These are synthetic reports, never independently verified tests.
-        for control in ("\\t", "\\r", "\\n", "\\u2028", "\\u2029",
-                        "\\x00", "\\u200b"):
+        for control in ("\t", "\r", "\n", "\u2028", "\u2029",
+                        "\x00", "\u200b"):
             for side in ("leading", "trailing"):
                 with self.subTest(control=repr(control), side=side):
                     item = record("tester", "pass")
