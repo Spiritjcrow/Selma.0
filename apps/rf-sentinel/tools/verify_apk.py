@@ -69,6 +69,7 @@ def main(argv):
         "sha256": sha256_file(path),
         "archive_test": "PASS",
         "package_id": "NOT_VERIFIED",
+        "internet_permission": "NOT_VERIFIED",
         "device_install": "NOT_RUN",
         "radio_observations": "NOT_RUN",
         "signature": "NOT_VERIFIED",
@@ -90,6 +91,19 @@ def main(argv):
         print(json.dumps(result, indent=2))
         print("FAIL: unexpected APK package identity", file=sys.stderr)
         return 1
+
+    permissions = run_tool([aapt2, "dump", "permissions", str(path)])
+    if permissions is None or permissions.returncode != 0:
+        result["internet_permission"] = "FAIL"
+        print(json.dumps(result, indent=2))
+        print("FAIL: AAPT2 could not read APK permissions", file=sys.stderr)
+        return 1
+    if "android.permission.INTERNET" in permissions.stdout:
+        result["internet_permission"] = "PRESENT"
+        print(json.dumps(result, indent=2))
+        print("FAIL: APK violates offline-first policy with INTERNET permission", file=sys.stderr)
+        return 1
+    result["internet_permission"] = "ABSENT"
 
     signer = find_build_tool("apksigner")
     if not signer:
