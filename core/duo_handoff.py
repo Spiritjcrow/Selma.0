@@ -42,7 +42,10 @@ def _unsafe_identifier_character(char: str) -> bool:
 
 
 def _required_text(value: Any, field: str) -> str:
-    if not isinstance(value, str) or not value.strip():
+    # JSON decoding yields exact str. A str subclass can override __len__,
+    # __iter__, strip and equality to conceal unsafe text in direct Mapping
+    # calls; accept only the built-in type rather than trusting those hooks.
+    if type(value) is not str or not value.strip():
         raise ValueError(f"{field} must be a non-empty string")
     if len(value) > 4096:
         raise ValueError(f"{field} is too long")
