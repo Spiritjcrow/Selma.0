@@ -108,3 +108,37 @@ class MappingKeyGuardTests(unittest.TestCase):
         item = record("tester", "pass")
         item["evidence"] = [f"note-{n}" for n in range(10)]
         self.assertEqual(10, len(HandoffMessage.from_mapping(item).evidence))
+
+    def test_rejects_str_subclasses_that_spoof_identifier_validation(self):
+        class SpoofedStr(str):
+            def __len__(self):
+                return 1
+
+            def __iter__(self):
+                return iter("safe")
+
+            def strip(self, *args):
+                return self
+
+            def __eq__(self, other):
+                return True
+
+            __hash__ = str.__hash__
+
+        for field in ("task_id", "repository", "ref", "actor_role",
+                      "status", "artifact", "summary"):
+            with self.subTest(field=field):
+                item = record()
+                item[field] = SpoofedStr(item[field] + "\x00forged")
+                with self.assertRaisesRegex(ValueError, "must be a non-empty string"):
+                    HandoffMessage.from_mapping(item)
+
+        with self.subTest(field="evidence"):
+            item = record("tester", "pass")
+            item["evidence"] = [SpoofedStr("observed: PASS\x00forged")]
+            with self.assertRaisesRegex(ValueError, "must be a non-empty string"):
+                HandoffMessage.from_mapping(item)
+
+    def test_exact_builtin_strings_remain_accepted(self):
+        self.assertEqual("tester_reported_pass", validate_exchange(
+            [record(), record("tester", "pass")])["state"])
