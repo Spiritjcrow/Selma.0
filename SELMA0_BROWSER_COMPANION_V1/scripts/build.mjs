@@ -1,7 +1,8 @@
 import { mkdir, copyFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-const project = path.resolve(import.meta.dirname, "..");
+import { fileURLToPath } from "node:url";
+const project = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const compiler = process.platform === "win32" ? "tsc.cmd" : "tsc";
 const result = spawnSync(compiler, ["--project", "tsconfig.json"], { cwd: project, stdio: "inherit" });
 if (result.status !== 0) process.exit(result.status ?? 1);

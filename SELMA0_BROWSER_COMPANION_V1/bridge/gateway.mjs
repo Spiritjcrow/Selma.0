@@ -1,4 +1,6 @@
 import http from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 const DEFAULT_PORT = 18766;
 const DEFAULT_UPSTREAM = "http://127.0.0.1:18765";
@@ -61,7 +63,7 @@ export function createGateway({
     server.listen(port, "127.0.0.1", () => { server.off("error", reject); resolve(server.address()); });
   }) };
 }
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const gateway = createGateway({ token: process.env.SELMA_BRIDGE_TOKEN || undefined, upstream: process.env.SELMA_BACKEND_URL || undefined });
   await gateway.start();
   console.log("Selma° local gateway: http://127.0.0.1:18766");

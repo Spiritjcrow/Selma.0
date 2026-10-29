@@ -5,6 +5,7 @@ import http from "node:http";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createGateway } from "../bridge/gateway.mjs";
 
 const backend = http.createServer((_req, res) => {
@@ -17,7 +18,7 @@ try {
   gateway = createGateway({ token: "e".repeat(32), upstream: `http://127.0.0.1:${backend.address().port}` });
   await gateway.start();
   profile = await mkdtemp(path.join(os.tmpdir(), "selma-caps-"));
-  const extPath = path.resolve(import.meta.dirname, "../dist");
+  const extPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../dist");
   browser = await chromium.launchPersistentContext(profile, {
     channel: "chromium", headless: true,
     args: [`--disable-extensions-except=${extPath}`, `--load-extension=${extPath}`],
