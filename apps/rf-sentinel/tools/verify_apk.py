@@ -14,6 +14,7 @@ import zipfile
 EXPECTED_PACKAGE_ID = "org.selma.rfsentinel"
 EXPECTED_MIN_SDK = "30"
 EXPECTED_TARGET_SDK = "35"
+EXPECTED_LAUNCHABLE_ACTIVITY = "org.selma.rfsentinel.MainActivity"
 
 
 def find_build_tool(name):
@@ -75,6 +76,7 @@ def main(argv):
         "internet_permission": "NOT_VERIFIED",
         "min_sdk": "NOT_VERIFIED",
         "target_sdk": "NOT_VERIFIED",
+        "launchable_activity": "NOT_VERIFIED",
         "device_install": "NOT_RUN",
         "radio_observations": "NOT_RUN",
         "signature": "NOT_VERIFIED",
@@ -131,6 +133,21 @@ def main(argv):
             result["target_sdk"] != EXPECTED_TARGET_SDK):
         print(json.dumps(result, indent=2))
         print("FAIL: unexpected APK SDK compatibility", file=sys.stderr)
+        return 1
+    launchable = re.search(
+        r"^launchable(?:-activity:| activity) name='([^']+)'",
+        badging.stdout,
+        re.MULTILINE,
+    )
+    if launchable is None:
+        result["launchable_activity"] = "FAIL"
+        print(json.dumps(result, indent=2))
+        print("FAIL: APK has no verified launchable activity", file=sys.stderr)
+        return 1
+    result["launchable_activity"] = launchable.group(1)
+    if result["launchable_activity"] != EXPECTED_LAUNCHABLE_ACTIVITY:
+        print(json.dumps(result, indent=2))
+        print("FAIL: unexpected APK launchable activity", file=sys.stderr)
         return 1
 
     signer = find_build_tool("apksigner")
