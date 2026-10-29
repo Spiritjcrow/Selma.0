@@ -42,6 +42,27 @@ class ProjectContracts(unittest.TestCase):
             on_stop.index("stopBle()"),
         )
 
+    def test_wifi_results_cannot_be_recorded_offscreen(self):
+        code = (ROOT / "app/src/main/java/org/selma/rfsentinel/MainActivity.kt").read_text()
+        receiver = code[
+            code.index("private val wifiReceiver"):
+            code.index("private val bleCallback")
+        ]
+        self.assertIn("if (!activityStarted) return", receiver)
+        self.assertLess(
+            receiver.index("if (!activityStarted) return"),
+            receiver.index("readWifi("),
+        )
+        read_wifi = code[
+            code.index("private fun readWifi"):
+            code.index("private fun startBle")
+        ]
+        self.assertIn("if (!activityStarted)", read_wifi)
+        self.assertLess(
+            read_wifi.index("if (!activityStarted)"),
+            read_wifi.index("manager.scanResults"),
+        )
+
     def test_no_danger_inference(self):
         code = (ROOT / "app/src/main/java/org/selma/rfsentinel/RfMetrics.kt").read_text()
         self.assertIn("radio change index", code)

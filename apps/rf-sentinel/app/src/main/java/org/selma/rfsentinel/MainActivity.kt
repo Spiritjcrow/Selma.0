@@ -59,6 +59,7 @@ class MainActivity : Activity() {
 
     private val wifiReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
+            if (!activityStarted) return
             if (intent?.action == WifiManager.SCAN_RESULTS_AVAILABLE_ACTION) {
                 readWifi(intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false))
             }
@@ -191,6 +192,10 @@ class MainActivity : Activity() {
 
     @Suppress("DEPRECATION")
     private fun readWifi(fresh: Boolean) {
+        if (!activityStarted) {
+            notice = "Wi-Fi result ignored while app is not visible."
+            return
+        }
         val manager = wifiManager
         if (manager == null) {
             notice = "Wi-Fi hardware unavailable."
@@ -341,4 +346,3 @@ class MainActivity : Activity() {
         super.onDestroy()
     }
 }
-
