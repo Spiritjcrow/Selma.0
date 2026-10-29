@@ -40,6 +40,7 @@ class MainActivity : Activity() {
     private var scanner: BluetoothLeScanner? = null
     private var scanningBle = false
     private var pendingAction: (() -> Unit)? = null
+    private var activityStarted = false
     private var wifiCount: Int? = null
     private var wifiMean: Double? = null
     private var bleCount: Int? = null
@@ -132,6 +133,11 @@ class MainActivity : Activity() {
         render()
     }
 
+    override fun onStart() {
+        super.onStart()
+        activityStarted = true
+    }
+
     private fun withPermissions(permissions: Array<String>, action: () -> Unit) {
         val missing = permissions.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
         if (missing.isEmpty()) action()
@@ -147,6 +153,11 @@ class MainActivity : Activity() {
         if (requestCode == 901) {
             val action = pendingAction
             pendingAction = null
+            if (!activityStarted) {
+                notice = "Permission result ignored while app is not visible."
+                render()
+                return
+            }
             if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED })
                 action?.invoke()
             else {
@@ -319,6 +330,8 @@ class MainActivity : Activity() {
     }
 
     override fun onStop() {
+        activityStarted = false
+        pendingAction = null
         stopBle() // Never leave BLE scanning in the background.
         super.onStop()
     }

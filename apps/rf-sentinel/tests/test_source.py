@@ -19,6 +19,29 @@ class ProjectContracts(unittest.TestCase):
         self.assertNotIn("startForegroundService(", code)
         self.assertNotIn("TelephonyManager", code)
 
+    def test_permission_result_cannot_start_scan_offscreen(self):
+        code = (ROOT / "app/src/main/java/org/selma/rfsentinel/MainActivity.kt").read_text()
+        self.assertIn("private var activityStarted = false", code)
+        self.assertIn("override fun onStart()", code)
+        self.assertIn("activityStarted = true", code)
+        callback = code[
+            code.index("override fun onRequestPermissionsResult"):
+            code.index("@Suppress(\"DEPRECATION\")", code.index("override fun onRequestPermissionsResult"))
+        ]
+        self.assertIn("if (!activityStarted)", callback)
+        on_stop = code[
+            code.index("override fun onStop()"):
+            code.index("override fun onDestroy()")
+        ]
+        self.assertLess(
+            on_stop.index("activityStarted = false"),
+            on_stop.index("pendingAction = null"),
+        )
+        self.assertLess(
+            on_stop.index("pendingAction = null"),
+            on_stop.index("stopBle()"),
+        )
+
     def test_no_danger_inference(self):
         code = (ROOT / "app/src/main/java/org/selma/rfsentinel/RfMetrics.kt").read_text()
         self.assertIn("radio change index", code)
