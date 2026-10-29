@@ -19,6 +19,14 @@ OPTIONAL_RADIO_FEATURES = (
     "android.hardware.wifi",
     "android.hardware.bluetooth_le",
 )
+EXPECTED_PERMISSIONS = frozenset({
+    "android.permission.ACCESS_WIFI_STATE",
+    "android.permission.CHANGE_WIFI_STATE",
+    "android.permission.ACCESS_FINE_LOCATION",
+    "android.permission.BLUETOOTH",
+    "android.permission.BLUETOOTH_ADMIN",
+    "android.permission.BLUETOOTH_SCAN",
+})
 
 
 def find_build_tool(name):
@@ -57,6 +65,14 @@ def badging_has_feature(output, kind, feature):
     return re.search(pattern, output, re.MULTILINE) is not None
 
 
+def parse_permissions(output):
+    return frozenset(re.findall(
+        r"^uses-permission(?:: name=|:)'([^']+)'",
+        output,
+        re.MULTILINE,
+    ))
+
+
 def main(argv):
     if len(argv) != 2:
         print("Usage: python3 tools/verify_apk.py PATH_TO_DEBUG_APK", file=sys.stderr)
@@ -83,6 +99,7 @@ def main(argv):
         "archive_test": "PASS",
         "package_id": "NOT_VERIFIED",
         "internet_permission": "NOT_VERIFIED",
+        "permission_contract": "NOT_VERIFIED",
         "min_sdk": "NOT_VERIFIED",
         "target_sdk": "NOT_VERIFIED",
         "launchable_activity": "NOT_VERIFIED",
@@ -121,6 +138,13 @@ def main(argv):
         print("FAIL: APK violates offline-first policy with INTERNET permission", file=sys.stderr)
         return 1
     result["internet_permission"] = "ABSENT"
+    observed_permissions = parse_permissions(permissions.stdout)
+    if observed_permissions != EXPECTED_PERMISSIONS:
+        result["permission_contract"] = "FAIL"
+        print(json.dumps(result, indent=2))
+        print("FAIL: APK permission set differs from reviewed contract", file=sys.stderr)
+        return 1
+    result["permission_contract"] = "PASS"
 
     badging = run_tool([aapt2, "dump", "badging", str(path)])
     if badging is None or badging.returncode != 0:
