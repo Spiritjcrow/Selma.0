@@ -240,10 +240,19 @@ class WizardHandler(BaseHTTPRequestHandler):
         if self.path != "/start" or self.headers.get("Content-Type", "").split(";")[0] != "application/json":
             return self.reply(404, {"error": "unsupported request"})
         try:
-            try:
-                n = int(self.headers.get("Content-Length", "0"))
-            except (ValueError, TypeError):
-                raise ValueError("invalid request size") from None
+            # HTTP Content-Length is one ASCII decimal field, not a Python
+            # integer expression. Reject duplicates before reading the body:
+            # choosing the first value creates ambiguous request framing.
+            length_values = (self.headers.get_all("Content-Length")
+                             if hasattr(self.headers, "get_all")
+                             else [self.headers.get("Content-Length")])
+            if not length_values or len(length_values) != 1:
+                raise ValueError("invalid request size")
+            raw_length = length_values[0]
+            if (type(raw_length) is not str or len(raw_length) > 16
+                    or not raw_length.isascii() or not raw_length.isdecimal()):
+                raise ValueError("invalid request size")
+            n = int(raw_length)
             if not 1 <= n <= 2048:
                 raise ValueError("invalid request size")
             opts = json.loads(self.rfile.read(n))
