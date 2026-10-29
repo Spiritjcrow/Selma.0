@@ -11,6 +11,18 @@ fi
 command -v java >/dev/null || { echo "BLOCKED: JDK 17 required" >&2; exit 75; }
 command -v gradle >/dev/null || { echo "BLOCKED: Gradle 8.9 required" >&2; exit 75; }
 command -v python3 >/dev/null || { echo "BLOCKED: Python 3 required" >&2; exit 75; }
+java_details="$(java -XshowSettings:properties -version 2>&1 || true)"
+java_spec="$(sed -n 's/^[[:space:]]*java\.specification\.version = //p' <<< "$java_details" | head -n 1)"
+if [[ "$java_spec" != "17" ]]; then
+  echo "BLOCKED: JDK 17 required; found ${java_spec:-unknown}" >&2
+  exit 75
+fi
+gradle_details="$(gradle --version 2>&1 || true)"
+gradle_version="$(sed -n 's/^Gradle //p' <<< "$gradle_details" | head -n 1)"
+if [[ "$gradle_version" != "8.9" ]]; then
+  echo "BLOCKED: Gradle 8.9 required; found ${gradle_version:-unknown}" >&2
+  exit 75
+fi
 sdk="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
 if [[ -z "$sdk" || ! -f "$sdk/platforms/android-35/android.jar" ]]; then
   echo "BLOCKED: ANDROID_SDK_ROOT must point to a local SDK with platform 35" >&2
