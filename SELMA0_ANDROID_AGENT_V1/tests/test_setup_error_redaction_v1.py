@@ -61,5 +61,16 @@ class TestSetupErrorRedaction(unittest.TestCase):
             spawn.assert_not_called()
 
 
+    def test_invalid_content_length_redacts_untrusted_header(self):
+        marker = "SYNTHETIC_PRIVATE_PATH_CONTENT_LENGTH_84"
+        handler, responses, _ = self.handler_for()
+        handler.headers["Content-Length"] = marker
+        with mock.patch.object(setup.subprocess, "Popen") as spawn:
+            handler.do_POST()
+        self.assertEqual(responses, [(400, {"error": "invalid request size"})])
+        self.assertNotIn(marker, json.dumps(responses))
+        spawn.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
