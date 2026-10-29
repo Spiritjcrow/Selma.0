@@ -100,9 +100,11 @@ class HandoffMessage:
         if len(keys) != len(key_set):
             raise ValueError("duplicate message field names")
         if key_set != FIELDS:
+            # Never echo attacker-controlled field names into CLI errors or
+            # audit logs: an unknown key may itself contain sensitive text.
             raise ValueError(
-                f"message fields mismatch: missing={sorted(FIELDS - key_set)}, "
-                f"extra={sorted(key_set - FIELDS)}"
+                f"message fields mismatch: missing_count={len(FIELDS - key_set)}, "
+                f"extra_count={len(key_set - FIELDS)}"
             )
         if type(raw["schema_version"]) is not int or raw["schema_version"] != SCHEMA_VERSION:
             raise ValueError("unsupported schema_version")
