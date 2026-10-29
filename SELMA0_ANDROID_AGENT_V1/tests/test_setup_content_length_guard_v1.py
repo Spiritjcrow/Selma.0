@@ -77,5 +77,16 @@ class TestContentLengthGuard(unittest.TestCase):
                 spawn.assert_not_called()
 
 
+    def test_short_body_rejected_even_when_received_json_is_valid(self):
+        _, _, actual_length = self.handler_with_lengths()
+        handler, replies, _ = self.handler_with_lengths(str(actual_length + 8))
+        with mock.patch.object(setup, "save_preferences") as save, \
+             mock.patch.object(setup.subprocess, "Popen") as spawn:
+            handler.do_POST()
+        self.assertEqual(replies, [(400, {"error": "incomplete request body"})])
+        save.assert_not_called()
+        spawn.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
