@@ -85,6 +85,17 @@ class ProjectContracts(unittest.TestCase):
         ]
         self.assertIn("stopBle(recordResults = false)", on_stop)
 
+    def test_stale_ble_failure_callback_is_ignored(self):
+        code = (ROOT / "app/src/main/java/org/selma/rfsentinel/MainActivity.kt").read_text()
+        callback = code[
+            code.index("override fun onScanFailed"):
+            code.index("override fun onCreate")
+        ]
+        guard = "if (!activityStarted || !scanningBle) return"
+        self.assertIn(guard, callback)
+        self.assertLess(callback.index(guard), callback.index("scanningBle = false"))
+        self.assertLess(callback.index(guard), callback.index("render()"))
+
     def test_no_danger_inference(self):
         code = (ROOT / "app/src/main/java/org/selma/rfsentinel/RfMetrics.kt").read_text()
         self.assertIn("radio change index", code)

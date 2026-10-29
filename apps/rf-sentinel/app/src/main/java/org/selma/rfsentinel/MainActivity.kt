@@ -75,6 +75,7 @@ class MainActivity : Activity() {
             }
         }
         override fun onScanFailed(errorCode: Int) {
+            if (!activityStarted || !scanningBle) return
             scanningBle = false
             handler.removeCallbacks(stopTask)
             scanner = null
