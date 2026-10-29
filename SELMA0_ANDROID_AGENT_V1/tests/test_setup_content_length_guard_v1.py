@@ -91,6 +91,27 @@ class TestContentLengthGuard(unittest.TestCase):
                 save.assert_not_called()
                 spawn.assert_not_called()
 
+    def test_duplicate_token_and_media_type_rejected_before_side_effects(self):
+        # Message.get() accepts the first value; get_all() must reject both
+        # identical and conflicting duplicates before reading the request.
+        _, _, length = self.handler_with_lengths()
+        for header, duplicate, expected_status in (
+            ("X-Selma-Setup-Token", setup.TOKEN, 403),
+            ("X-Selma-Setup-Token", "not-the-token", 403),
+            ("Content-Type", "application/json", 404),
+            ("Content-Type", "text/plain", 404),
+        ):
+            with self.subTest(header=header, duplicate=duplicate):
+                handler, replies, _ = self.handler_with_lengths(str(length))
+                handler.headers.add_header(header, duplicate)
+                with mock.patch.object(setup, "save_preferences") as save, \
+                     mock.patch.object(setup.subprocess, "Popen") as spawn:
+                    handler.do_POST()
+                self.assertEqual(replies[0][0], expected_status)
+                self.assertEqual(handler.rfile.tell(), 0)
+                save.assert_not_called()
+                spawn.assert_not_called()
+
     def test_missing_length_rejected(self):
         self.assert_rejected_before_side_effects()
 
