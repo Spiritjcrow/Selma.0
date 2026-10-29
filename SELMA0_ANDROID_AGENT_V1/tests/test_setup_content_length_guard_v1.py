@@ -112,6 +112,22 @@ class TestContentLengthGuard(unittest.TestCase):
                 save.assert_not_called()
                 spawn.assert_not_called()
 
+    def test_duplicate_json_preference_keys_rejected_before_side_effects(self):
+        # json.loads normally keeps the last duplicate; the wizard must not.
+        for raw in (
+            b'{"profile":"eco","profile":"balanced","scene":"coast","motion":"reduced"}',
+            b'{"profile":"eco","scene":"coast","scene":"coast","motion":"reduced"}',
+        ):
+            with self.subTest(raw=raw):
+                handler, replies, _ = self.handler_with_lengths(str(len(raw)))
+                handler.rfile = io.BytesIO(raw)
+                with mock.patch.object(setup, "save_preferences") as save, \
+                     mock.patch.object(setup.subprocess, "Popen") as spawn:
+                    handler.do_POST()
+                self.assertEqual(replies, [(400, {"error": "duplicate JSON key"})])
+                save.assert_not_called()
+                spawn.assert_not_called()
+
     def test_missing_length_rejected(self):
         self.assert_rejected_before_side_effects()
 
