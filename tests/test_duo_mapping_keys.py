@@ -142,3 +142,22 @@ class MappingKeyGuardTests(unittest.TestCase):
     def test_exact_builtin_strings_remain_accepted(self):
         self.assertEqual("tester_reported_pass", validate_exchange(
             [record(), record("tester", "pass")])["state"])
+
+
+class NoncharacterIdentifierTests(unittest.TestCase):
+    def test_unicode_noncharacters_rejected_in_structural_fields(self):
+        # These are category Cn, not covered by Cc/Cf/Cs controls.
+        for char in ("\\ufdd0", "\\ufffe", "\\U0010ffff"):
+            for field in ("task_id", "repository", "ref", "artifact"):
+                with self.subTest(field=field, codepoint=hex(ord(char))):
+                    item = record()
+                    item[field] += char
+                    with self.assertRaisesRegex(ValueError, "unsafe identifier characters"):
+                        HandoffMessage.from_mapping(item)
+
+    def test_noncharacter_in_evidence_detail_downgrades_trace(self):
+        item = record("tester", "pass")
+        item["evidence"] = [
+            "source: synthetic\\ufdd0other", "command: unittest", "observed: PASS",
+        ]
+        self.assertEqual("ambiguous_unverified", validate_exchange([record(), item])["evidence_trace"])
