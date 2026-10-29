@@ -117,6 +117,28 @@ class DuoCliRegressionTests(unittest.TestCase):
             path.write_bytes(raw)
             self.assertEqual(self.run_cli(raw), self.run_cli(None, path))
 
+    def test_missing_input_path_is_not_echoed_in_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            marker = "SYNTHETIC_PRIVATE_PATH_abc123"
+            missing = Path(directory) / (marker + ".json")
+            code, result = self.run_cli(None, missing)
+            self.assertEqual(2, code)
+            self.assertFalse(result["ok"])
+            self.assertEqual("input read failed", result["error"])
+            self.assertNotIn(marker, json.dumps(result))
+            self.assertNotIn(str(missing), json.dumps(result))
+
+    def test_directory_input_error_is_not_echoed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            marker = "SYNTHETIC_PRIVATE_DIRECTORY_4f63"
+            path = Path(directory) / marker
+            path.mkdir()
+            code, result = self.run_cli(None, path)
+            self.assertEqual(2, code)
+            self.assertFalse(result["ok"])
+            self.assertEqual("input read failed", result["error"])
+            self.assertNotIn(marker, json.dumps(result))
+
     def test_empty_file_fails_closed(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "empty.json"
