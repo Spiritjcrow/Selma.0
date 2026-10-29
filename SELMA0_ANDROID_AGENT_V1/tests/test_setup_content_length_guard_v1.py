@@ -76,6 +76,21 @@ class TestContentLengthGuard(unittest.TestCase):
                 save.assert_not_called()
                 spawn.assert_not_called()
 
+    def test_transfer_encoding_rejected_before_side_effects(self):
+        # BaseHTTPRequestHandler does not decode chunked request bodies;
+        # reject TE regardless of the otherwise valid Content-Length.
+        _, _, length = self.handler_with_lengths()
+        for encoding in ("chunked", "identity"):
+            with self.subTest(encoding=encoding):
+                handler, replies, _ = self.handler_with_lengths(str(length))
+                handler.headers.add_header("Transfer-Encoding", encoding)
+                with mock.patch.object(setup, "save_preferences") as save, \
+                     mock.patch.object(setup.subprocess, "Popen") as spawn:
+                    handler.do_POST()
+                self.assertEqual(replies, [(400, {"error": "unsupported transfer encoding"})])
+                save.assert_not_called()
+                spawn.assert_not_called()
+
     def test_missing_length_rejected(self):
         self.assert_rejected_before_side_effects()
 
