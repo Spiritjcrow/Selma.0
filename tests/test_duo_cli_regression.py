@@ -62,6 +62,26 @@ class DuoCliRegressionTests(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertIn("ref does not match", result["error"])
 
+    def test_unknown_field_name_not_echoed_in_cli_error(self):
+        # Synthetic marker stands in for a confidential field name.
+        item = message()
+        marker = "SYNTHETIC_PRIVATE_FIELD_4f63"
+        item[marker] = "fixture"
+        code, result = self.run_cli(json.dumps([item]).encode())
+        self.assertEqual(2, code)
+        self.assertFalse(result["ok"])
+        self.assertIn("extra_count=1", result["error"])
+        self.assertNotIn(marker, json.dumps(result))
+
+    def test_missing_field_error_uses_counts_not_field_names(self):
+        item = message()
+        item.pop("artifact")
+        code, result = self.run_cli(json.dumps([item]).encode())
+        self.assertEqual(2, code)
+        self.assertFalse(result["ok"])
+        self.assertIn("missing_count=1", result["error"])
+        self.assertNotIn("artifact", result["error"])
+
     def test_duplicate_top_level_key_rejected(self):
         raw = json.dumps(message()).replace('"task_id":', '"task_id":"shadow", "task_id":', 1)
         code, result = self.run_cli(("[" + raw + "]").encode())
