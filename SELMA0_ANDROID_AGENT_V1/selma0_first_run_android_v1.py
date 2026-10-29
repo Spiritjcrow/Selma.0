@@ -247,9 +247,20 @@ class WizardHandler(BaseHTTPRequestHandler):
                  any(origin not in {None, "http://127.0.0.1:8766", "http://localhost:8766"}
                      for origin in origins))):
             return self.reply(403, {"error": "invalid origin"})
-        if self.headers.get("X-Selma-Setup-Token") != TOKEN:
+        # A single valid first header must not conceal conflicting duplicates.
+        # BaseHTTPRequestHandler's email.message headers otherwise select the
+        # first value for .get(), so enforce one token and one media type.
+        tokens = (self.headers.get_all("X-Selma-Setup-Token")
+                  if hasattr(self.headers, "get_all")
+                  else [self.headers.get("X-Selma-Setup-Token")])
+        if not tokens or len(tokens) != 1 or tokens[0] != TOKEN:
             return self.reply(403, {"error": "invalid setup token"})
-        if self.path != "/start" or self.headers.get("Content-Type", "").split(";")[0] != "application/json":
+        content_types = (self.headers.get_all("Content-Type")
+                         if hasattr(self.headers, "get_all")
+                         else [self.headers.get("Content-Type")])
+        if (self.path != "/start" or not content_types or len(content_types) != 1
+                or not content_types[0]
+                or content_types[0].split(";")[0] != "application/json"):
             return self.reply(404, {"error": "unsupported request"})
         # BaseHTTPRequestHandler does not decode chunked bodies. Never mix
         # Transfer-Encoding with Content-Length in the local setup protocol.
