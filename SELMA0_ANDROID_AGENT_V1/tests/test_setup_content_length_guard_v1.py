@@ -59,6 +59,23 @@ class TestContentLengthGuard(unittest.TestCase):
         self.assert_rejected_before_side_effects("\u0667\u0662")
         self.assert_rejected_before_side_effects("9" * 100)
 
+    def test_duplicate_host_and_origin_rejected_without_side_effects(self):
+        # Email Message models duplicate HTTP headers; no socket is opened.
+        for header, duplicate in (("Host", "localhost:8766"),
+                                  ("Origin", "http://localhost:8766")):
+            with self.subTest(header=header):
+                handler, replies, length = self.handler_with_lengths()
+                handler.headers.add_header("Content-Length", str(length))
+                if header == "Origin":
+                    handler.headers.add_header("Origin", "http://127.0.0.1:8766")
+                handler.headers.add_header(header, duplicate)
+                with mock.patch.object(setup, "save_preferences") as save, \
+                     mock.patch.object(setup.subprocess, "Popen") as spawn:
+                    handler.do_POST()
+                self.assertEqual(replies[0][0], 403)
+                save.assert_not_called()
+                spawn.assert_not_called()
+
     def test_missing_length_rejected(self):
         self.assert_rejected_before_side_effects()
 
