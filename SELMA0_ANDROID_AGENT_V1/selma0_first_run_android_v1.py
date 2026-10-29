@@ -255,7 +255,12 @@ class WizardHandler(BaseHTTPRequestHandler):
             n = int(raw_length)
             if not 1 <= n <= 2048:
                 raise ValueError("invalid request size")
-            opts = json.loads(self.rfile.read(n))
+            body = self.rfile.read(n)
+            # EOF before the declared length is invalid framing, even when
+            # the available prefix happens to be complete JSON.
+            if len(body) != n:
+                raise ValueError("incomplete request body")
+            opts = json.loads(body)
             profile = checked_preferences(opts)
             if not RUNTIME.is_file():
                 return self.reply(503, {"error": "runtime script is missing; setup remains incomplete"})
