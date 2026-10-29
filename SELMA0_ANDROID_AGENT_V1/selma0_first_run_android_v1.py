@@ -292,7 +292,14 @@ class WizardHandler(BaseHTTPRequestHandler):
             n = int(raw_length)
             if not 1 <= n <= 2048:
                 raise ValueError("invalid request size")
-            body = self.rfile.read(n)
+            # A stalled loopback client must not hold a request thread forever.
+            # This is a per-socket read timeout, not a total request deadline.
+            try:
+                if hasattr(self, "connection"):
+                    self.connection.settimeout(5.0)
+                body = self.rfile.read(n)
+            except TimeoutError:
+                return self.reply(408, {"error": "request body timed out"})
             # EOF before the declared length is invalid framing, even when
             # the available prefix happens to be complete JSON.
             if len(body) != n:
