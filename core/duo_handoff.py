@@ -118,9 +118,11 @@ class HandoffMessage:
         # in-process Mapping calls. Reject it rather than trusting its methods.
         if type(evidence) is not list or len(evidence) > 10:
             raise ValueError("evidence must be a JSON array of at most 10 strings")
-        validated_evidence = tuple(
-            _required_text(item, "evidence item") for item in evidence
-        )
+        # Keep the exact validated text for provenance classification. Trimming
+        # here can erase edge controls before _evidence_trace sees them.
+        validated_evidence = tuple(evidence)
+        for item in validated_evidence:
+            _required_text(item, "evidence item")
         if actor_role == "tester" and not validated_evidence:
             raise ValueError("tester reports require reproducible evidence")
         return cls(
