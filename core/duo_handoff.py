@@ -62,6 +62,11 @@ def _required_text(value: Any, field: str) -> str:
             raise ValueError(f"{field} contains unsafe identifier characters")
         if value != value.strip():
             raise ValueError(f"{field} contains surrounding whitespace")
+        # Non-ASCII spacing characters can look like ordinary spaces while
+        # identifying a different task/ref. Keep ordinary ASCII spaces valid.
+        if any(unicodedata.category(char) == "Zs" and char != " "
+               for char in value):
+            raise ValueError(f"{field} contains unsafe identifier characters")
         # Distinct NFC/NFD spellings can display as the same identifier.
         # Reject noncanonical forms instead of silently rewriting task/ref IDs.
         if unicodedata.normalize("NFC", value) != value:
@@ -143,7 +148,11 @@ def _evidence_trace(items: tuple[str, ...]) -> str:
         # A hidden modifier can turn a source/command/observed lookalike
         # into an ignored label. Downgrade before the allowlist check so a
         # second, clean label cannot conceal that conflicting provenance.
-        if separator and any(_unsafe_identifier_character(char) for char in label):
+        if separator and any(
+            _unsafe_identifier_character(char)
+            or (unicodedata.category(char) == "Zs" and char != " ")
+            for char in label
+        ):
             return "ambiguous_unverified"
         normalized = label.strip().lower()
         if not separator or normalized not in required:
