@@ -1,7 +1,9 @@
+import os
 import pathlib
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+REPO_ROOT = pathlib.Path(os.environ.get("RF_SENTINEL_REPO_ROOT", ROOT.parents[1]))
 
 class ProjectContracts(unittest.TestCase):
     def test_no_network_permission(self):
@@ -33,6 +35,15 @@ class ProjectContracts(unittest.TestCase):
         self.assertIn("private fun exportCsv()", code)
         self.assertIn("override fun onDestroy()", code)
         self.assertTrue(code.rstrip().endswith("}"))
+
+    def test_ci_verifies_apk_before_hash_and_upload(self):
+        workflow = (REPO_ROOT / ".github/workflows/rf-sentinel-ci.yml").read_text()
+        verify = "python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk"
+        sha256 = "sha256sum app/build/outputs/apk/debug/*.apk"
+        upload = "uses: actions/upload-artifact@v4"
+        self.assertIn(verify, workflow)
+        self.assertLess(workflow.index(verify), workflow.index(sha256))
+        self.assertLess(workflow.index(verify), workflow.index(upload))
 
 if __name__ == "__main__":
     unittest.main()

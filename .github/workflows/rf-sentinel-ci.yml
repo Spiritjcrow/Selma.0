@@ -41,6 +41,9 @@ jobs:
       - name: Build debug APK
         working-directory: apps/rf-sentinel
         run: gradle --no-daemon :app:assembleDebug
+      - name: Verify APK contract
+        working-directory: apps/rf-sentinel
+        run: python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk
       - name: Record APK SHA256
         working-directory: apps/rf-sentinel
         run: sha256sum app/build/outputs/apk/debug/*.apk
