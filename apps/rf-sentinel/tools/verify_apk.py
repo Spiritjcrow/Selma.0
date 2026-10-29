@@ -15,6 +15,10 @@ EXPECTED_PACKAGE_ID = "org.selma.rfsentinel"
 EXPECTED_MIN_SDK = "30"
 EXPECTED_TARGET_SDK = "35"
 EXPECTED_LAUNCHABLE_ACTIVITY = "org.selma.rfsentinel.MainActivity"
+OPTIONAL_RADIO_FEATURES = (
+    "android.hardware.wifi",
+    "android.hardware.bluetooth_le",
+)
 
 
 def find_build_tool(name):
@@ -48,6 +52,11 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
+def badging_has_feature(output, kind, feature):
+    pattern = rf"^{re.escape(kind)}(?:: name=|:)'{re.escape(feature)}'"
+    return re.search(pattern, output, re.MULTILINE) is not None
+
+
 def main(argv):
     if len(argv) != 2:
         print("Usage: python3 tools/verify_apk.py PATH_TO_DEBUG_APK", file=sys.stderr)
@@ -77,6 +86,7 @@ def main(argv):
         "min_sdk": "NOT_VERIFIED",
         "target_sdk": "NOT_VERIFIED",
         "launchable_activity": "NOT_VERIFIED",
+        "radio_hardware_optional": "NOT_VERIFIED",
         "device_install": "NOT_RUN",
         "radio_observations": "NOT_RUN",
         "signature": "NOT_VERIFIED",
@@ -149,6 +159,19 @@ def main(argv):
         print(json.dumps(result, indent=2))
         print("FAIL: unexpected APK launchable activity", file=sys.stderr)
         return 1
+    invalid_features = [
+        feature for feature in OPTIONAL_RADIO_FEATURES
+        if (badging_has_feature(badging.stdout, "uses-feature", feature) or
+            not badging_has_feature(
+                badging.stdout, "uses-feature-not-required", feature
+            ))
+    ]
+    if invalid_features:
+        result["radio_hardware_optional"] = "FAIL"
+        print(json.dumps(result, indent=2))
+        print("FAIL: APK does not preserve optional radio hardware", file=sys.stderr)
+        return 1
+    result["radio_hardware_optional"] = "PASS"
 
     signer = find_build_tool("apksigner")
     if not signer:
