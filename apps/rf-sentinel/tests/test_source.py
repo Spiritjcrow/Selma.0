@@ -114,6 +114,29 @@ class ProjectContracts(unittest.TestCase):
         clear_after_aggregate = stop_ble.index("bleSamples.clear()", aggregate_end)
         self.assertLess(clear_after_aggregate, save_row)
 
+    def test_ble_start_failures_release_scanner_state(self):
+        code = (ROOT / "app/src/main/java/org/selma/rfsentinel/MainActivity.kt").read_text()
+        start_ble = code[
+            code.index("private fun startBle"):
+            code.index("private fun abortBleStart")
+        ]
+        self.assertEqual(start_ble.count("abortBleStart("), 2)
+
+        abort = code[
+            code.index("private fun abortBleStart"):
+            code.index("private fun stopBle")
+        ]
+        for statement in (
+            "handler.removeCallbacks(stopTask)",
+            "scanningBle = false",
+            "scanner?.stopScan(bleCallback)",
+            "scanner = null",
+            "bleSamples.clear()",
+        ):
+            self.assertIn(statement, abort)
+        self.assertLess(abort.index("scanner?.stopScan"), abort.index("scanner = null"))
+        self.assertLess(abort.index("bleSamples.clear()"), abort.index("render()"))
+
     def test_no_danger_inference(self):
         code = (ROOT / "app/src/main/java/org/selma/rfsentinel/RfMetrics.kt").read_text()
         self.assertIn("radio change index", code)

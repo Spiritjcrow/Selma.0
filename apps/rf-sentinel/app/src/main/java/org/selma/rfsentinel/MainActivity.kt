@@ -244,14 +244,24 @@ class MainActivity : Activity() {
             notice = "BLE advertisement survey running for 12 seconds."
             render()
         } catch (_: SecurityException) {
-            scanningBle = false
-            notice = "BLE scan blocked by Android permissions."
-            render()
+            abortBleStart("BLE scan blocked by Android permissions.")
         } catch (exc: Exception) {
-            scanningBle = false
-            notice = "BLE scan unavailable: " + exc.javaClass.simpleName
-            render()
+            abortBleStart("BLE scan unavailable: " + exc.javaClass.simpleName)
         }
+    }
+
+    private fun abortBleStart(message: String) {
+        handler.removeCallbacks(stopTask)
+        scanningBle = false
+        try {
+            scanner?.stopScan(bleCallback)
+        } catch (_: Exception) {
+            // Cleanup is best-effort; scanner state is still discarded below.
+        }
+        scanner = null
+        bleSamples.clear()
+        notice = message
+        render()
     }
 
     private fun stopBle(recordResults: Boolean = true) {
