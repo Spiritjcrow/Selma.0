@@ -252,12 +252,17 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun stopBle() {
+    private fun stopBle(recordResults: Boolean = true) {
         handler.removeCallbacks(stopTask)
         if (!scanningBle) return
         scanningBle = false
         try { scanner?.stopScan(bleCallback) } catch (_: Exception) {}
         scanner = null
+        if (!recordResults) {
+            bleSamples.clear()
+            notice = "BLE scan stopped when app left the foreground; partial result discarded."
+            return
+        }
         bleCount = bleSamples.size
         bleMean = bleSamples.values.map { it.toDouble() }.average().takeIf { !it.isNaN() }
         bleStatus = "BLE: " + bleCount + " distinct radio devices this scan, not people."
@@ -337,7 +342,7 @@ class MainActivity : Activity() {
     override fun onStop() {
         activityStarted = false
         pendingAction = null
-        stopBle() // Never leave BLE scanning in the background.
+        stopBle(recordResults = false) // Never retain a partial scan from background transition.
         super.onStop()
     }
     override fun onDestroy() {
@@ -346,3 +351,4 @@ class MainActivity : Activity() {
         super.onDestroy()
     }
 }
+

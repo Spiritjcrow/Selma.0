@@ -39,7 +39,7 @@ class ProjectContracts(unittest.TestCase):
         )
         self.assertLess(
             on_stop.index("pendingAction = null"),
-            on_stop.index("stopBle()"),
+            on_stop.index("stopBle(recordResults = false)"),
         )
 
     def test_wifi_results_cannot_be_recorded_offscreen(self):
@@ -62,6 +62,28 @@ class ProjectContracts(unittest.TestCase):
             read_wifi.index("if (!activityStarted)"),
             read_wifi.index("manager.scanResults"),
         )
+
+    def test_activity_stop_discards_partial_ble_scan(self):
+        code = (ROOT / "app/src/main/java/org/selma/rfsentinel/MainActivity.kt").read_text()
+        stop_ble = code[
+            code.index("private fun stopBle"):
+            code.index("private fun snapshot")
+        ]
+        self.assertIn("private fun stopBle(recordResults: Boolean = true)", stop_ble)
+        self.assertIn("if (!recordResults)", stop_ble)
+        self.assertLess(
+            stop_ble.index("if (!recordResults)"),
+            stop_ble.index("bleCount = bleSamples.size"),
+        )
+        self.assertLess(
+            stop_ble.index("if (!recordResults)"),
+            stop_ble.index("saveRow()"),
+        )
+        on_stop = code[
+            code.index("override fun onStop()"):
+            code.index("override fun onDestroy()")
+        ]
+        self.assertIn("stopBle(recordResults = false)", on_stop)
 
     def test_no_danger_inference(self):
         code = (ROOT / "app/src/main/java/org/selma/rfsentinel/RfMetrics.kt").read_text()
