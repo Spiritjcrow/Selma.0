@@ -41,6 +41,20 @@ class RecurrenceTraceTests(unittest.TestCase):
         self.assertEqual([1], result["unchanged_revisit_indices"])
         self.assertEqual([], result["duplicate_event_indices"])
 
+    def test_cross_role_handoff_is_not_misclassified_as_unchanged_revisit(self):
+        # Same task/state/artifact/evidence, but distinct authorized logical
+        # role labels. This is provenance metadata, NOT actor authentication.
+        first = event()
+        second = event("e2", "v1", checkpoint_hash(first))
+        second["owner_role"] = "White"
+        third = event("e3", "v1", checkpoint_hash(second))
+        third["owner_role"] = "White"
+        result = review_trace([first, second, third])
+        self.assertEqual([], result["chain_break_indices"])
+        self.assertEqual([], result["duplicate_event_indices"])
+        self.assertEqual([2], result["unchanged_revisit_indices"])
+        self.assertEqual("none_data_only", result["authority"])
+
     def test_chain_break_and_mutation_are_reported(self):
         first = event()
         second = event("e2", "v2", digest("wrong"))
