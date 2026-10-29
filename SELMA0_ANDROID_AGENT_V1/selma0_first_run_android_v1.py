@@ -197,7 +197,13 @@ class WizardHandler(BaseHTTPRequestHandler):
         pass
 
     def headers_ok(self):
-        return self.headers.get("Host") in {"127.0.0.1:8766", "localhost:8766"}
+        # Reject ambiguous authority fields; Message.get() otherwise silently
+        # selects the first of multiple Host values.
+        hosts = (self.headers.get_all("Host")
+                 if hasattr(self.headers, "get_all")
+                 else [self.headers.get("Host")])
+        return (hosts is not None and len(hosts) == 1
+                and hosts[0] in {"127.0.0.1:8766", "localhost:8766"})
 
     def reply(self, code, payload):
         raw = json.dumps(payload).encode("utf-8")
@@ -233,7 +239,13 @@ class WizardHandler(BaseHTTPRequestHandler):
         global LAUNCHED_CHILD
         if not self.headers_ok():
             return self.reply(403, {"error": "invalid host"})
-        if self.headers.get("Origin") not in {None, "http://127.0.0.1:8766", "http://localhost:8766"}:
+        origins = (self.headers.get_all("Origin")
+                   if hasattr(self.headers, "get_all")
+                   else [self.headers.get("Origin")])
+        if (origins is not None and
+                (len(origins) > 1 or
+                 any(origin not in {None, "http://127.0.0.1:8766", "http://localhost:8766"}
+                     for origin in origins))):
             return self.reply(403, {"error": "invalid origin"})
         if self.headers.get("X-Selma-Setup-Token") != TOKEN:
             return self.reply(403, {"error": "invalid setup token"})
