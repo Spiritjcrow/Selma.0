@@ -251,6 +251,10 @@ class WizardHandler(BaseHTTPRequestHandler):
             return self.reply(403, {"error": "invalid setup token"})
         if self.path != "/start" or self.headers.get("Content-Type", "").split(";")[0] != "application/json":
             return self.reply(404, {"error": "unsupported request"})
+        # BaseHTTPRequestHandler does not decode chunked bodies. Never mix
+        # Transfer-Encoding with Content-Length in the local setup protocol.
+        if self.headers.get("Transfer-Encoding") is not None:
+            return self.reply(400, {"error": "unsupported transfer encoding"})
         try:
             # HTTP Content-Length is one ASCII decimal field, not a Python
             # integer expression. Reject duplicates before reading the body:
