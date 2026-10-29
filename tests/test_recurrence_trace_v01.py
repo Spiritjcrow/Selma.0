@@ -63,6 +63,26 @@ class RecurrenceTraceTests(unittest.TestCase):
         first_copy["evidence_sha256"] = digest("tampered")
         self.assertNotEqual(checkpoint_hash(first), checkpoint_hash(first_copy))
 
+    def test_prior_checkpoint_tampering_breaks_next_hash_link(self):
+        # This detects inconsistency only; hashes do not authenticate actors.
+        first = event()
+        second = event("e2", "v2", checkpoint_hash(first))
+        self.assertEqual([], review_trace([first, second])["chain_break_indices"])
+        altered = copy.deepcopy(first)
+        altered["evidence_sha256"] = digest("modified-after-linking")
+        result = review_trace([altered, second])
+        self.assertEqual([1], result["chain_break_indices"])
+        self.assertEqual("none_data_only", result["authority"])
+
+    def test_cross_role_new_evidence_is_not_an_unchanged_revisit(self):
+        first = event()
+        second = event("e2", "white-independent-fixture", checkpoint_hash(first))
+        second["owner_role"] = "White"
+        result = review_trace([first, second])
+        self.assertEqual([], result["chain_break_indices"])
+        self.assertEqual([], result["unchanged_revisit_indices"])
+        self.assertEqual([1], result["changed_evidence_revisit_indices"])
+
     def test_raw_secret_field_and_invalid_types_fail_closed(self):
         for mutation in (
             {"secret": "SYNTHETIC_ONLY"},
