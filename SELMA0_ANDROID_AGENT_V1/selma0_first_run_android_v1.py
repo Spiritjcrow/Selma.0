@@ -69,6 +69,16 @@ def recommended_profile(stats):
     return "balanced" if isinstance(mem, int) and mem >= 3072 else "eco"
 
 
+def reject_duplicate_json_keys(pairs):
+    """Reject ambiguous JSON objects instead of silently keeping the last key."""
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON key")
+        result[key] = value
+    return result
+
+
 def checked_preferences(value):
     if not isinstance(value, dict):
         raise ValueError("preferences must be an object")
@@ -287,7 +297,7 @@ class WizardHandler(BaseHTTPRequestHandler):
             # the available prefix happens to be complete JSON.
             if len(body) != n:
                 raise ValueError("incomplete request body")
-            opts = json.loads(body)
+            opts = json.loads(body, object_pairs_hook=reject_duplicate_json_keys)
             profile = checked_preferences(opts)
             if not RUNTIME.is_file():
                 return self.reply(503, {"error": "runtime script is missing; setup remains incomplete"})
