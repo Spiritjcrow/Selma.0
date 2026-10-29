@@ -147,7 +147,7 @@ class MappingKeyGuardTests(unittest.TestCase):
 class NoncharacterIdentifierTests(unittest.TestCase):
     def test_unicode_noncharacters_rejected_in_structural_fields(self):
         # These are category Cn, not covered by Cc/Cf/Cs controls.
-        for char in ("\\ufdd0", "\\ufffe", "\\U0010ffff"):
+        for char in ("\ufdd0", "\ufffe", "\U0010ffff"):
             for field in ("task_id", "repository", "ref", "artifact"):
                 with self.subTest(field=field, codepoint=hex(ord(char))):
                     item = record()
@@ -158,6 +158,6 @@ class NoncharacterIdentifierTests(unittest.TestCase):
     def test_noncharacter_in_evidence_detail_downgrades_trace(self):
         item = record("tester", "pass")
         item["evidence"] = [
-            "source: synthetic\\ufdd0other", "command: unittest", "observed: PASS",
+            "source: synthetic\ufdd0other", "command: unittest", "observed: PASS",
         ]
         self.assertEqual("ambiguous_unverified", validate_exchange([record(), item])["evidence_trace"])
