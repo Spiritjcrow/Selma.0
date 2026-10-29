@@ -32,10 +32,10 @@ echo "SOURCE_ONLY_CHECKS"
 python3 -m unittest discover -s tests -v
 if [[ "$allow_network" == 1 ]]; then
   echo "NETWORK_AUTHORIZED_FOR_GRADLE_DEPENDENCIES"
-  gradle --no-daemon :app:assembleDebug
+  gradle --no-daemon :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
 else
   echo "GRADLE_OFFLINE_MODE (use --allow-network only after reviewing dependency sources)"
-  gradle --offline --no-daemon :app:assembleDebug
+  gradle --offline --no-daemon :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
 fi
 python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk
 echo "BUILD ARTIFACT EXISTS: physical device install, permission and sensing QA NOT VERIFIED"
