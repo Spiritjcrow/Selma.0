@@ -36,6 +36,8 @@ def _unsafe_identifier_character(char: str) -> bool:
     """
     codepoint = ord(char)
     return (unicodedata.category(char) in UNSAFE_IDENTIFIER_CATEGORIES
+            or 0xFDD0 <= codepoint <= 0xFDEF
+            or (codepoint & 0xFFFF) in (0xFFFE, 0xFFFF)
             or codepoint == 0x034F
             or 0xFE00 <= codepoint <= 0xFE0F
             or 0xE0100 <= codepoint <= 0xE01EF)
