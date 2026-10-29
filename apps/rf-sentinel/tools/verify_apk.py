@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -11,6 +12,8 @@ import zipfile
 
 
 EXPECTED_PACKAGE_ID = "org.selma.rfsentinel"
+EXPECTED_MIN_SDK = "30"
+EXPECTED_TARGET_SDK = "35"
 
 
 def find_build_tool(name):
@@ -70,6 +73,8 @@ def main(argv):
         "archive_test": "PASS",
         "package_id": "NOT_VERIFIED",
         "internet_permission": "NOT_VERIFIED",
+        "min_sdk": "NOT_VERIFIED",
+        "target_sdk": "NOT_VERIFIED",
         "device_install": "NOT_RUN",
         "radio_observations": "NOT_RUN",
         "signature": "NOT_VERIFIED",
@@ -104,6 +109,29 @@ def main(argv):
         print("FAIL: APK violates offline-first policy with INTERNET permission", file=sys.stderr)
         return 1
     result["internet_permission"] = "ABSENT"
+
+    badging = run_tool([aapt2, "dump", "badging", str(path)])
+    if badging is None or badging.returncode != 0:
+        result["min_sdk"] = "FAIL"
+        result["target_sdk"] = "FAIL"
+        print(json.dumps(result, indent=2))
+        print("FAIL: AAPT2 could not read APK SDK compatibility", file=sys.stderr)
+        return 1
+    min_sdk = re.search(r"^sdkVersion:'(\d+)'$", badging.stdout, re.MULTILINE)
+    target_sdk = re.search(r"^targetSdkVersion:'(\d+)'$", badging.stdout, re.MULTILINE)
+    if min_sdk is None or target_sdk is None:
+        result["min_sdk"] = "FAIL"
+        result["target_sdk"] = "FAIL"
+        print(json.dumps(result, indent=2))
+        print("FAIL: APK SDK compatibility evidence is incomplete", file=sys.stderr)
+        return 1
+    result["min_sdk"] = min_sdk.group(1)
+    result["target_sdk"] = target_sdk.group(1)
+    if (result["min_sdk"] != EXPECTED_MIN_SDK or
+            result["target_sdk"] != EXPECTED_TARGET_SDK):
+        print(json.dumps(result, indent=2))
+        print("FAIL: unexpected APK SDK compatibility", file=sys.stderr)
+        return 1
 
     signer = find_build_tool("apksigner")
     if not signer:
