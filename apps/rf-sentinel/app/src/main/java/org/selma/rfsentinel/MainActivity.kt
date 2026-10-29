@@ -132,13 +132,23 @@ class MainActivity : Activity() {
         }
         button("EXPORT CSV") { exportCsv() }
         setContentView(ScrollView(this).apply { addView(panel) })
-        registerReceiver(wifiReceiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
+        registerWifiReceiver()
         render()
     }
 
     override fun onStart() {
         super.onStart()
         activityStarted = true
+    }
+
+    @Suppress("DEPRECATION")
+    private fun registerWifiReceiver() {
+        val filter = IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(wifiReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(wifiReceiver, filter)
+        }
     }
 
     private fun withPermissions(permissions: Array<String>, action: () -> Unit) {

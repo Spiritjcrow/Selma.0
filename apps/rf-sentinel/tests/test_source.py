@@ -63,6 +63,18 @@ class ProjectContracts(unittest.TestCase):
             read_wifi.index("manager.scanResults"),
         )
 
+    def test_wifi_receiver_is_non_exported_on_android_13_plus(self):
+        code = (ROOT / "app/src/main/java/org/selma/rfsentinel/MainActivity.kt").read_text()
+        registration = code[
+            code.index("private fun registerWifiReceiver"):
+            code.index("private fun withPermissions")
+        ]
+        self.assertIn("Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU", registration)
+        self.assertIn("Context.RECEIVER_NOT_EXPORTED", registration)
+        self.assertEqual(registration.count("registerReceiver(wifiReceiver, filter"), 2)
+        on_create = code[code.index("override fun onCreate"):code.index("override fun onStart")]
+        self.assertIn("registerWifiReceiver()", on_create)
+
     def test_activity_stop_discards_partial_ble_scan(self):
         code = (ROOT / "app/src/main/java/org/selma/rfsentinel/MainActivity.kt").read_text()
         stop_ble = code[
