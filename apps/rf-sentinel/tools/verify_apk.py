@@ -15,6 +15,8 @@ EXPECTED_PACKAGE_ID = "org.selma.rfsentinel"
 EXPECTED_MIN_SDK = "30"
 EXPECTED_TARGET_SDK = "35"
 EXPECTED_LAUNCHABLE_ACTIVITY = "org.selma.rfsentinel.MainActivity"
+EXPECTED_VERSION_CODE = "2"
+EXPECTED_VERSION_NAME = "0.2-source"
 OPTIONAL_RADIO_FEATURES = (
     "android.hardware.wifi",
     "android.hardware.bluetooth_le",
@@ -98,6 +100,8 @@ def main(argv):
         "sha256": sha256_file(path),
         "archive_test": "PASS",
         "package_id": "NOT_VERIFIED",
+        "version_code": "NOT_VERIFIED",
+        "version_name": "NOT_VERIFIED",
         "internet_permission": "NOT_VERIFIED",
         "permission_contract": "NOT_VERIFIED",
         "min_sdk": "NOT_VERIFIED",
@@ -196,6 +200,24 @@ def main(argv):
         print("FAIL: APK does not preserve optional radio hardware", file=sys.stderr)
         return 1
     result["radio_hardware_optional"] = "PASS"
+    package_badging = re.search(
+        r"^package: name='[^']+' versionCode='([^']+)' versionName='([^']+)'",
+        badging.stdout,
+        re.MULTILINE,
+    )
+    if package_badging is None:
+        result["version_code"] = "FAIL"
+        result["version_name"] = "FAIL"
+        print(json.dumps(result, indent=2))
+        print("FAIL: APK version evidence is incomplete", file=sys.stderr)
+        return 1
+    result["version_code"] = package_badging.group(1)
+    result["version_name"] = package_badging.group(2)
+    if (result["version_code"] != EXPECTED_VERSION_CODE or
+            result["version_name"] != EXPECTED_VERSION_NAME):
+        print(json.dumps(result, indent=2))
+        print("FAIL: unexpected APK version metadata", file=sys.stderr)
+        return 1
 
     signer = find_build_tool("apksigner")
     if not signer:
