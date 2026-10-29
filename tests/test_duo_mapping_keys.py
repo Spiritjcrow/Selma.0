@@ -161,3 +161,27 @@ class NoncharacterIdentifierTests(unittest.TestCase):
             "source: synthetic\ufdd0other", "command: unittest", "observed: PASS",
         ]
         self.assertEqual("ambiguous_unverified", validate_exchange([record(), item])["evidence_trace"])
+
+
+class NonAsciiSpacingGuardTests(unittest.TestCase):
+    def test_non_ascii_internal_spacing_rejected_in_structural_fields(self):
+        for char in ("\u00a0", "\u2007", "\u202f"):
+            for field in ("task_id", "repository", "ref", "artifact"):
+                with self.subTest(field=field, codepoint=hex(ord(char))):
+                    item = record()
+                    item[field] += "part" + char + "two"
+                    with self.assertRaisesRegex(ValueError, "unsafe identifier characters"):
+                        HandoffMessage.from_mapping(item)
+
+    def test_non_ascii_spacing_provenance_label_downgraded(self):
+        for char in ("\u00a0", "\u2007", "\u202f"):
+            with self.subTest(codepoint=hex(ord(char))):
+                item = record("tester", "pass")
+                item["evidence"] = [
+                    "source" + char + ": synthetic A",
+                    "command: unittest",
+                    "observed: synthetic PASS",
+                ]
+                result = validate_exchange([record(), item])
+                self.assertEqual("ambiguous_unverified", result["evidence_trace"])
+                self.assertNotIn("accepted", result)
