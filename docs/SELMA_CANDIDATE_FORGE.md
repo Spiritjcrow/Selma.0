@@ -50,3 +50,22 @@ These tests do **not** assess generated code correctness or prove runtime sandbo
 ## Dependencies and release path
 
 This draft branch stacks on PR #94, which stacks on PR #89. PR #78 (Android native UI) and PR #95 (API 36 proposal) are independent release-track branches. Do not merge or auto-cherry-pick speculative model changes into these branches. The Play Store commercialization gate is issue #96. Security hardening issue #43 and actual Android acceptance remain release blockers. No background daemon, Google Play upload, paid advertisement, or release signing is authorized by this component.
+
+
+## Static reviewer (new in this PR)
+
+After the forge prints the generated candidate ID, independently run:
+
+~~~sh
+python tools/selma_candidate_review.py --candidate-id YOUR_GENERATED_ID
+~~~
+
+This reviewer checks manifest identity, exact base SHA, untouched source digest, patch headers, clean application into an **isolated temporary copy**, generated candidate SHA-256, and Python AST syntax (for .py files). It writes a separate .review.json with status STATIC_OK_HUMAN_REVIEW_REQUIRED and tests_executed=false. It does **not execute** candidate code, run Gradle, or authorize application to the repository.
+
+**23 isolated fixture tests passed in the local test environment on 2026-10-30**, 14 for forge and 9 for static review. Run the suites from the repository root:
+
+~~~sh
+python -m unittest discover -s tests -p 'test_selma_candidate_*.py' -v
+~~~
+
+Source and test files were byte-length/fingerprint checked against the contents committed to this private branch; this is not the same as an independent complete private-repository CI execution. Before running generated code, require a separate owner-authorized, isolated test lane with no network, no secrets, low privileges and resource caps. Manual source review remains mandatory.
