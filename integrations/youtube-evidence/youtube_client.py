@@ -10,21 +10,32 @@ VID = re.compile(r"^[A-Za-z0-9_-]{11}$")
 API = "https://www.googleapis.com/youtube/v3/"
 
 def parse_id(value):
+    # MCP inputs are untrusted. Bound work and return a stable validation error.
+    if type(value) is not str or len(value) > 2048:
+        raise ValueError("Expected HTTPS YouTube URL or 11-character ID")
     value = value.strip()
     if VID.fullmatch(value):
         return value
-    u = urlparse(value)
-    if u.scheme != "https" or u.username or u.password or u.port:
+    try:
+        u = urlparse(value)
+        # Exact authority matching rejects credentials, ports (including :0
+        # and an empty :), and deceptive host suffixes.
+        authority = u.netloc.lower()
+    except ValueError:
+        raise ValueError("Invalid YouTube URL") from None
+    if u.scheme != "https" or authority not in (
+            "youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"):
         raise ValueError("Expected HTTPS YouTube URL or 11-character ID")
-    host = (u.hostname or "").lower()
     parts = [p for p in u.path.split("/") if p]
     found = None
-    if host in ("youtube.com", "www.youtube.com", "m.youtube.com"):
+    if authority in ("youtube.com", "www.youtube.com", "m.youtube.com"):
         if u.path == "/watch":
-            found = parse_qs(u.query).get("v", [None])[0]
+            ids = parse_qs(u.query, keep_blank_values=True).get("v", [])
+            # Multiple video IDs are ambiguous provenance, even if one is valid.
+            found = ids[0] if len(ids) == 1 else None
         elif len(parts) == 2 and parts[0] in ("shorts", "embed", "live"):
             found = parts[1]
-    elif host == "youtu.be" and len(parts) == 1:
+    elif authority == "youtu.be" and len(parts) == 1:
         found = parts[0]
     if not found or not VID.fullmatch(found):
         raise ValueError("Invalid YouTube URL")
