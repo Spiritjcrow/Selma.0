@@ -129,6 +129,17 @@ class Tests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "Unexpected YouTube details response"):
                     details("dQw4w9WgXcQ", get=lambda *args: payload)
 
+    def test_details_rejects_ambiguous_multiple_items(self):
+        vid = "dQw4w9WgXcQ"
+        for items in (
+            [{"id": vid}, {"id": vid}],
+            [{"id": vid}, {"id": "AAAAAAAAAAA"}],
+            [{"id": "AAAAAAAAAAA"}, {"id": vid}],
+        ):
+            with self.subTest(items=items):
+                with self.assertRaisesRegex(RuntimeError, "Unexpected YouTube details response"):
+                    details(vid, get=lambda *args: {"items": items})
+
     def test_details_malformed_item_or_mismatched_id_fails_closed(self):
         for item in (None, "bad", {}, {"id": None}, {"id": "x" * 11},
                      {"id": "dQw4w9WgXcQ", "snippet": None},
