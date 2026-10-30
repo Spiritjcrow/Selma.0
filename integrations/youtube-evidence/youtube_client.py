@@ -55,16 +55,31 @@ def google_get(endpoint, params, *, opener=urlopen):
     return data
 
 def search(query, limit=10, *, get=google_get):
-    if not 1 <= len(query) <= 180 or not 1 <= limit <= 25:
+    # Reject booleans, fractional limits, and non-text queries before the API call.
+    if (type(query) is not str or not 1 <= len(query.strip()) <= 180
+            or type(limit) is not int or not 1 <= limit <= 25):
         raise ValueError("Invalid search query or result limit")
     response = get("search", {"part":"snippet", "type":"video", "safeSearch":"moderate", "q":query, "maxResults":limit})
+    # A provider error/malformed response must not masquerade as zero results.
+    if type(response) is not dict or type(response.get("items")) is not list:
+        raise RuntimeError("Unexpected YouTube search response")
     output = []
-    for entry in response.get("items", []):
-        vid = entry.get("id", {}).get("videoId", "")
-        if not VID.fullmatch(vid):
+    for entry in response["items"]:
+        if type(entry) is not dict or type(entry.get("id")) is not dict:
+            continue
+        vid = entry["id"].get("videoId")
+        if type(vid) is not str or not VID.fullmatch(vid):
             continue
         s = entry.get("snippet", {})
-        output.append({"video_id":vid, "watch_url":watch_link(vid), "title":s.get("title", ""), "channel":s.get("channelTitle",""), "published_at":s.get("publishedAt",""), "description_excerpt":s.get("description","")[:500]})
+        if type(s) is not dict:
+            continue
+        title = s.get("title", "")
+        channel = s.get("channelTitle", "")
+        published = s.get("publishedAt", "")
+        description = s.get("description", "")
+        if any(type(value) is not str for value in (title, channel, published, description)):
+            continue
+        output.append({"video_id":vid, "watch_url":watch_link(vid), "title":title, "channel":channel, "published_at":published, "description_excerpt":description[:500]})
     return output
 
 def details(url_or_id, *, get=google_get):
