@@ -162,7 +162,13 @@ def _evidence_trace(items: tuple[str, ...]) -> str:
             for position, char in enumerate(item):
                 if (unicodedata.normalize("NFKC", char) == ":"
                         or char in ("\ua789", "\u2236", "\u02d0", "\u205a")):
-                    if item[:position].strip().lower() in required:
+                    prefix = item[:position].strip()
+                    # A non-ASCII label plus a lookalike delimiter can hide
+                    # a conflicting provenance key (e.g. Cyrillic letters).
+                    # ASCII unrelated notes remain compatible; untrusted
+                    # non-ASCII labels fail closed for trace metadata only.
+                    if (prefix.lower() in required
+                            or (prefix and any(ord(ch) > 0x7F for ch in prefix))):
                         return "ambiguous_unverified"
         # A hidden modifier can turn a source/command/observed lookalike
         # into an ignored label. Downgrade before the allowlist check so a
