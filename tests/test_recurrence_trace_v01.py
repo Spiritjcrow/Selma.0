@@ -160,5 +160,28 @@ class RecurrenceTraceTests(unittest.TestCase):
             review_trace(chain + [event("e128", "v1", previous)])
 
 
+    def test_foreign_genesis_hash_is_reported_as_chain_break(self):
+        # An imported trace must not silently treat an unknown predecessor
+        # as an authenticated anchor. Detection is data-only, not rejection.
+        orphan = event("e1", "v1", digest("foreign-predecessor"))
+        result = review_trace([orphan])
+        self.assertEqual([0], result["chain_break_indices"])
+        self.assertEqual([], result["duplicate_event_indices"])
+        self.assertEqual("none_data_only", result["authority"])
+
+    def test_event_id_reuse_across_tasks_still_flags_global_collision(self):
+        # The queue's event IDs are globally unique, even if tasks differ.
+        # Different tasks must not create false unchanged/changed recurrence.
+        first = event("reused", "v1")
+        second = event("reused", "v2", checkpoint_hash(first))
+        second["task_id"] = "SELMA52-INDEPENDENT"
+        result = review_trace([first, second])
+        self.assertEqual([1], result["duplicate_event_indices"])
+        self.assertEqual([], result["chain_break_indices"])
+        self.assertEqual([], result["unchanged_revisit_indices"])
+        self.assertEqual([], result["changed_evidence_revisit_indices"])
+        self.assertEqual("none_data_only", result["authority"])
+
+
 if __name__ == "__main__":
     unittest.main()
