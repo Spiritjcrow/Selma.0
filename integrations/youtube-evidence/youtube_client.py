@@ -85,11 +85,29 @@ def search(query, limit=10, *, get=google_get):
 def details(url_or_id, *, get=google_get):
     vid = parse_id(url_or_id)
     response = get("videos", {"part":"snippet,contentDetails,statistics", "id":vid})
-    items = response.get("items", [])
+    if type(response) is not dict or type(response.get("items")) is not list:
+        raise RuntimeError("Unexpected YouTube details response")
+    items = response["items"]
     if not items:
         return {"found":False, "video_id":vid, "watch_url":watch_link(vid)}
-    s = items[0].get("snippet", {})
-    return {"found":True, "video_id":vid, "watch_url":watch_link(vid), "title":s.get("title",""), "channel":s.get("channelTitle",""), "published_at":s.get("publishedAt",""), "description":s.get("description","")[:3000], "duration":items[0].get("contentDetails",{}).get("duration",""), "view_count":items[0].get("statistics",{}).get("viewCount"), "inspection_status":"metadata only; no video frames or audio analyzed"}
+    item = items[0]
+    if type(item) is not dict or item.get("id") != vid:
+        raise RuntimeError("Unexpected YouTube details response")
+    s = item.get("snippet", {})
+    content = item.get("contentDetails", {})
+    stats = item.get("statistics", {})
+    if any(type(part) is not dict for part in (s, content, stats)):
+        raise RuntimeError("Unexpected YouTube details response")
+    title = s.get("title", "")
+    channel = s.get("channelTitle", "")
+    published = s.get("publishedAt", "")
+    description = s.get("description", "")
+    duration = content.get("duration", "")
+    views = stats.get("viewCount")
+    if (any(type(value) is not str for value in (title, channel, published, description, duration))
+            or (views is not None and type(views) is not str)):
+        raise RuntimeError("Unexpected YouTube details response")
+    return {"found":True, "video_id":vid, "watch_url":watch_link(vid), "title":title, "channel":channel, "published_at":published, "description":description[:3000], "duration":duration, "view_count":views, "inspection_status":"metadata only; no video frames or audio analyzed"}
 
 def evidence_checklist(url_or_id, timestamp=0):
     return {"video_url": watch_link(url_or_id, timestamp), "timestamp_seconds": timestamp, "status":"unverified", "direct_observation":"not viewed", "review": ["Continuity and potential cuts", "Possible concealed supports", "Air movement and pressure", "Camera perspective and timing", "Known object mass and scale", "Independent test with multiple angles"], "note":"A metadata lookup cannot prove the physical event depicted."}
