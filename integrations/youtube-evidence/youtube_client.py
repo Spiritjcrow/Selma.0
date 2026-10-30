@@ -32,7 +32,7 @@ def parse_id(value):
 
 def watch_link(value, timestamp=0):
     vid = parse_id(value)
-    if not 0 <= timestamp <= 864000:
+    if type(timestamp) is not int or not 0 <= timestamp <= 864000:
         raise ValueError("Invalid timestamp")
     return "https://www.youtube.com/watch?v=" + vid + (f"&t={timestamp}s" if timestamp else "")
 
