@@ -163,6 +163,33 @@ class NoncharacterIdentifierTests(unittest.TestCase):
         self.assertEqual("ambiguous_unverified", validate_exchange([record(), item])["evidence_trace"])
 
 
+class PrivateUseIdentifierTests(unittest.TestCase):
+    def test_private_use_codepoints_rejected_in_structural_fields(self):
+        # Private-use characters may render as invisible or custom glyphs.
+        # This is a display guard, not proof of actor authentication.
+        for char in ("\ue000", "\U000f0000", "\U0010fffd"):
+            for field in ("task_id", "repository", "ref", "artifact"):
+                with self.subTest(field=field, codepoint=hex(ord(char))):
+                    item = record()
+                    item[field] += char
+                    with self.assertRaisesRegex(ValueError, "unsafe identifier characters"):
+                        HandoffMessage.from_mapping(item)
+
+    def test_private_use_provenance_label_and_detail_stay_unverified(self):
+        for char in ("\ue000", "\U000f0000"):
+            for location in ("label", "detail"):
+                with self.subTest(location=location, codepoint=hex(ord(char))):
+                    item = record("tester", "pass")
+                    source = ("sou" + char + "rce: synthetic" if location == "label"
+                              else "source: synthetic" + char)
+                    item["evidence"] = [
+                        source, "command: unittest", "observed: synthetic PASS",
+                    ]
+                    result = validate_exchange([record(), item])
+                    self.assertEqual("ambiguous_unverified", result["evidence_trace"])
+                    self.assertNotIn("accepted", result)
+
+
 class NonAsciiSpacingGuardTests(unittest.TestCase):
     def test_non_ascii_internal_spacing_rejected_in_structural_fields(self):
         for char in ("\u00a0", "\u2007", "\u202f"):
