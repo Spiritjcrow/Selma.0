@@ -23,6 +23,20 @@ class Tests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     parse_id(value)
 
+    def test_parse_id_rejects_embedded_controls_stripped_by_urlparse(self):
+        vid = "dQw4w9WgXcQ"
+        malformed = (
+            f"https://www.youtube.com/\twatch?v={vid}",
+            f"https://www.youtube.com/wa\ntch?v={vid}",
+            f"https://youtu.be/{vid[:4]}\r{vid[4:]}",
+        )
+        for value in malformed:
+            with self.subTest(value=repr(value)):
+                with self.assertRaises(ValueError):
+                    parse_id(value)
+        # Ordinary whitespace around a pasted link remains supported.
+        self.assertEqual(vid, parse_id(f" \nhttps://youtu.be/{vid}\n "))
+
     def test_parse_id_keeps_supported_https_forms(self):
         vid = "dQw4w9WgXcQ"
         valid = (
