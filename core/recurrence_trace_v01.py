@@ -16,7 +16,7 @@ FIELDS = frozenset({
     "evidence_sha256", "previous_hash",
 })
 ROLES = frozenset({"Black", "White", "UltraViolet"})
-STATES = frozenset({"QUEUED", "CLAIMED", "BLOCKED", "REVIEW", "COMPLETE"})
+STATES = frozenset({"QUEUED", "CLAIMED", "BLOCKED", "REVIEW", "IN_REVIEW", "COMPLETE"})
 ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,95}\Z", re.ASCII)
 SHA = re.compile(r"[0-9a-f]{64}\Z", re.ASCII)
 
@@ -69,7 +69,8 @@ def review_trace(records: list[dict[str, Any]]) -> dict[str, Any]:
         event_ids.add(record["event_id"])
         # A handoff to a different role is not an unchanged revisit:
         # ownership is part of the checkpoint's observable state.
-        snapshot = (record["task_id"], record["owner_role"], record["state"],
+        state = "REVIEW" if record["state"] == "IN_REVIEW" else record["state"]
+        snapshot = (record["task_id"], record["owner_role"], state,
                     record["artifact_sha256"], record["evidence_sha256"])
         if snapshot in snapshots:
             unchanged_revisits.append(index)
