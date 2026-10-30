@@ -220,6 +220,46 @@ class SandboxTests(unittest.TestCase):
                         stop, 'selma-test-inspect', time.monotonic() + 5)
             self.assertIsNotNone(started[0].poll())
 
+    def test_stop_racing_with_completed_cli_is_not_pass(self):
+        # Even a completed zero-exit CLI cannot override an owner stop request.
+        import time
+        with tempfile.TemporaryDirectory() as d:
+            stop = Path(d) / 'STOP'
+            stop.touch()
+            with patch.object(sandbox.subprocess, 'Popen') as popen, \
+                 patch.object(sandbox.subprocess, 'run',
+                              return_value=subprocess.CompletedProcess([], 0, stdout='')):
+                proc = popen.return_value
+                proc.poll.return_value = 0
+                proc.returncode = 0
+                code = sandbox.run_bounded(['docker', 'run'], stop,
+                                           'selma-stop-race', time.monotonic() + 5)
+            self.assertEqual(130, code)
+
+    def test_stop_after_bounded_run_prevents_pass_evidence(self):
+        # A late stop must not be written as ISOLATED_TEST_PASS_REVIEW_REQUIRED.
+        head, target, diff, digest = sandbox.read_evidence(self.root, self.prefix.name)
+        stop = forge.git_private(self.root, 'SELMA_BUILD_STOP')
+
+        def fake_snapshot(_root, _target, _patch, _digest, output):
+            output.mkdir()
+
+        def stop_then_return_zero(*_args):
+            stop.touch()
+            return 0
+
+        with patch.object(sandbox, 'read_evidence',
+                          return_value=(head, target, diff, digest)), \
+             patch.object(sandbox.forge, 'clean_head', return_value=head), \
+             patch.object(sandbox.shutil, 'which', return_value='/usr/bin/docker'), \
+             patch.object(sandbox.subprocess, 'run',
+                          return_value=subprocess.CompletedProcess([], 0)), \
+             patch.object(sandbox, 'snapshot_candidate', side_effect=fake_snapshot), \
+             patch.object(sandbox, 'run_bounded', side_effect=stop_then_return_zero):
+            with self.assertRaisesRegex(forge.ForgeError, 'kill switch'):
+                sandbox.run(self.root, self.prefix.name, IMAGE)
+        self.assertFalse(self.prefix.with_suffix('.sandbox.json').exists())
+
     def test_invalid_timeout_rejected(self):
         with self.assertRaisesRegex(forge.ForgeError,'timeout'):
             sandbox.run(self.root,self.prefix.name,IMAGE,timeout_seconds=10)
