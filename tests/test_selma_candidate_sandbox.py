@@ -248,12 +248,14 @@ class SandboxTests(unittest.TestCase):
             stop.touch()
             return 0
 
+        from types import SimpleNamespace
+        fake_docker = SimpleNamespace(run=lambda *_a, **_kw:
+                                      subprocess.CompletedProcess([], 0))
         with patch.object(sandbox, 'read_evidence',
                           return_value=(head, target, diff, digest)), \
              patch.object(sandbox.forge, 'clean_head', return_value=head), \
              patch.object(sandbox.shutil, 'which', return_value='/usr/bin/docker'), \
-             patch.object(sandbox.subprocess, 'run',
-                          return_value=subprocess.CompletedProcess([], 0)), \
+             patch.object(sandbox, 'subprocess', fake_docker), \
              patch.object(sandbox, 'snapshot_candidate', side_effect=fake_snapshot), \
              patch.object(sandbox, 'run_bounded', side_effect=stop_then_return_zero):
             with self.assertRaisesRegex(forge.ForgeError, 'kill switch'):
