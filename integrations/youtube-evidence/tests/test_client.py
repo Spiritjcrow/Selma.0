@@ -62,8 +62,36 @@ class Tests(unittest.TestCase):
         self.assertEqual(500, len(result[0]["description_excerpt"]))
 
     def test_details(self):
-        def mock(endpoint,params): return {"items":[{"snippet":{"title":"Sample"}}]}
+        def mock(endpoint,params): return {"items":[{"id":"dQw4w9WgXcQ","snippet":{"title":"Sample"}}]}
         self.assertIn("metadata only",details("dQw4w9WgXcQ",get=mock)["inspection_status"])
+    def test_details_empty_items_is_not_found(self):
+        result = details("dQw4w9WgXcQ", get=lambda *args: {"items": []})
+        self.assertEqual({"found": False, "video_id": "dQw4w9WgXcQ", "watch_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}, result)
+    def test_details_malformed_top_level_fails_closed(self):
+        for response in (None, [], {}, {"error": {"message": "synthetic"}},
+                         {"items": None}, {"items": {}}, {"items": "oops"}):
+            with self.subTest(response=repr(response)):
+                with self.assertRaisesRegex(RuntimeError, "Unexpected YouTube details response"):
+                    details("dQw4w9WgXcQ", get=lambda *args: response)
+    def test_details_malformed_item_or_mismatched_id_fails_closed(self):
+        for item in (None, "bad", {}, {"id": None}, {"id": "x" * 11},
+                     {"id": "dQw4w9WgXcQ", "snippet": None},
+                     {"id": "dQw4w9WgXcQ", "contentDetails": []},
+                     {"id": "dQw4w9WgXcQ", "statistics": "bad"}):
+            with self.subTest(item=repr(item)):
+                with self.assertRaisesRegex(RuntimeError, "Unexpected YouTube details response"):
+                    details("dQw4w9WgXcQ", get=lambda *args: {"items": [item]})
+    def test_details_malformed_field_types_fails_closed(self):
+        for item in ({"snippet": {"title": None}}, {"snippet": {"description": []}},
+                     {"contentDetails": {"duration": 123}}, {"statistics": {"viewCount": 123}}):
+            with self.subTest(item=repr(item)):
+                with self.assertRaisesRegex(RuntimeError, "Unexpected YouTube details response"):
+                    details("dQw4w9WgXcQ", get=lambda *args: {"items": [{"id": "dQw4w9WgXcQ", **item}]})
+    def test_details_retains_bounded_valid_metadata(self):
+        result = details("dQw4w9WgXcQ", get=lambda *args: {"items": [{"id": "dQw4w9WgXcQ", "snippet": {"description": "x" * 3500}, "contentDetails": {"duration": "PT1M"}, "statistics": {"viewCount": "123"}}]})
+        self.assertEqual(3000, len(result["description"]))
+        self.assertEqual("123", result["view_count"])
+        self.assertEqual("PT1M", result["duration"])
     def test_checklist(self):
         self.assertEqual(evidence_checklist("dQw4w9WgXcQ")["status"],"unverified")
 
