@@ -130,73 +130,7 @@ def run_bounded(command, stop_file, container_name, deadline):
             # Confirm absence using the same Docker context; never infer it from
             # a failed rm or a CLI process that exited successfully.
             verified = subprocess.run(
-                ['docker', 'ps', '-a', '--filter', f'name=^/{container_name}
-            cleanup_error = error
-        finally:
-            # Always reap the local Docker CLI, including when docker rm times out.
-            if proc.poll() is None:
-                proc.terminate()
-                try:
-                    proc.wait(timeout=3)
-                except subprocess.TimeoutExpired:
-                    proc.kill()
-                    proc.wait(timeout=3)
-        if cleanup_error is not None:
-            raise forge.ForgeError('Docker cleanup unverified') from cleanup_error
-
-
-def run(root, candidate_id, image, *, timeout_seconds=300):
-    if not 30 <= timeout_seconds <= 600:
-        raise forge.ForgeError('timeout must be 30..600 seconds')
-    if not IMAGE_REGEX.fullmatch(image):
-        raise forge.ForgeError('untrusted or unpinned container image')
-    stop = forge.git_private(root, 'SELMA_BUILD_STOP')
-    if stop.exists():
-        raise forge.ForgeError('kill switch set')
-    head, target, patch, digest = read_evidence(root, candidate_id)
-    if not shutil.which('docker'):
-        raise forge.ForgeError('Docker Linux container runner unavailable')
-    inspect = subprocess.run(['docker', 'image', 'inspect', image],
-                             capture_output=True, timeout=15, check=False)
-    if inspect.returncode:
-        raise forge.ForgeError('pinned container image not preloaded; no auto-pull')
-    name = 'selma-candidate-' + uuid.uuid4().hex[:14]
-    with tempfile.TemporaryDirectory(prefix='selma-container-candidate-') as tmp:
-        source = Path(tmp) / 'source'
-        snapshot_candidate(root, target, patch, digest, source)
-        if forge.clean_head(root) != head or stop.exists():
-            raise forge.ForgeError('source changed before Docker execution')
-        command = build_command(image, source, name)
-        code = run_bounded(command, stop, name, time.monotonic() + timeout_seconds)
-    if forge.clean_head(root) != head:
-        raise forge.ForgeError('source revision changed during Docker execution')
-    prefix = forge.git_private(root, 'selma-forge') / candidate_id
-    evidence = {'candidate_id': candidate_id, 'base_sha': head, 'image': image,
-                'return_code': code, 'network': 'none', 'unprivileged': True,
-                'status': 'ISOLATED_TEST_PASS_REVIEW_REQUIRED' if code == 0 else 'ISOLATED_TEST_FAILED',
-                'release_authorized': False}
-    forge.atomic_write(prefix.with_suffix('.sandbox.json'), json.dumps(evidence, indent=2) + '\n')
-    return code
-
-
-def main():
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('--candidate-id', required=True)
-    ap.add_argument('--image', required=True, help='preloaded python@sha256:<64 hex> digest')
-    ap.add_argument('--timeout-seconds', type=int, default=300)
-    args = ap.parse_args()
-    try:
-        code = run(ROOT, args.candidate_id, args.image, timeout_seconds=args.timeout_seconds)
-        print(f'Isolated Docker test exit code {code}; human review still required.')
-        return code
-    except (forge.ForgeError, OSError, ValueError, UnicodeError, subprocess.SubprocessError, tarfile.TarError) as e:
-        print(f'FAIL CLOSED: {e}', file=sys.stderr)
-        return 1
-
-
-if __name__ == '__main__':
-    raise SystemExit(main())
-,
+                ['docker', 'ps', '-a', '--filter', f'name=^/{container_name}$',
                  '--format', '{{.Names}}'],
                 capture_output=True, text=True, timeout=15, check=False)
             if (verified.returncode != 0 or not isinstance(verified.stdout, str)
