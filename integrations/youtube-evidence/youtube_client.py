@@ -107,6 +107,10 @@ def details(url_or_id, *, get=google_get):
     items = response["items"]
     if not items:
         return {"found":False, "video_id":vid, "watch_url":watch_link(vid)}
+    # The videos.list request is for exactly one ID. Multiple records make
+    # the returned metadata ambiguous, even if the first record matches.
+    if len(items) != 1:
+        raise RuntimeError("Unexpected YouTube details response")
     item = items[0]
     if type(item) is not dict or item.get("id") != vid:
         raise RuntimeError("Unexpected YouTube details response")
