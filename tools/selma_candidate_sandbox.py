@@ -117,6 +117,9 @@ def run_bounded(command, stop_file, container_name, deadline):
             if time.monotonic() >= deadline:
                 return 124
             time.sleep(0.5)
+        # A stop request racing with CLI completion must not report PASS.
+        if stop_file.exists():
+            return 130
         return proc.returncode
     finally:
         # Docker CLI exits and detached containers can outlive the CLI; clean by exact random name.
@@ -174,6 +177,8 @@ def run(root, candidate_id, image, *, timeout_seconds=300):
             raise forge.ForgeError('source changed before Docker execution')
         command = build_command(image, source, name)
         code = run_bounded(command, stop, name, time.monotonic() + timeout_seconds)
+    if stop.exists():
+        raise forge.ForgeError('kill switch set during Docker execution')
     if forge.clean_head(root) != head:
         raise forge.ForgeError('source revision changed during Docker execution')
     prefix = forge.git_private(root, 'selma-forge') / candidate_id
