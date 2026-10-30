@@ -160,6 +160,12 @@ def _evidence_trace(items: tuple[str, ...]) -> str:
             for char in label
         ):
             return "ambiguous_unverified"
+        # Non-ASCII colon-delimited labels can visually imitate the
+        # ASCII provenance keys via homoglyphs. Preserve the untrusted text,
+        # but downgrade trace metadata rather than ignoring a conflicting
+        # lookalike label. Ordinary ASCII notes remain permitted.
+        if separator and any(ord(char) > 0x7F for char in label):
+            return "ambiguous_unverified"
         normalized = label.strip().lower()
         if not separator or normalized not in required:
             continue
