@@ -14,6 +14,10 @@ def parse_id(value):
     if type(value) is not str or len(value) > 2048:
         raise ValueError("Expected HTTPS YouTube URL or 11-character ID")
     value = value.strip()
+    # urllib.parse silently removes embedded TAB/CR/LF, which can rewrite
+    # a malformed evidence URL into a different valid YouTube identifier.
+    if any(c in value for c in "\t\n\r"):
+        raise ValueError("Invalid YouTube URL")
     if VID.fullmatch(value):
         return value
     try:
