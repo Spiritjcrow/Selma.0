@@ -37,5 +37,12 @@ else
   echo "GRADLE_OFFLINE_MODE (use --allow-network only after reviewing dependency sources)"
   gradle --offline --no-daemon :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
 fi
-python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk
+evidence_path="${RF_SENTINEL_EVIDENCE_PATH:-app/build/outputs/apk/debug/rf-sentinel-debug-evidence.json}"
+mkdir -p "$(dirname "$evidence_path")"
+python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk | tee "$evidence_path"
+if [[ ! -s "$evidence_path" ]]; then
+  echo "FAIL: APK verification produced no evidence" >&2
+  exit 1
+fi
+echo "VERIFICATION EVIDENCE: $evidence_path"
 echo "BUILD ARTIFACT EXISTS: physical device install, permission and sensing QA NOT VERIFIED"

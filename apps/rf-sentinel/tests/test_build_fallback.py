@@ -83,6 +83,7 @@ class BuildFallbackContracts(unittest.TestCase):
                 "python3": (
                     "#!/bin/sh\n"
                     "echo \"python:$*\" >> \"$CALL_LOG\"\n"
+                    "if [ \"${1:-}\" = \"tools/verify_apk.py\" ]; then echo '{}'; fi\n"
                 ),
             }
             for name, source in programs.items():
@@ -94,6 +95,8 @@ class BuildFallbackContracts(unittest.TestCase):
             environment["PATH"] = str(tools) + os.pathsep + environment["PATH"]
             environment["ANDROID_SDK_ROOT"] = str(base / "sdk")
             environment["CALL_LOG"] = str(call_log)
+            evidence = base / "apk-evidence.json"
+            environment["RF_SENTINEL_EVIDENCE_PATH"] = str(evidence)
             result = subprocess.run(
                 ["/bin/bash", str(SCRIPT)],
                 cwd=ROOT,
@@ -114,6 +117,7 @@ class BuildFallbackContracts(unittest.TestCase):
                 ],
                 calls,
             )
+            self.assertEqual("{}", evidence.read_text().strip())
 
 
 if __name__ == "__main__":
