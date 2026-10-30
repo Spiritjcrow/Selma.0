@@ -212,3 +212,39 @@ class NonAsciiSpacingGuardTests(unittest.TestCase):
                 result = validate_exchange([record(), item])
                 self.assertEqual("ambiguous_unverified", result["evidence_trace"])
                 self.assertNotIn("accepted", result)
+
+
+class HomoglyphProvenanceTests(unittest.TestCase):
+    def test_confusable_non_ascii_colon_labels_downgrade_trace(self):
+        # Visual lookalikes must not be ignored as unrelated evidence when
+        # another clean source/command/observed set is present.
+        for label in (
+            "s\u043eurce: conflicting fixture",  # Cyrillic o
+            "\u0455ource: conflicting fixture",  # Cyrillic dze
+            "sourc\u0435: conflicting fixture",  # Cyrillic e
+            "c\u043emmand: conflicting command",
+            "\u043ebserved: conflicting FAIL",
+        ):
+            with self.subTest(label=repr(label)):
+                tester = record("tester", "pass")
+                tester["evidence"] = [
+                    "source: synthetic fixture",
+                    "command: unittest",
+                    "observed: synthetic PASS",
+                    label,
+                ]
+                result = validate_exchange([record(), tester])
+                self.assertEqual("ambiguous_unverified", result["evidence_trace"])
+                self.assertNotIn("accepted", result)
+
+    def test_unrelated_ascii_notes_and_visible_detail_remain_compatible(self):
+        tester = record("tester", "pass")
+        tester["evidence"] = [
+            "source: synthetic fixture",
+            "command: unittest",
+            "observed: synthetic PASS",
+            "notes: Caf\u00e9 is untrusted context",
+        ]
+        result = validate_exchange([record(), tester])
+        self.assertEqual("source_labeled_unverified", result["evidence_trace"])
+        self.assertNotIn("accepted", result)
