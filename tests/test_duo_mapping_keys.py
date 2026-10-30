@@ -254,6 +254,34 @@ class HomoglyphProvenanceTests(unittest.TestCase):
                     self.assertEqual("ambiguous_unverified", result["evidence_trace"])
                     self.assertNotIn("accepted", result)
 
+    def test_additional_colon_confusables_downgrade_provenance(self):
+        # NFKC vertical colon and additional visual confusables are not
+        # independent evidence of a verified tester or executed test.
+        for colon in ("\ufe13", "\u02d0", "\u205a"):
+            for label in ("source", "command", "observed"):
+                with self.subTest(colon=hex(ord(colon)), label=label):
+                    tester = record("tester", "pass")
+                    tester["evidence"] = [
+                        "source: synthetic fixture",
+                        "command: unittest",
+                        "observed: synthetic PASS",
+                        f"{label}{colon} contradictory synthetic claim",
+                    ]
+                    result = validate_exchange([record(), tester])
+                    self.assertEqual("ambiguous_unverified", result["evidence_trace"])
+                    self.assertNotIn("accepted", result)
+
+    def test_unrelated_vertical_colon_note_remains_compatible(self):
+        tester = record("tester", "pass")
+        tester["evidence"] = [
+            "source: synthetic fixture",
+            "command: unittest",
+            "observed: synthetic PASS",
+            "notes\ufe13 unrelated synthetic note",
+        ]
+        self.assertEqual("source_labeled_unverified",
+                         validate_exchange([record(), tester])["evidence_trace"])
+
     def test_unrelated_confusable_colon_notes_remain_compatible(self):
         tester = record("tester", "pass")
         tester["evidence"] = [
