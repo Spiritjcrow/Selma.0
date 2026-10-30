@@ -138,12 +138,86 @@ class SandboxTests(unittest.TestCase):
 
             with patch.object(sandbox.subprocess, 'Popen', side_effect=record_process), \
                  patch.object(sandbox.subprocess, 'run',
-                              return_value=subprocess.CompletedProcess([], 0)):
+                              return_value=subprocess.CompletedProcess([], 0, stdout='')):
                 code = sandbox.run_bounded(
                     [sys.executable, '-c', 'import time; time.sleep(30)'],
                     stop, 'selma-test-stop', time.monotonic() + 5)
             self.assertEqual(130, code)
             self.assertEqual(1, len(started))
+            self.assertIsNotNone(started[0].poll())
+
+    def test_cli_already_removed_verified_absent(self):
+        # docker run --rm can remove the container before docker rm -f runs.
+        import sys
+        import time
+        with tempfile.TemporaryDirectory() as d:
+            stop = Path(d) / 'STOP'
+            stop.touch()
+            original_popen = subprocess.Popen
+            started = []
+
+            def record_process(*args, **kwargs):
+                proc = original_popen(*args, **kwargs)
+                started.append(proc)
+                return proc
+
+            with patch.object(sandbox.subprocess, 'Popen', side_effect=record_process), \
+                 patch.object(sandbox.subprocess, 'run', side_effect=[
+                     subprocess.CompletedProcess([], 1),
+                     subprocess.CompletedProcess([], 0, stdout='')]) as cleanup:
+                code = sandbox.run_bounded(
+                    [sys.executable, '-c', 'import time; time.sleep(30)'],
+                    stop, 'selma-test-absent', time.monotonic() + 5)
+            self.assertEqual(130, code)
+            self.assertEqual(2, cleanup.call_count)
+            self.assertIsNotNone(started[0].poll())
+
+    def test_cli_still_present_fails_closed_and_reaps(self):
+        import sys
+        import time
+        with tempfile.TemporaryDirectory() as d:
+            stop = Path(d) / 'STOP'
+            stop.touch()
+            original_popen = subprocess.Popen
+            started = []
+
+            def record_process(*args, **kwargs):
+                proc = original_popen(*args, **kwargs)
+                started.append(proc)
+                return proc
+
+            with patch.object(sandbox.subprocess, 'Popen', side_effect=record_process), \
+                 patch.object(sandbox.subprocess, 'run', side_effect=[
+                     subprocess.CompletedProcess([], 0),
+                     subprocess.CompletedProcess([], 0, stdout='selma-test-present\\n')]):
+                with self.assertRaisesRegex(forge.ForgeError, 'cleanup unverified'):
+                    sandbox.run_bounded(
+                        [sys.executable, '-c', 'import time; time.sleep(30)'],
+                        stop, 'selma-test-present', time.monotonic() + 5)
+            self.assertIsNotNone(started[0].poll())
+
+    def test_cli_inspection_failure_fails_closed_and_reaps(self):
+        import sys
+        import time
+        with tempfile.TemporaryDirectory() as d:
+            stop = Path(d) / 'STOP'
+            stop.touch()
+            original_popen = subprocess.Popen
+            started = []
+
+            def record_process(*args, **kwargs):
+                proc = original_popen(*args, **kwargs)
+                started.append(proc)
+                return proc
+
+            with patch.object(sandbox.subprocess, 'Popen', side_effect=record_process), \
+                 patch.object(sandbox.subprocess, 'run', side_effect=[
+                     subprocess.CompletedProcess([], 1),
+                     subprocess.CompletedProcess([], 1, stdout='')]):
+                with self.assertRaisesRegex(forge.ForgeError, 'cleanup unverified'):
+                    sandbox.run_bounded(
+                        [sys.executable, '-c', 'import time; time.sleep(30)'],
+                        stop, 'selma-test-inspect', time.monotonic() + 5)
             self.assertIsNotNone(started[0].poll())
 
     def test_invalid_timeout_rejected(self):
