@@ -8,6 +8,34 @@ class Tests(unittest.TestCase):
         self.assertEqual(parse_id("https://youtu.be/"+vid),vid)
         self.assertEqual(parse_id("https://www.youtube.com/watch?v="+vid),vid)
         self.assertIn("&t=12s",watch_link(vid,12))
+    def test_parse_id_rejects_ambiguous_urls_and_input_types(self):
+        vid = "dQw4w9WgXcQ"
+        invalid = (
+            None, 123, [], "x" * 2049,
+            f"https://youtube.com:0/watch?v={vid}",
+            f"https://youtube.com:/watch?v={vid}",
+            f"https://youtube.com/watch?v={vid}&v=aaaaaaaaaaa",
+            f"https://youtube.com/watch?v={vid}&v=",
+            f"https://[youtube.com/watch?v={vid}",
+        )
+        for value in invalid:
+            with self.subTest(value=repr(value)):
+                with self.assertRaises(ValueError):
+                    parse_id(value)
+
+    def test_parse_id_keeps_supported_https_forms(self):
+        vid = "dQw4w9WgXcQ"
+        valid = (
+            vid, f"https://youtu.be/{vid}",
+            f"https://WWW.YOUTUBE.COM/watch?v={vid}",
+            f"https://youtube.com/shorts/{vid}",
+            f"https://youtube.com/embed/{vid}",
+            f"https://youtube.com/live/{vid}",
+        )
+        for value in valid:
+            with self.subTest(value=value):
+                self.assertEqual(vid, parse_id(value))
+
     def test_timestamp_rejects_noninteger(self):
         vid="dQw4w9WgXcQ"
         for value in (True, False, 1.5, "12", None, {}, []):
