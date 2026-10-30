@@ -151,6 +151,15 @@ def _evidence_trace(items: tuple[str, ...]) -> str:
     found = set()
     for item in items:
         label, separator, detail = item.partition(":")
+        # A lookalike colon can disguise a conflicting provenance key while
+        # another clean source/command/observed trio remains present. Only
+        # known key prefixes trigger this downgrade; unrelated notes remain
+        # compatible. This is display hygiene, not authentication.
+        if not separator:
+            for lookalike in ("\uff1a", "\ufe55", "\ua789", "\u2236"):
+                prefix, sep_like, _ = item.partition(lookalike)
+                if sep_like and prefix.strip().lower() in required:
+                    return "ambiguous_unverified"
         # A hidden modifier can turn a source/command/observed lookalike
         # into an ignored label. Downgrade before the allowlist check so a
         # second, clean label cannot conceal that conflicting provenance.
