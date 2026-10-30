@@ -144,11 +144,19 @@ def run_bounded(command, stop_file, container_name, deadline):
         finally:
             # Always reap the local Docker CLI, including when docker rm times out.
             if proc.poll() is None:
-                proc.terminate()
+                try:
+                    proc.terminate()
+                except ProcessLookupError:
+                    # Docker CLI exited between poll() and terminate().
+                    pass
                 try:
                     proc.wait(timeout=3)
                 except subprocess.TimeoutExpired:
-                    proc.kill()
+                    try:
+                        proc.kill()
+                    except ProcessLookupError:
+                        # Docker CLI exited between wait() timeout and kill().
+                        pass
                     proc.wait(timeout=3)
         if cleanup_error is not None:
             raise forge.ForgeError('Docker cleanup unverified') from cleanup_error
