@@ -1,6 +1,8 @@
 """Offline validation; no Google credentials needed."""
+import io
 import unittest
-from youtube_client import parse_id, watch_link, search, details, evidence_checklist
+from unittest.mock import patch
+from youtube_client import parse_id, watch_link, search, details, evidence_checklist, google_get
 
 class Tests(unittest.TestCase):
     def test_ids(self):
@@ -66,6 +68,28 @@ class Tests(unittest.TestCase):
     def test_bad_urls(self):
         for x in ("http://youtu.be/dQw4w9WgXcQ","https://youtube.com.evil.test/watch?v=dQw4w9WgXcQ"):
             with self.assertRaises(ValueError): parse_id(x)
+    def test_google_get_rejects_duplicate_json_keys_at_any_depth(self):
+        payloads = (
+            b'{"items":[{"id":"A"}],"items":[]}',
+            b'{"items":[{"id":{"videoId":"A","videoId":"B"}}]}',
+            b'{"error":{"code":403},"error":null,"items":[]}',
+        )
+        with patch.dict("os.environ", {"YOUTUBE_API_KEY": "fixture-only-key"}):
+            for payload in payloads:
+                with self.subTest(payload=payload):
+                    def opener(url, timeout):
+                        self.assertEqual(timeout, 15)
+                        return io.BytesIO(payload)
+                    with self.assertRaisesRegex(RuntimeError, "YouTube API request failed: ValueError"):
+                        google_get("search", {"q": "fixture"}, opener=opener)
+
+    def test_google_get_retains_valid_nested_json(self):
+        payload = b'{"items":[{"id":{"videoId":"dQw4w9WgXcQ"}}]}'
+        with patch.dict("os.environ", {"YOUTUBE_API_KEY": "fixture-only-key"}):
+            result = google_get("search", {"q": "fixture"},
+                                opener=lambda url, timeout: io.BytesIO(payload))
+        self.assertEqual(result["items"][0]["id"]["videoId"], "dQw4w9WgXcQ")
+
     def test_search(self):
         def mock(endpoint,params): return {"items":[{"id":{"videoId":"dQw4w9WgXcQ"},"snippet":{"title":"Sample"}}]}
         self.assertEqual(search("subwoofer",get=mock)[0]["title"],"Sample")
