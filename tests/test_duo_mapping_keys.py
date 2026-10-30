@@ -305,3 +305,30 @@ class HomoglyphProvenanceTests(unittest.TestCase):
         result = validate_exchange([record(), tester])
         self.assertEqual("source_labeled_unverified", result["evidence_trace"])
         self.assertNotIn("accepted", result)
+
+
+class MixedConfusableDelimiterTests(unittest.TestCase):
+    def test_mixed_unicode_label_and_lookalike_colon_downgrades(self):
+        # A non-ASCII provenance lookalike followed by a non-ASCII colon
+        # previously escaped both the ASCII-colon and delimiter guards.
+        for label in ("s\u043eurce", "\u0455ource", "observ\u0435d"):
+            for colon in ("\ufe13", "\uff1a", "\u2236"):
+                with self.subTest(label=label, colon=hex(ord(colon))):
+                    tester = record("tester", "pass")
+                    tester["evidence"] = [
+                        "source: synthetic fixture", "command: unittest",
+                        "observed: synthetic PASS",
+                        f"{label}{colon} conflicting synthetic FAIL",
+                    ]
+                    result = validate_exchange([record(), tester])
+                    self.assertEqual("ambiguous_unverified", result["evidence_trace"])
+                    self.assertNotIn("accepted", result)
+
+    def test_unrelated_ascii_note_with_lookalike_colon_still_compatible(self):
+        tester = record("tester", "pass")
+        tester["evidence"] = [
+            "source: synthetic fixture", "command: unittest",
+            "observed: synthetic PASS", "notes\ufe13 context only",
+        ]
+        result = validate_exchange([record(), tester])
+        self.assertEqual("source_labeled_unverified", result["evidence_trace"])
