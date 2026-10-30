@@ -268,7 +268,7 @@ class SandboxTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             stop = Path(d) / 'STOP'
             stop.touch()
-            with patch.object(sandbox.subprocess, 'Popen') as popen, \\
+            with patch.object(sandbox.subprocess, 'Popen') as popen, \
                  patch.object(sandbox.subprocess, 'run', side_effect=[
                      subprocess.CompletedProcess([], 0),
                      subprocess.CompletedProcess([], 0, stdout='')]):
@@ -287,7 +287,7 @@ class SandboxTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             stop = Path(d) / 'STOP'
             stop.touch()
-            with patch.object(sandbox.subprocess, 'Popen') as popen, \\
+            with patch.object(sandbox.subprocess, 'Popen') as popen, \
                  patch.object(sandbox.subprocess, 'run', side_effect=[
                      subprocess.CompletedProcess([], 0),
                      subprocess.CompletedProcess([], 0, stdout='')]):
