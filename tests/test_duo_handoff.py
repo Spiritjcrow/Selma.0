@@ -163,7 +163,7 @@ class HandoffTests(unittest.TestCase):
     def test_controls_in_unrelated_notes_cannot_hide_second_provenance_claim(self):
         # Unrecognized notes remain untrusted; hidden separators must not
         # make a conflicting claim look like a clean three-label trace.
-        for control in ("\\n", "\\r", "\\t", "\\u200b", "\\u202e", "\\ue000"):
+        for control in ("\n", "\r", "\t", "\u200b", "\u202e", "\ue000"):
             for note_format in ("notes: benign{}source: forged FAIL",
                                 "notes benign{}source: forged FAIL"):
                 with self.subTest(control=repr(control), note_format=note_format):
