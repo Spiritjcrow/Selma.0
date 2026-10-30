@@ -83,6 +83,20 @@ class RecurrenceTraceTests(unittest.TestCase):
         self.assertEqual([], result["unchanged_revisit_indices"])
         self.assertEqual([1], result["changed_evidence_revisit_indices"])
 
+    def test_ledger_in_review_state_is_supported_without_authority(self):
+        first = event(state="IN_REVIEW")
+        result = review_trace([first])
+        self.assertEqual([], result["chain_break_indices"])
+        self.assertEqual("none_data_only", result["authority"])
+
+    def test_review_state_alias_does_not_hide_unchanged_revisit(self):
+        first = event(state="REVIEW")
+        second = event("e2", "v1", checkpoint_hash(first), state="IN_REVIEW")
+        result = review_trace([first, second])
+        self.assertEqual([], result["chain_break_indices"])
+        self.assertEqual([1], result["unchanged_revisit_indices"])
+        self.assertNotEqual(checkpoint_hash(first), checkpoint_hash(second))
+
     def test_raw_secret_field_and_invalid_types_fail_closed(self):
         for mutation in (
             {"secret": "SYNTHETIC_ONLY"},
