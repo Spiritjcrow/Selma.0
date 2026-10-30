@@ -76,7 +76,8 @@ def search(query, limit=10, *, get=google_get):
         raise ValueError("Invalid search query or result limit")
     response = get("search", {"part":"snippet", "type":"video", "safeSearch":"moderate", "q":query, "maxResults":limit})
     # A provider error/malformed response must not masquerade as zero results.
-    if type(response) is not dict or type(response.get("items")) is not list:
+    if (type(response) is not dict or "error" in response
+            or type(response.get("items")) is not list):
         raise RuntimeError("Unexpected YouTube search response")
     output = []
     for entry in response["items"]:
@@ -100,7 +101,8 @@ def search(query, limit=10, *, get=google_get):
 def details(url_or_id, *, get=google_get):
     vid = parse_id(url_or_id)
     response = get("videos", {"part":"snippet,contentDetails,statistics", "id":vid})
-    if type(response) is not dict or type(response.get("items")) is not list:
+    if (type(response) is not dict or "error" in response
+            or type(response.get("items")) is not list):
         raise RuntimeError("Unexpected YouTube details response")
     items = response["items"]
     if not items:
