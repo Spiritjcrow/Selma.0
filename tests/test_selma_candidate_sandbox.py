@@ -262,6 +262,44 @@ class SandboxTests(unittest.TestCase):
                 sandbox.run(self.root, self.prefix.name, IMAGE)
         self.assertFalse(self.prefix.with_suffix('.sandbox.json').exists())
 
+    def test_cli_terminate_exit_race_reaps_and_honors_stop(self):
+        # The CLI may exit between poll() and terminate(); do not lose stop intent.
+        import time
+        with tempfile.TemporaryDirectory() as d:
+            stop = Path(d) / 'STOP'
+            stop.touch()
+            with patch.object(sandbox.subprocess, 'Popen') as popen, \\
+                 patch.object(sandbox.subprocess, 'run', side_effect=[
+                     subprocess.CompletedProcess([], 0),
+                     subprocess.CompletedProcess([], 0, stdout='')]):
+                proc = popen.return_value
+                proc.poll.return_value = None
+                proc.terminate.side_effect = ProcessLookupError()
+                proc.wait.return_value = 0
+                code = sandbox.run_bounded(['docker', 'run'], stop,
+                                           'selma-terminate-race', time.monotonic() + 5)
+            self.assertEqual(130, code)
+            proc.wait.assert_called_once_with(timeout=3)
+
+    def test_cli_kill_exit_race_reaps_and_honors_stop(self):
+        # The CLI may exit after wait() times out but before kill().
+        import time
+        with tempfile.TemporaryDirectory() as d:
+            stop = Path(d) / 'STOP'
+            stop.touch()
+            with patch.object(sandbox.subprocess, 'Popen') as popen, \\
+                 patch.object(sandbox.subprocess, 'run', side_effect=[
+                     subprocess.CompletedProcess([], 0),
+                     subprocess.CompletedProcess([], 0, stdout='')]):
+                proc = popen.return_value
+                proc.poll.return_value = None
+                proc.wait.side_effect = [subprocess.TimeoutExpired(['docker', 'run'], 3), 0]
+                proc.kill.side_effect = ProcessLookupError()
+                code = sandbox.run_bounded(['docker', 'run'], stop,
+                                           'selma-kill-race', time.monotonic() + 5)
+            self.assertEqual(130, code)
+            self.assertEqual(2, proc.wait.call_count)
+
     def test_invalid_timeout_rejected(self):
         with self.assertRaisesRegex(forge.ForgeError,'timeout'):
             sandbox.run(self.root,self.prefix.name,IMAGE,timeout_seconds=10)
