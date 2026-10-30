@@ -86,6 +86,13 @@ class Tests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "Unexpected YouTube search response"):
                     search("fixture", get=lambda *args: response)
 
+    def test_search_rejects_error_envelope_even_with_items(self):
+        for payload in ({"error": {"code": 403}, "items": []},
+                        {"error": None, "items": []}):
+            with self.subTest(payload=payload):
+                with self.assertRaisesRegex(RuntimeError, "Unexpected YouTube search response"):
+                    search("fixture", get=lambda *args: payload)
+
     def test_search_skips_malformed_entries_without_crashing(self):
         vid = "dQw4w9WgXcQ"
         entries = [None, "bad", {"id": None}, {"id": {"videoId": None}},
@@ -115,6 +122,13 @@ class Tests(unittest.TestCase):
             with self.subTest(response=repr(response)):
                 with self.assertRaisesRegex(RuntimeError, "Unexpected YouTube details response"):
                     details("dQw4w9WgXcQ", get=lambda *args: response)
+    def test_details_rejects_error_envelope_even_with_items(self):
+        for payload in ({"error": {"code": 403}, "items": []},
+                        {"error": None, "items": []}):
+            with self.subTest(payload=payload):
+                with self.assertRaisesRegex(RuntimeError, "Unexpected YouTube details response"):
+                    details("dQw4w9WgXcQ", get=lambda *args: payload)
+
     def test_details_malformed_item_or_mismatched_id_fails_closed(self):
         for item in (None, "bad", {}, {"id": None}, {"id": "x" * 11},
                      {"id": "dQw4w9WgXcQ", "snippet": None},
