@@ -8,6 +8,8 @@ from urllib.error import HTTPError, URLError
 
 VID = re.compile(r"^[A-Za-z0-9_-]{11}$")
 API = "https://www.googleapis.com/youtube/v3/"
+# Bound untrusted API response bytes before JSON decoding to avoid memory exhaustion.
+MAX_API_RESPONSE_BYTES = 2_097_152
 
 def _unique_json_object(pairs):
     """Reject ambiguous duplicate keys at every depth of an API JSON response."""
@@ -69,10 +71,13 @@ def google_get(endpoint, params, *, opener=urlopen):
     target = API + endpoint + "?" + urlencode({**params, "key": key})
     try:
         with opener(target, timeout=15) as f:
-            data = json.load(f, object_pairs_hook=_unique_json_object)
+            raw = f.read(MAX_API_RESPONSE_BYTES + 1)
+        if len(raw) > MAX_API_RESPONSE_BYTES:
+            raise ValueError("API response exceeds byte limit")
+        data = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_json_object)
     except HTTPError as e:
         raise RuntimeError(f"YouTube API returned HTTP {e.code}") from None
-    except (URLError, TimeoutError, ValueError) as e:
+    except (URLError, TimeoutError, ValueError, RecursionError) as e:
         raise RuntimeError(f"YouTube API request failed: {type(e).__name__}") from None
     if not isinstance(data, dict):
         raise RuntimeError("Unexpected API response")
