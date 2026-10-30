@@ -2,7 +2,7 @@
 import io
 import unittest
 from unittest.mock import patch
-from youtube_client import parse_id, watch_link, search, details, evidence_checklist, google_get
+from youtube_client import parse_id, watch_link, search, details, evidence_checklist, google_get, MAX_API_RESPONSE_BYTES
 
 class Tests(unittest.TestCase):
     def test_ids(self):
@@ -89,6 +89,37 @@ class Tests(unittest.TestCase):
             result = google_get("search", {"q": "fixture"},
                                 opener=lambda url, timeout: io.BytesIO(payload))
         self.assertEqual(result["items"][0]["id"]["videoId"], "dQw4w9WgXcQ")
+
+    def test_google_get_bounds_response_read_before_json_parsing(self):
+        class TrackingBytesIO(io.BytesIO):
+            def read(self, size=-1):
+                self.assert_read_size = size
+                data = super().read(size)
+                self.bytes_read = len(data)
+                return data
+        payload = b'{"items":[]}' + b' ' * MAX_API_RESPONSE_BYTES
+        stream = TrackingBytesIO(payload)
+        with patch.dict("os.environ", {"YOUTUBE_API_KEY": "fixture-only-key"}):
+            with self.assertRaisesRegex(RuntimeError, "YouTube API request failed: ValueError"):
+                google_get("search", {"q": "fixture"},
+                           opener=lambda url, timeout: stream)
+        self.assertEqual(MAX_API_RESPONSE_BYTES + 1, stream.assert_read_size)
+        self.assertEqual(MAX_API_RESPONSE_BYTES + 1, stream.bytes_read)
+
+    def test_google_get_accepts_valid_json_at_exact_byte_limit(self):
+        payload = b'{"items":[]}'
+        payload += b' ' * (MAX_API_RESPONSE_BYTES - len(payload))
+        with patch.dict("os.environ", {"YOUTUBE_API_KEY": "fixture-only-key"}):
+            result = google_get("search", {"q": "fixture"},
+                                opener=lambda url, timeout: io.BytesIO(payload))
+        self.assertEqual({"items": []}, result)
+
+    def test_google_get_deep_json_fails_closed_without_traceback(self):
+        payload = b'[' * 20000 + b'0' + b']' * 20000
+        with patch.dict("os.environ", {"YOUTUBE_API_KEY": "fixture-only-key"}):
+            with self.assertRaisesRegex(RuntimeError, "YouTube API request failed: RecursionError"):
+                google_get("search", {"q": "fixture"},
+                           opener=lambda url, timeout: io.BytesIO(payload))
 
     def test_search(self):
         def mock(endpoint,params): return {"items":[{"id":{"videoId":"dQw4w9WgXcQ"},"snippet":{"title":"Sample"}}]}
