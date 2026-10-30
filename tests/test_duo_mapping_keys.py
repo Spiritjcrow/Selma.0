@@ -237,6 +237,35 @@ class HomoglyphProvenanceTests(unittest.TestCase):
                 self.assertEqual("ambiguous_unverified", result["evidence_trace"])
                 self.assertNotIn("accepted", result)
 
+    def test_confusable_colons_downgrade_conflicting_provenance(self):
+        # Colon lookalikes must not hide a second conflicting source, command,
+        # or observed statement behind a visually similar delimiter.
+        for colon in ("\uff1a", "\ufe55", "\ua789", "\u2236"):
+            for label in ("source", "command", "observed"):
+                with self.subTest(label=label, colon=hex(ord(colon))):
+                    tester = record("tester", "pass")
+                    tester["evidence"] = [
+                        "source: synthetic fixture",
+                        "command: unittest",
+                        "observed: synthetic PASS",
+                        f"{label}{colon} contradictory synthetic claim",
+                    ]
+                    result = validate_exchange([record(), tester])
+                    self.assertEqual("ambiguous_unverified", result["evidence_trace"])
+                    self.assertNotIn("accepted", result)
+
+    def test_unrelated_confusable_colon_notes_remain_compatible(self):
+        tester = record("tester", "pass")
+        tester["evidence"] = [
+            "source: synthetic fixture",
+            "command: unittest",
+            "observed: synthetic PASS",
+            "notes\uff1a synthetic context, not a provenance key",
+        ]
+        result = validate_exchange([record(), tester])
+        self.assertEqual("source_labeled_unverified", result["evidence_trace"])
+        self.assertNotIn("accepted", result)
+
     def test_unrelated_ascii_notes_and_visible_detail_remain_compatible(self):
         tester = record("tester", "pass")
         tester["evidence"] = [
