@@ -98,6 +98,54 @@ class SandboxTests(unittest.TestCase):
             with self.assertRaisesRegex(forge.ForgeError, 'Docker'):
                 sandbox.run(self.root,self.prefix.name,IMAGE)
 
+    def test_cli_cleanup_timeout_reaps_process_and_fails_closed(self):
+        import sys
+        import time
+        with tempfile.TemporaryDirectory() as d:
+            stop = Path(d) / 'STOP'
+            stop.touch()
+            original_popen = subprocess.Popen
+            started = []
+
+            def record_process(*args, **kwargs):
+                proc = original_popen(*args, **kwargs)
+                started.append(proc)
+                return proc
+
+            with patch.object(sandbox.subprocess, 'Popen', side_effect=record_process), \
+                 patch.object(sandbox.subprocess, 'run',
+                              side_effect=subprocess.TimeoutExpired(['docker', 'rm'], 15)):
+                with self.assertRaisesRegex(forge.ForgeError, 'cleanup unverified'):
+                    sandbox.run_bounded(
+                        [sys.executable, '-c', 'import time; time.sleep(30)'],
+                        stop, 'selma-test-timeout', time.monotonic() + 5)
+            self.assertEqual(1, len(started))
+            self.assertIsNotNone(started[0].poll())
+
+    def test_cli_stop_reaps_process(self):
+        import sys
+        import time
+        with tempfile.TemporaryDirectory() as d:
+            stop = Path(d) / 'STOP'
+            stop.touch()
+            original_popen = subprocess.Popen
+            started = []
+
+            def record_process(*args, **kwargs):
+                proc = original_popen(*args, **kwargs)
+                started.append(proc)
+                return proc
+
+            with patch.object(sandbox.subprocess, 'Popen', side_effect=record_process), \
+                 patch.object(sandbox.subprocess, 'run',
+                              return_value=subprocess.CompletedProcess([], 0)):
+                code = sandbox.run_bounded(
+                    [sys.executable, '-c', 'import time; time.sleep(30)'],
+                    stop, 'selma-test-stop', time.monotonic() + 5)
+            self.assertEqual(130, code)
+            self.assertEqual(1, len(started))
+            self.assertIsNotNone(started[0].poll())
+
     def test_invalid_timeout_rejected(self):
         with self.assertRaisesRegex(forge.ForgeError,'timeout'):
             sandbox.run(self.root,self.prefix.name,IMAGE,timeout_seconds=10)
