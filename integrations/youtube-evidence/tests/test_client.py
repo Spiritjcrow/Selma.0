@@ -27,6 +27,40 @@ class Tests(unittest.TestCase):
     def test_search(self):
         def mock(endpoint,params): return {"items":[{"id":{"videoId":"dQw4w9WgXcQ"},"snippet":{"title":"Sample"}}]}
         self.assertEqual(search("subwoofer",get=mock)[0]["title"],"Sample")
+    def test_search_rejects_bad_input_before_network(self):
+        def no_network(*args):
+            self.fail("invalid search input must not reach the API")
+        for query, limit in ((None, 1), ([], 1), ("   ", 1),
+                             ("ok", True), ("ok", 1.5), ("ok", "2"),
+                             ("ok", 0), ("ok", 26)):
+            with self.subTest(query=repr(query), limit=repr(limit)):
+                with self.assertRaises(ValueError):
+                    search(query, limit, get=no_network)
+
+    def test_search_malformed_response_fails_closed(self):
+        for response in (None, [], {}, {"error": {"message": "synthetic"}},
+                         {"items": None}, {"items": {}}, {"items": "oops"}):
+            with self.subTest(response=repr(response)):
+                with self.assertRaisesRegex(RuntimeError, "Unexpected YouTube search response"):
+                    search("fixture", get=lambda *args: response)
+
+    def test_search_skips_malformed_entries_without_crashing(self):
+        vid = "dQw4w9WgXcQ"
+        entries = [None, "bad", {"id": None}, {"id": {"videoId": None}},
+                   {"id": {"videoId": vid}, "snippet": None},
+                   {"id": {"videoId": vid}, "snippet": {"description": None}},
+                   {"id": {"videoId": vid}, "snippet": {"title": "valid"}}]
+        result = search("fixture", get=lambda *args: {"items": entries})
+        self.assertEqual(1, len(result))
+        self.assertEqual("valid", result[0]["title"])
+        self.assertEqual(vid, result[0]["video_id"])
+
+    def test_search_retains_bounded_valid_description(self):
+        vid = "dQw4w9WgXcQ"
+        result = search("fixture", get=lambda *args: {"items": [
+            {"id": {"videoId": vid}, "snippet": {"description": "x" * 600}}]})
+        self.assertEqual(500, len(result[0]["description_excerpt"]))
+
     def test_details(self):
         def mock(endpoint,params): return {"items":[{"snippet":{"title":"Sample"}}]}
         self.assertIn("metadata only",details("dQw4w9WgXcQ",get=mock)["inspection_status"])
