@@ -120,16 +120,24 @@ def run_bounded(command, stop_file, container_name, deadline):
         return proc.returncode
     finally:
         # Docker CLI exits and detached containers can outlive the CLI; clean by exact random name.
-        subprocess.run(['docker', 'rm', '-f', container_name],
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                       timeout=15, check=False)
-        if proc.poll() is None:
-            proc.terminate()
-            try:
-                proc.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-                proc.wait(timeout=3)
+        cleanup_error = None
+        try:
+            subprocess.run(['docker', 'rm', '-f', container_name],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                           timeout=15, check=False)
+        except (OSError, subprocess.SubprocessError) as error:
+            cleanup_error = error
+        finally:
+            # Always reap the local Docker CLI, including when docker rm times out.
+            if proc.poll() is None:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait(timeout=3)
+        if cleanup_error is not None:
+            raise forge.ForgeError('Docker cleanup unverified') from cleanup_error
 
 
 def run(root, candidate_id, image, *, timeout_seconds=300):
