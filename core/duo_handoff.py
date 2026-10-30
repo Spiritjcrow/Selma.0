@@ -150,6 +150,12 @@ def _evidence_trace(items: tuple[str, ...]) -> str:
     required = {"source", "command", "observed"}
     found = set()
     for item in items:
+        # Even an unrelated note can hide a second provenance claim behind
+        # a newline or invisible modifier. Downgrade derived trace metadata
+        # for controls anywhere in an evidence item; retain the raw text.
+        # This does not authenticate evidence, actors, or device tests.
+        if any(_unsafe_identifier_character(char) for char in item):
+            return "ambiguous_unverified"
         label, separator, detail = item.partition(":")
         # A lookalike colon can disguise a conflicting provenance key while
         # another clean source/command/observed trio remains present. Only
