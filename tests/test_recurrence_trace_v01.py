@@ -121,5 +121,44 @@ class RecurrenceTraceTests(unittest.TestCase):
         self.assertNotIn("accepted", review_trace([first]))
 
 
+    def test_deleted_middle_checkpoint_breaks_chain(self):
+        # Deleting an intermediate event must be visible in hash linkage.
+        first = event("e1")
+        middle = event("e2", "v2", checkpoint_hash(first))
+        last = event("e3", "v3", checkpoint_hash(middle))
+        self.assertEqual([], review_trace([first, middle, last])["chain_break_indices"])
+        missing = review_trace([first, last])
+        self.assertEqual([1], missing["chain_break_indices"])
+        self.assertEqual("none_data_only", missing["authority"])
+
+    def test_distinct_task_ids_do_not_create_false_recurrence(self):
+        # Identical content for different tasks is not the same handoff.
+        first = event("e1", "v1")
+        other = event("e2", "v1", checkpoint_hash(first))
+        other["task_id"] = "SELMA52-OTHER"
+        result = review_trace([first, other])
+        self.assertEqual([], result["unchanged_revisit_indices"])
+        self.assertEqual([], result["changed_evidence_revisit_indices"])
+        self.assertEqual([], result["chain_break_indices"])
+        self.assertEqual([], result["duplicate_event_indices"])
+
+    def test_empty_and_maximum_length_trace_boundaries(self):
+        empty = review_trace([])
+        self.assertEqual(0, empty["count"])
+        self.assertIsNone(empty["last_hash"])
+        chain = []
+        previous = None
+        for index in range(128):
+            current = event(f"e{index}", "v1", previous)
+            chain.append(current)
+            previous = checkpoint_hash(current)
+        result = review_trace(chain)
+        self.assertEqual(128, result["count"])
+        self.assertEqual([], result["chain_break_indices"])
+        self.assertEqual([], result["duplicate_event_indices"])
+        with self.assertRaisesRegex(ValueError, "at most 128"):
+            review_trace(chain + [event("e128", "v1", previous)])
+
+
 if __name__ == "__main__":
     unittest.main()
