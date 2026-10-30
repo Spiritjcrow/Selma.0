@@ -9,6 +9,15 @@ from urllib.error import HTTPError, URLError
 VID = re.compile(r"^[A-Za-z0-9_-]{11}$")
 API = "https://www.googleapis.com/youtube/v3/"
 
+def _unique_json_object(pairs):
+    """Reject ambiguous duplicate keys at every depth of an API JSON response."""
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("Duplicate JSON key")
+        result[key] = value
+    return result
+
 def parse_id(value):
     # MCP inputs are untrusted. Bound work and return a stable validation error.
     if type(value) is not str or len(value) > 2048:
@@ -60,7 +69,7 @@ def google_get(endpoint, params, *, opener=urlopen):
     target = API + endpoint + "?" + urlencode({**params, "key": key})
     try:
         with opener(target, timeout=15) as f:
-            data = json.load(f)
+            data = json.load(f, object_pairs_hook=_unique_json_object)
     except HTTPError as e:
         raise RuntimeError(f"YouTube API returned HTTP {e.code}") from None
     except (URLError, TimeoutError, ValueError) as e:
