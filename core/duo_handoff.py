@@ -20,7 +20,9 @@ FIELDS = frozenset({
 STRUCTURAL_FIELDS = frozenset({
     "task_id", "repository", "ref", "actor_role", "status", "artifact",
 })
-UNSAFE_IDENTIFIER_CATEGORIES = frozenset({"Cc", "Cf", "Cs", "Zl", "Zp"})
+# Private-use code points (Co) may render invisibly or as local custom glyphs.
+# Do not allow them to spoof structural IDs or provenance labels.
+UNSAFE_IDENTIFIER_CATEGORIES = frozenset({"Cc", "Cf", "Cs", "Co", "Zl", "Zp"})
 ALLOWED_STATUSES = {
     "builder": frozenset({"submitted"}),
     "tester": frozenset({"pass", "fail", "blocked"}),
