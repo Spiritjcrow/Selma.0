@@ -80,10 +80,21 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
         combined = process.stdout + "\n" + process.stderr
         result["elapsed_ms"] = round((time.monotonic() - start) * 1000)
         result["unittest_output_sha256"] = hashlib.sha256(combined.encode()).hexdigest()
-        match = re.search(r"Ran (\d+) tests? in ", combined)
-        if match:
-            result["test_methods_reported"] = int(match.group(1))
+        # unittest returns zero for a suite where every method was skipped.
+        # Such a run is incomplete, not passing verification evidence.
+        match = re.search(r"^Ran (\d+) tests? in ", process.stderr, re.MULTILINE)
+        count = int(match.group(1)) if match else 0
+        skipped_match = re.search(
+            r"^OK\s*\([^)]*\bskipped=(\d+)", process.stderr, re.MULTILINE,
+        )
+        skipped = int(skipped_match.group(1)) if skipped_match else 0
+        result["test_methods_reported"] = count
+        result["test_methods_skipped"] = skipped
         result["test_exit_code"] = process.returncode
+        if process.returncode == 0 and (count == 0 or skipped):
+            result["tests"] = "INCOMPLETE"
+            result["blocker"] = "unittest reported no executed methods or skipped methods"
+            return result, 2
         result["tests"] = "PASS" if process.returncode == 0 else "FAIL"
         result["state"] = "REVIEW" if process.returncode == 0 else "BLOCKED"
         # No acceptance state is emitted: even PASS is only local checkout QA.
