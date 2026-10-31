@@ -57,8 +57,12 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
         result["actual_head_sha"] = actual
         if actual != expected:
             raise ValueError("checkout SHA does not match expected PR head")
-        if git(root, "status", "--porcelain", "--untracked-files=no"):
-            raise ValueError("tracked working tree or index is dirty")
+        if git(root, "status", "--porcelain", "--untracked-files=all"):
+            raise ValueError("working tree or index contains modified or untracked files")
+        discovered = {path.relative_to(root).as_posix()
+                      for path in (root / "tests").glob("test_duo*.py")}
+        if discovered != set(TEST_FILES):
+            raise ValueError("discovered test files differ from pinned allowlist")
         for path in SOURCE_FILES + TEST_FILES:
             source = root / path
             if not source.is_file() or source.is_symlink():
