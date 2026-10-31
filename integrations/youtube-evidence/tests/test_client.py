@@ -176,6 +176,22 @@ class Tests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     search(query, limit, get=no_network)
 
+    def test_search_rejects_oversized_raw_padding_before_api(self):
+        def no_network(*args):
+            self.fail("oversized raw query must not reach the API")
+        for query in (" " * 100_000 + "x", "x" * 181,
+                      " " * 2048 + "x"):
+            with self.subTest(length=len(query)):
+                with self.assertRaisesRegex(ValueError, "Invalid search"):
+                    search(query, get=no_network)
+
+    def test_search_normalizes_pasted_edge_whitespace(self):
+        def mock(endpoint, params):
+            self.assertEqual("search", endpoint)
+            self.assertEqual("synthetic", params["q"])
+            return {"items": []}
+        self.assertEqual([], search(" \t synthetic \n", get=mock))
+
     def test_search_malformed_response_fails_closed(self):
         for response in (None, [], {}, {"error": {"message": "synthetic"}},
                          {"items": None}, {"items": {}}, {"items": "oops"}):
