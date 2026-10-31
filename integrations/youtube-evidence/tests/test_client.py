@@ -182,7 +182,7 @@ class Tests(unittest.TestCase):
         vid = "dQw4w9WgXcQ"
         entries = [None, {"id": {"videoId": "bad"}}]
         entries += [
-            {"id": {"videoId": vid}, "snippet": {"title": f"valid-{i}"}}
+            {"id": {"videoId": f"{i:011d}"}, "snippet": {"title": f"valid-{i}"}}
             for i in range(8)
         ]
         for limit in (1, 2, 3, 8):
@@ -194,6 +194,22 @@ class Tests(unittest.TestCase):
                 self.assertEqual(limit, len(result))
                 self.assertEqual([f"valid-{i}" for i in range(limit)],
                                  [item["title"] for item in result])
+
+    def test_search_deduplicates_provider_ids_before_result_limit(self):
+        first, second = "dQw4w9WgXcQ", "abcdefghijk"
+        entries = [
+            {"id": {"videoId": first}, "snippet": {"title": "first"}},
+            {"id": {"videoId": first}, "snippet": {"title": "duplicate"}},
+            {"id": {"videoId": second}, "snippet": {"title": "second"}},
+        ]
+        result = search("fixture", limit=2, get=lambda *args: {"items": entries})
+        self.assertEqual([first, second], [row["video_id"] for row in result])
+        self.assertEqual(["first", "second"], [row["title"] for row in result])
+        # A malformed first occurrence must not reserve a valid video ID.
+        entries[0]["snippet"] = {"title": None}
+        result = search("fixture", limit=2, get=lambda *args: {"items": entries})
+        self.assertEqual([first, second], [row["video_id"] for row in result])
+        self.assertEqual("duplicate", result[0]["title"])
 
     def test_search_rejects_bad_input_before_network(self):
         def no_network(*args):
