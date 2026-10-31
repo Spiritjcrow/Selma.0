@@ -252,6 +252,39 @@ class Tests(unittest.TestCase):
             {"id": {"videoId": vid}, "snippet": {"description": "x" * 600}}]})
         self.assertEqual(500, len(result[0]["description_excerpt"]))
 
+    def test_search_bounded_provider_text_and_truncation_provenance(self):
+        vid = "dQw4w9WgXcQ"
+        item = {"id": {"videoId": vid}, "snippet": {
+            "title": "T" * 100_000, "channelTitle": "C" * 100_000,
+            "publishedAt": "P" * 100_000, "description": "D" * 100_000}}
+        result = search("fixture", get=lambda *args: {"items": [item]})[0]
+        self.assertEqual({"title", "channel", "published_at", "description_excerpt"},
+                         set(result["truncated_fields"]))
+        self.assertEqual((300, 200, 64, 500), tuple(len(result[k]) for k in
+                         ("title", "channel", "published_at", "description_excerpt")))
+        self.assertEqual([], search("fixture", get=lambda *args: {"items": []}))
+
+    def test_details_bounded_provider_text_and_truncation_provenance(self):
+        vid = "dQw4w9WgXcQ"
+        item = {"id": vid, "snippet": {
+            "title": "T" * 100_000, "channelTitle": "C" * 100_000,
+            "publishedAt": "P" * 100_000, "description": "D" * 100_000},
+            "contentDetails": {"duration": "Z" * 100_000},
+            "statistics": {"viewCount": "9" * 100_000}}
+        result = details(vid, get=lambda *args: {"items": [item]})
+        self.assertEqual({"title", "channel", "published_at", "description",
+                          "duration", "view_count"}, set(result["truncated_fields"]))
+        self.assertEqual((300, 200, 64, 3000, 64, 64), tuple(len(result[k]) for k in
+                         ("title", "channel", "published_at", "description",
+                          "duration", "view_count")))
+        self.assertEqual("metadata only; no video frames or audio analyzed",
+                         result["inspection_status"])
+
+    def test_untruncated_metadata_has_empty_truncation_record(self):
+        vid = "dQw4w9WgXcQ"
+        item = {"id": vid, "snippet": {"title": "short"}}
+        self.assertEqual([], details(vid, get=lambda *args: {"items": [item]})["truncated_fields"])
+
     def test_details(self):
         def mock(endpoint,params): return {"items":[{"id":"dQw4w9WgXcQ","snippet":{"title":"Sample"}}]}
         self.assertIn("metadata only",details("dQw4w9WgXcQ",get=mock)["inspection_status"])
