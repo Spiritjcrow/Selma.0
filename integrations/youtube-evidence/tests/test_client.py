@@ -50,7 +50,7 @@ class Tests(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         parse_id(malformed)
         # Pasted surrounding ordinary whitespace remains supported.
-        self.assertEqual(vid, parse_id(" \\n\\t" + url + "\\r\\n "))
+        self.assertEqual(vid, parse_id(" \n\t" + url + "\r\n "))
 
     def test_parse_id_keeps_supported_https_forms(self):
         vid = "dQw4w9WgXcQ"
