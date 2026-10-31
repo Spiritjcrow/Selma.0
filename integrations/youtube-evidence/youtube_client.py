@@ -90,10 +90,14 @@ def google_get(endpoint, params, *, opener=urlopen):
 
 def search(query, limit=10, *, get=google_get):
     # Reject booleans, fractional limits, and non-text queries before the API call.
-    if (type(query) is not str or not 1 <= len(query.strip()) <= 180
+    # Bound the raw input before trimming: a very long whitespace prefix can
+    # otherwise pass the 180-character visible-query limit and reach urlencode.
+    if (type(query) is not str or len(query) > 2048
+            or not 1 <= len(query.strip()) <= 180
             or type(limit) is not int or not 1 <= limit <= 25):
         raise ValueError("Invalid search query or result limit")
-    response = get("search", {"part":"snippet", "type":"video", "safeSearch":"moderate", "q":query, "maxResults":limit})
+    clean_query = query.strip()
+    response = get("search", {"part":"snippet", "type":"video", "safeSearch":"moderate", "q":clean_query, "maxResults":limit})
     # A provider error/malformed response must not masquerade as zero results.
     if (type(response) is not dict or "error" in response
             or type(response.get("items")) is not list):
