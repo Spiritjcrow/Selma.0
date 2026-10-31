@@ -124,7 +124,19 @@ def search(query, limit=10, *, get=google_get):
             or not 1 <= len(query.strip()) <= 180
             or type(limit) is not int or not 1 <= limit <= 25):
         raise ValueError("Invalid search query or result limit")
+    # Preserve ordinary pasted edge whitespace, but never silently erase C1
+    # controls or pass lone surrogates/bidi overrides to the URL encoder. An
+    # embedded ASCII newline also changes the visible search provenance.
+    if any((ord(char) < 32 and char not in " \t\r\n")
+           or 0x7F <= ord(char) <= 0x9F
+           or unicodedata.category(char) in ("Cs", "Zl", "Zp")
+           or char in "\u061c\u200e\u200f"
+           or 0x202A <= ord(char) <= 0x202E
+           or 0x2066 <= ord(char) <= 0x2069 for char in query):
+        raise ValueError("Invalid search query or result limit")
     clean_query = query.strip()
+    if any(char in "\t\r\n" for char in clean_query):
+        raise ValueError("Invalid search query or result limit")
     response = get("search", {"part":"snippet", "type":"video", "safeSearch":"moderate", "q":clean_query, "maxResults":limit})
     # A provider error/malformed response must not masquerade as zero results.
     if (type(response) is not dict or "error" in response
