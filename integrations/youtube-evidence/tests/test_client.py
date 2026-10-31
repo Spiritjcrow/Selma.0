@@ -258,6 +258,18 @@ class Tests(unittest.TestCase):
                     return {"items": []}
                 self.assertEqual([], search(query, get=mock))
 
+    def test_search_rejects_other_invisible_format_and_private_use(self):
+        # Synthetic query provenance guard, not evidence of an API attack.
+        def no_network(*args):
+            self.fail("invisible query must be rejected before API request")
+        for char in ("\u00ad", "\u180e", "\u2062", "\u206a", "\ue000"):
+            with self.subTest(codepoint=hex(ord(char))):
+                with self.assertRaisesRegex(ValueError, "Invalid search"):
+                    search("fixture" + char + "query", get=no_network)
+        # ZWNJ remains valid for scripts that use it as an orthographic joiner.
+        self.assertEqual([], search("हिन्दी\u200cशब्द", get=lambda *args: {"items": []}))
+
+
     def test_search_malformed_response_fails_closed(self):
         for response in (None, [], {}, {"error": {"message": "synthetic"}},
                          {"items": None}, {"items": {}}, {"items": "oops"}):
