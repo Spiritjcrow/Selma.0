@@ -76,6 +76,23 @@ class Tests(unittest.TestCase):
         # Keep the documented ASCII pasted-whitespace compatibility.
         self.assertEqual(vid, parse_id(" \n\t" + url + "\r\n "))
 
+    def test_parse_id_rejects_invisible_unicode_in_ignored_url_fields(self):
+        # An ignored query/fragment must not launder invisible raw characters
+        # into an apparently clean canonical evidence watch link.
+        vid = "dQw4w9WgXcQ"
+        for codepoint in (0x200B, 0x202E, 0x2066, 0x034F, 0xFE0F,
+                          0xE0100, 0xE000, 0xD800):
+            char = chr(codepoint)
+            for malformed in (
+                f"https://www.youtube.com/watch?v={vid}&source={char}",
+                f"https://youtu.be/{vid}#source{char}",
+                f"https://youtu.be/{vid}{char}",
+            ):
+                with self.subTest(codepoint=hex(codepoint), value=repr(malformed)):
+                    with self.assertRaises(ValueError):
+                        parse_id(malformed)
+        self.assertEqual(vid, parse_id(f"https://www.youtube.com/watch?v={vid}&t=12s"))
+
     def test_parse_id_keeps_supported_https_forms(self):
         vid = "dQw4w9WgXcQ"
         valid = (
