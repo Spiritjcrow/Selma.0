@@ -24,9 +24,10 @@ def parse_id(value):
     # MCP inputs are untrusted. Bound work and return a stable validation error.
     if type(value) is not str or len(value) > 2048:
         raise ValueError("Expected HTTPS YouTube URL or 11-character ID")
-    # urlparse also strips leading C0 controls; strip() can remove some
-    # non-whitespace controls before validation. Reject those on raw input.
-    if any((ord(c) < 32 and c not in " \t\n\r") or ord(c) == 127 for c in value):
+    # urlparse strips leading C0 controls, while strip() can erase C1 NEL
+    # (U+0085). Reject these raw control characters before normalization.
+    if any((ord(c) < 32 and c not in " \t\n\r")
+           or 0x7F <= ord(c) <= 0x9F for c in value):
         raise ValueError("Invalid YouTube URL")
     value = value.strip()
     # urllib.parse silently removes embedded TAB/CR/LF, which can rewrite
