@@ -73,6 +73,17 @@ def _required_text(value: Any, field: str) -> str:
         # Reject noncanonical forms instead of silently rewriting task/ref IDs.
         if unicodedata.normalize("NFC", value) != value:
             raise ValueError(f"{field} contains non-NFC Unicode text")
+    if field == "repository":
+        # Require ASCII owner/name slugs for this v0.1 handoff contract.
+        # NFC alone permits Unicode lookalikes in provenance labels.
+        # This is display hygiene, NOT actor/repository authentication.
+        components = value.split("/")
+        allowed = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-")
+        if (len(components) != 2
+                or any(not part or part in (".", "..") or len(part) > 100
+                       or any(char not in allowed for char in part)
+                       for part in components)):
+            raise ValueError("repository must be an ASCII owner/name slug")
     return value.strip()
 
 
