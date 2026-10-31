@@ -237,6 +237,26 @@ class Tests(unittest.TestCase):
             return {"items": []}
         self.assertEqual([], search(" \t synthetic \n", get=mock))
 
+    def test_search_rejects_control_surrogate_and_bidi_query_before_api(self):
+        # Avoid invisible provenance changes and UnicodeEncodeError in
+        # urlencode. These are synthetic inputs, not observed API attacks.
+        def no_network(*args):
+            self.fail("invalid search query must not reach API")
+        for query in ("video\ud800", "video\x00", "video\nother",
+                      "video\u202e", "\u0085video", "video\u2066",
+                      "video\u2028other", "video\u200e"):
+            with self.subTest(query=repr(query)):
+                with self.assertRaisesRegex(ValueError, "Invalid search"):
+                    search(query, get=no_network)
+        # Ordinary pasted whitespace and multilingual/emoji search remain valid.
+        for query, expected in ((" \n café \t", "café"),
+                                ("family 👩\u200d🔬", "family 👩\u200d🔬")):
+            with self.subTest(valid=repr(query)):
+                def mock(endpoint, params):
+                    self.assertEqual(expected, params["q"])
+                    return {"items": []}
+                self.assertEqual([], search(query, get=mock))
+
     def test_search_malformed_response_fails_closed(self):
         for response in (None, [], {}, {"error": {"message": "synthetic"}},
                          {"items": None}, {"items": {}}, {"items": "oops"}):
