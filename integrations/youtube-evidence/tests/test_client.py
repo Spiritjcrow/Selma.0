@@ -244,7 +244,8 @@ class Tests(unittest.TestCase):
             self.fail("invalid search query must not reach API")
         for query in ("video\ud800", "video\x00", "video\nother",
                       "video\u202e", "\u0085video", "video\u2066",
-                      "video\u2028other", "video\u200e"):
+                      "video\u2028other", "video\u200e",
+                      "video\u200bother", "video\u2060other", "\ufeffvideo"):
             with self.subTest(query=repr(query)):
                 with self.assertRaisesRegex(ValueError, "Invalid search"):
                     search(query, get=no_network)
