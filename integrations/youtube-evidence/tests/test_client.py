@@ -52,6 +52,18 @@ class Tests(unittest.TestCase):
         # Pasted surrounding ordinary whitespace remains supported.
         self.assertEqual(vid, parse_id(" \n\t" + url + "\r\n "))
 
+    def test_parse_id_rejects_c1_controls_before_unicode_strip(self):
+        vid = "dQw4w9WgXcQ"
+        url = "https://youtu.be/" + vid
+        for control in ("\u0080", "\u0085", "\u009f"):
+            for malformed in (control + url, url + control,
+                              url[:10] + control + url[10:], control + vid):
+                with self.subTest(control=repr(control), value=repr(malformed)):
+                    with self.assertRaises(ValueError):
+                        parse_id(malformed)
+        # Preserve legitimate pasted ordinary whitespace.
+        self.assertEqual(vid, parse_id(" \n\t" + url + "\r\n "))
+
     def test_parse_id_keeps_supported_https_forms(self):
         vid = "dQw4w9WgXcQ"
         valid = (
