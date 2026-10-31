@@ -149,6 +149,23 @@ class Tests(unittest.TestCase):
     def test_search(self):
         def mock(endpoint,params): return {"items":[{"id":{"videoId":"dQw4w9WgXcQ"},"snippet":{"title":"Sample"}}]}
         self.assertEqual(search("subwoofer",get=mock)[0]["title"],"Sample")
+    def test_search_enforces_result_limit_after_validation(self):
+        vid = "dQw4w9WgXcQ"
+        entries = [None, {"id": {"videoId": "bad"}}]
+        entries += [
+            {"id": {"videoId": vid}, "snippet": {"title": f"valid-{i}"}}
+            for i in range(8)
+        ]
+        for limit in (1, 2, 3, 8):
+            with self.subTest(limit=limit):
+                def mock(endpoint, params):
+                    self.assertEqual(limit, params["maxResults"])
+                    return {"items": entries}
+                result = search("synthetic", limit=limit, get=mock)
+                self.assertEqual(limit, len(result))
+                self.assertEqual([f"valid-{i}" for i in range(limit)],
+                                 [item["title"] for item in result])
+
     def test_search_rejects_bad_input_before_network(self):
         def no_network(*args):
             self.fail("invalid search input must not reach the API")
