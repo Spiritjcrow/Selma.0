@@ -129,8 +129,11 @@ def search(query, limit=10, *, get=google_get):
     # embedded ASCII newline also changes the visible search provenance.
     if any((ord(char) < 32 and char not in " \t\r\n")
            or 0x7F <= ord(char) <= 0x9F
-           or unicodedata.category(char) in ("Cs", "Zl", "Zp")
-           or char in "\u061c\u200e\u200f\u200b\u2060\ufeff"
+           or unicodedata.category(char) in ("Cs", "Co", "Zl", "Zp")
+           # Preserve ZWNJ/ZWJ for legitimate multilingual and emoji searches.
+           # Other Unicode format characters and private-use codepoints can
+           # silently alter the visible query provenance.
+           or (unicodedata.category(char) == "Cf" and char not in "\u200c\u200d")
            or 0x202A <= ord(char) <= 0x202E
            or 0x2066 <= ord(char) <= 0x2069 for char in query):
         raise ValueError("Invalid search query or result limit")
