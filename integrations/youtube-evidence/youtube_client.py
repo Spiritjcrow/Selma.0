@@ -25,9 +25,11 @@ def parse_id(value):
     if type(value) is not str or len(value) > 2048:
         raise ValueError("Expected HTTPS YouTube URL or 11-character ID")
     # urlparse strips leading C0 controls, while strip() can erase C1 NEL
-    # (U+0085). Reject these raw control characters before normalization.
+    # (U+0085). Reject these and non-ASCII Unicode whitespace before
+    # normalization; preserve only ordinary pasted ASCII edge whitespace.
     if any((ord(c) < 32 and c not in " \t\n\r")
-           or 0x7F <= ord(c) <= 0x9F for c in value):
+           or 0x7F <= ord(c) <= 0x9F
+           or (c.isspace() and c not in " \t\n\r") for c in value):
         raise ValueError("Invalid YouTube URL")
     value = value.strip()
     # urllib.parse silently removes embedded TAB/CR/LF, which can rewrite
