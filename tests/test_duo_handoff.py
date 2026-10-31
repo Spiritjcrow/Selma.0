@@ -271,6 +271,28 @@ class HandoffTests(unittest.TestCase):
         item["task_id"] = "SELMA-Café-001"
         self.assertEqual("SELMA-Café-001", HandoffMessage.from_mapping(item).task_id)
 
+    def test_repository_slug_rejects_unicode_lookalikes_and_bad_structure(self):
+        # Repository labels are untrusted data, never proof of actor identity.
+        bad = (
+            "Spiritjcr\u043ew/Selma.0",  # Cyrillic o
+            "Spiritjcrow/\uff33elma.0",  # fullwidth S
+            "Spiritjcrow/Selma.0/extra",
+            "/Selma.0", "Spiritjcrow/", "Spiritjcrow/..",
+            "Spiritjcrow/Selma 0", "Spiritjcrow/Selma.0?x",
+            "Spiritjcrow\\\\Selma.0",
+        )
+        for slug in bad:
+            with self.subTest(slug=slug):
+                item = record()
+                item["repository"] = slug
+                with self.assertRaisesRegex(ValueError, "ASCII owner/name slug"):
+                    HandoffMessage.from_mapping(item)
+        for slug in ("Spiritjcrow/Selma.0", "owner/repo_name-v1.2"):
+            with self.subTest(valid=slug):
+                item = record()
+                item["repository"] = slug
+                self.assertEqual(HandoffMessage.from_mapping(item).repository, slug)
+
     def test_builder_cannot_claim_verified_state(self):
         with self.assertRaisesRegex(ValueError, "role cannot report"):
             HandoffMessage.from_mapping(record("builder", "pass"))
