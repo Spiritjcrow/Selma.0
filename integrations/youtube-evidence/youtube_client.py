@@ -2,6 +2,7 @@
 import json
 import os
 import re
+import unicodedata
 from urllib.parse import parse_qs, urlencode, urlparse
 from urllib.request import urlopen
 from urllib.error import HTTPError, URLError
@@ -25,11 +26,17 @@ def parse_id(value):
     if type(value) is not str or len(value) > 2048:
         raise ValueError("Expected HTTPS YouTube URL or 11-character ID")
     # urlparse strips leading C0 controls, while strip() can erase C1 NEL
-    # (U+0085). Reject these and non-ASCII Unicode whitespace before
-    # normalization; preserve only ordinary pasted ASCII edge whitespace.
+    # (U+0085). Reject these, non-ASCII whitespace, and invisible Unicode
+    # format/surrogate/private-use/variation characters anywhere in the raw
+    # evidence URL, including ignored query/fragment fields. Preserve only
+    # ordinary pasted ASCII edge whitespace.
     if any((ord(c) < 32 and c not in " \t\n\r")
            or 0x7F <= ord(c) <= 0x9F
-           or (c.isspace() and c not in " \t\n\r") for c in value):
+           or (c.isspace() and c not in " \t\n\r")
+           or unicodedata.category(c) in ("Cf", "Cs", "Co")
+           or ord(c) == 0x034F
+           or 0xFE00 <= ord(c) <= 0xFE0F
+           or 0xE0100 <= ord(c) <= 0xE01EF for c in value):
         raise ValueError("Invalid YouTube URL")
     value = value.strip()
     # urllib.parse silently removes embedded TAB/CR/LF, which can rewrite
