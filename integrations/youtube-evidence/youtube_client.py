@@ -115,6 +115,10 @@ def search(query, limit=10, *, get=google_get):
         if any(type(value) is not str for value in (title, channel, published, description)):
             continue
         output.append({"video_id":vid, "watch_url":watch_link(vid), "title":title, "channel":channel, "published_at":published, "description_excerpt":description[:500]})
+        # Treat provider items as untrusted; maxResults is a request, not a
+        # response-side bound. Count only validated entries toward the limit.
+        if len(output) >= limit:
+            break
     return output
 
 def details(url_or_id, *, get=google_get):
