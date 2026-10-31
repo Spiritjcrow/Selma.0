@@ -64,6 +64,18 @@ class Tests(unittest.TestCase):
         # Preserve legitimate pasted ordinary whitespace.
         self.assertEqual(vid, parse_id(" \n\t" + url + "\r\n "))
 
+    def test_parse_id_rejects_unicode_whitespace_stripped_before_validation(self):
+        vid = "dQw4w9WgXcQ"
+        url = "https://youtu.be/" + vid
+        for codepoint in (0x00A0, 0x1680, 0x2007, 0x2028, 0x2029, 0x202F, 0x3000):
+            char = chr(codepoint)
+            for malformed in (char + url, url + char, char + vid):
+                with self.subTest(codepoint=hex(codepoint), value=repr(malformed)):
+                    with self.assertRaises(ValueError):
+                        parse_id(malformed)
+        # Keep the documented ASCII pasted-whitespace compatibility.
+        self.assertEqual(vid, parse_id(" \n\t" + url + "\r\n "))
+
     def test_parse_id_keeps_supported_https_forms(self):
         vid = "dQw4w9WgXcQ"
         valid = (
