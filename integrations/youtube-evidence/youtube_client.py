@@ -130,7 +130,7 @@ def search(query, limit=10, *, get=google_get):
     if any((ord(char) < 32 and char not in " \t\r\n")
            or 0x7F <= ord(char) <= 0x9F
            or unicodedata.category(char) in ("Cs", "Zl", "Zp")
-           or char in "\u061c\u200e\u200f"
+           or char in "\u061c\u200e\u200f\u200b\u2060\ufeff"
            or 0x202A <= ord(char) <= 0x202E
            or 0x2066 <= ord(char) <= 0x2069 for char in query):
         raise ValueError("Invalid search query or result limit")
