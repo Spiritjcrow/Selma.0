@@ -11,6 +11,25 @@ VID = re.compile(r"^[A-Za-z0-9_-]{11}$")
 API = "https://www.googleapis.com/youtube/v3/"
 # Bound untrusted API response bytes before JSON decoding to avoid memory exhaustion.
 MAX_API_RESPONSE_BYTES = 2_097_152
+# Untrusted provider text must not create unbounded MCP tool responses.
+# Keep truncation explicit: these excerpts are not full evidentiary records.
+METADATA_LIMITS = {"title": 300, "channel": 200, "published_at": 64,
+                   "description_excerpt": 500, "description": 3000,
+                   "duration": 64, "view_count": 64}
+
+def _bound_metadata(fields):
+    truncated = []
+    output = {}
+    for name, value in fields.items():
+        if value is None:
+            output[name] = None
+            continue
+        cap = METADATA_LIMITS[name]
+        if len(value) > cap:
+            truncated.append(name)
+        output[name] = value[:cap]
+    output["truncated_fields"] = truncated
+    return output
 
 def _unique_json_object(pairs):
     """Reject ambiguous duplicate keys at every depth of an API JSON response."""
@@ -127,7 +146,9 @@ def search(query, limit=10, *, get=google_get):
         description = s.get("description", "")
         if any(type(value) is not str for value in (title, channel, published, description)):
             continue
-        output.append({"video_id":vid, "watch_url":watch_link(vid), "title":title, "channel":channel, "published_at":published, "description_excerpt":description[:500]})
+        output.append({"video_id":vid, "watch_url":watch_link(vid), **_bound_metadata({
+            "title": title, "channel": channel, "published_at": published,
+            "description_excerpt": description})})
         # Treat provider items as untrusted; maxResults is a request, not a
         # response-side bound. Count only validated entries toward the limit.
         if len(output) >= limit:
@@ -164,7 +185,10 @@ def details(url_or_id, *, get=google_get):
     if (any(type(value) is not str for value in (title, channel, published, description, duration))
             or (views is not None and type(views) is not str)):
         raise RuntimeError("Unexpected YouTube details response")
-    return {"found":True, "video_id":vid, "watch_url":watch_link(vid), "title":title, "channel":channel, "published_at":published, "description":description[:3000], "duration":duration, "view_count":views, "inspection_status":"metadata only; no video frames or audio analyzed"}
+    return {"found":True, "video_id":vid, "watch_url":watch_link(vid), **_bound_metadata({
+        "title": title, "channel": channel, "published_at": published,
+        "description": description, "duration": duration, "view_count": views}),
+        "inspection_status":"metadata only; no video frames or audio analyzed"}
 
 def evidence_checklist(url_or_id, timestamp=0):
     return {"video_url": watch_link(url_or_id, timestamp), "timestamp_seconds": timestamp, "status":"unverified", "direct_observation":"not viewed", "review": ["Continuity and potential cuts", "Possible concealed supports", "Air movement and pressure", "Camera perspective and timing", "Known object mass and scale", "Independent test with multiple angles"], "note":"A metadata lookup cannot prove the physical event depicted."}
