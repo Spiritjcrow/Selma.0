@@ -131,6 +131,7 @@ def search(query, limit=10, *, get=google_get):
             or type(response.get("items")) is not list):
         raise RuntimeError("Unexpected YouTube search response")
     output = []
+    seen_ids = set()
     for entry in response["items"]:
         if type(entry) is not dict or type(entry.get("id")) is not dict:
             continue
@@ -146,6 +147,11 @@ def search(query, limit=10, *, get=google_get):
         description = s.get("description", "")
         if any(type(value) is not str for value in (title, channel, published, description)):
             continue
+        # Repeated provider IDs must not consume the caller's limited evidence
+        # slots or hide later distinct videos. Keep first valid occurrence.
+        if vid in seen_ids:
+            continue
+        seen_ids.add(vid)
         output.append({"video_id":vid, "watch_url":watch_link(vid), **_bound_metadata({
             "title": title, "channel": channel, "published_at": published,
             "description_excerpt": description})})
