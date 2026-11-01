@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 
 RUNNER = Path(__file__).resolve().parents[1] / 'verify_duo_handoff_offline.py'
 spec = importlib.util.spec_from_file_location('duo_runner', RUNNER)
@@ -48,6 +49,22 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertEqual(report['tests'], 'PASS')
         self.assertEqual(report['test_methods_reported'], 4)
         self.assertEqual(report['state'], 'REVIEW')
+
+    def test_inherited_pythonpath_cannot_replace_unittest_runner(self):
+        # A caller-controlled PYTHONPATH must not replace the stdlib unittest
+        # module with a fake executable that prints a fabricated PASS summary.
+        with tempfile.TemporaryDirectory() as external:
+            fake = Path(external) / 'unittest.py'
+            fake.write_text(
+                'import sys\\n'
+                'sys.stderr.write("Ran 999 tests in 0.001s\\\\n\\\\nOK\\\\n")\\n',
+                encoding='utf8',
+            )
+            with mock.patch.dict(os.environ, {'PYTHONPATH': external}):
+                report, exit_code = self.verify()
+        self.assertEqual(exit_code, 0, report)
+        self.assertEqual(report['tests'], 'PASS')
+        self.assertEqual(report['test_methods_reported'], 4, report)
 
     def test_wrong_sha_blocks_without_execution(self):
         report, exit_code = self.verify('0' * 40)
