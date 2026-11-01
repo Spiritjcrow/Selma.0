@@ -151,6 +151,30 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertIn('defines load_tests', report['blocker'])
         self.assertEqual(report['state'], 'BLOCKED')
 
+    def test_lambda_load_tests_substitution_blocks_before_execution(self):
+        # A module-level lambda assigned to load_tests bypasses a guard that
+        # checks only FunctionDef nodes, yet unittest honors the hook.
+        # It can repeat a passing method and hide a failing method while
+        # preserving the exact reported test count.
+        path = self.root / runner.TEST_FILES[0]
+        path.write_text(
+            'import unittest\n'
+            'class Synthetic(unittest.TestCase):\n'
+            '    def test_one(self): self.assertTrue(True)\n'
+            '    def test_two(self): self.fail("UNEXECUTED")\n'
+            'load_tests = lambda loader, tests, pattern: unittest.TestSuite(['
+            'Synthetic("test_one"), Synthetic("test_one")])\n',
+            encoding='utf8',
+        )
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic lambda load_tests substitution')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'NOT_RUN', report)
+        self.assertIn('defines load_tests', report['blocker'])
+        self.assertEqual(report['state'], 'BLOCKED')
+
     def test_all_expected_failures_are_incomplete(self):
         # unittest exits zero for suites containing only expected failures.
         # Such a suite has not demonstrated any successful assertions.
