@@ -93,6 +93,10 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
             if not source.is_file() or source.is_symlink():
                 raise ValueError(f"required source missing or symlink: {path}")
             tree = ast.parse(source.read_text(encoding="utf-8"), filename=path)
+            # ast.parse alone accepts context-invalid constructs (for example,
+            # a module-level return). Compile every pinned input without
+            # executing it before any unittest import can report a false PASS.
+            compile(tree, path, "exec", dont_inherit=True)
             if path in TEST_FILES:
                 # unittest's module-level load_tests hook can replace the
                 # discovered suite while preserving the reported test count
@@ -190,7 +194,11 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
         result["state"] = "REVIEW" if process.returncode == 0 else "BLOCKED"
         # No acceptance state is emitted: even PASS is only local checkout QA.
         return result, 0 if process.returncode == 0 else 2
-    except (OSError, UnicodeError, SyntaxError, ValueError, subprocess.TimeoutExpired) as exc:
+    except SyntaxError:
+        result["syntax"] = "FAIL"
+        result["blocker"] = "pinned Python input failed compilation"
+        return result, 2
+    except (OSError, UnicodeError, ValueError, subprocess.TimeoutExpired) as exc:
         result["blocker"] = str(exc)[:200]
         return result, 2
 
