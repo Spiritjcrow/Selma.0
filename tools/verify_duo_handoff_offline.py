@@ -87,11 +87,24 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
                       for path in (root / "tests").rglob("test_duo*.py")}
         if discovered != set(TEST_FILES):
             raise ValueError("discovered test files differ from pinned allowlist")
+        declared_methods = 0
         for path in SOURCE_FILES + TEST_FILES:
             source = root / path
             if not source.is_file() or source.is_symlink():
                 raise ValueError(f"required source missing or symlink: {path}")
-            ast.parse(source.read_text(encoding="utf-8"), filename=path)
+            tree = ast.parse(source.read_text(encoding="utf-8"), filename=path)
+            if path in TEST_FILES:
+                # A pinned test module that silently loses all test methods
+                # must not let the remaining modules yield a false PASS.
+                methods = sum(
+                    1 for node in ast.walk(tree)
+                    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                    and node.name.startswith("test_")
+                )
+                if not methods:
+                    raise ValueError(f"pinned test module declares no test methods: {path}")
+                declared_methods += methods
+        result["test_methods_declared"] = declared_methods
         result["syntax"] = "PASS"
         # Do not inherit PYTHONPATH/PYTHONHOME or other Python interpreter
         # environment overrides: they can replace stdlib unittest and fake QA.
@@ -136,9 +149,9 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
         result["test_methods_skipped"] = skipped
         result["test_methods_expected_failures"] = expected_failures
         result["test_exit_code"] = process.returncode
-        if process.returncode == 0 and (count == 0 or skipped or expected_failures):
+        if process.returncode == 0 and (count < declared_methods or skipped or expected_failures):
             result["tests"] = "INCOMPLETE"
-            result["blocker"] = "unittest reported no tests, skips, or expected failures"
+            result["blocker"] = "unittest reported fewer methods than declared, skips, or expected failures"
             return result, 2
         result["tests"] = "PASS" if process.returncode == 0 else "FAIL"
         result["state"] = "REVIEW" if process.returncode == 0 else "BLOCKED"
