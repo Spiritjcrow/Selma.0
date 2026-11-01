@@ -121,7 +121,7 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         # tests/__init__.py can run through imports from the pinned test set.
         path = 'tests/__init__.py'
         cmd(self.root, 'update-index', '--assume-unchanged', path)
-        (self.root / path).write_text('raise RuntimeError("UNPINNED_PACKAGE_INIT")\\n')
+        (self.root / path).write_text('raise RuntimeError("UNPINNED_PACKAGE_INIT")\n')
         self.assertEqual(cmd(self.root, 'status', '--porcelain', '--untracked-files=all'), '')
         report, exit_code = self.verify()
         self.assertEqual(exit_code, 2, report)
@@ -132,7 +132,7 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         # core/__init__.py imports core.protocols before core.duo_handoff.
         path = 'core/protocols.py'
         cmd(self.root, 'update-index', '--skip-worktree', path)
-        (self.root / path).write_text('raise RuntimeError("UNPINNED_CORE_DEPENDENCY")\\n')
+        (self.root / path).write_text('raise RuntimeError("UNPINNED_CORE_DEPENDENCY")\n')
         self.assertEqual(cmd(self.root, 'status', '--porcelain', '--untracked-files=all'), '')
         report, exit_code = self.verify()
         self.assertEqual(exit_code, 2, report)
