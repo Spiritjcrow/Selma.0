@@ -1,4 +1,6 @@
 import importlib.util
+import os
+import py_compile
 from pathlib import Path
 import subprocess
 import tempfile
@@ -97,6 +99,28 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertEqual(exit_code, 2, report)
         self.assertEqual(report['tests'], 'NOT_RUN')
         self.assertIn('on-disk Git blob differs', report['blocker'])
+
+    def test_ignored_timestamp_valid_bytecode_cannot_replace_pinned_test(self):
+        path = self.root / runner.TEST_FILES[0]
+        original = path.read_text(encoding='utf8')
+        original_stat = path.stat()
+        poison = 'raise RuntimeError("POISONED_BYTECODE_EXECUTED")\n'
+        self.assertLessEqual(len(poison), len(original))
+        poison += ' ' * (len(original) - len(poison))
+        path.write_text(poison, encoding='utf8')
+        cached = Path(importlib.util.cache_from_source(str(path)))
+        cached.parent.mkdir(parents=True, exist_ok=True)
+        py_compile.compile(str(path), cfile=str(cached), doraise=True)
+        path.write_text(original, encoding='utf8')
+        os.utime(path, ns=(original_stat.st_atime_ns, original_stat.st_mtime_ns))
+        (self.root / '.git/info/exclude').write_text('__pycache__/\n', encoding='utf8')
+        self.assertEqual(cmd(self.root, 'status', '--porcelain', '--untracked-files=all'), '')
+        self.assertEqual(cmd(self.root, 'hash-object', runner.TEST_FILES[0]),
+                         cmd(self.root, 'rev-parse', 'HEAD:' + runner.TEST_FILES[0]))
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 0, report)
+        self.assertEqual(report['tests'], 'PASS')
+        self.assertEqual(report['test_methods_reported'], 4)
 
     def test_missing_allowlisted_file_blocks(self):
         (self.root / runner.TEST_FILES[0]).unlink()
