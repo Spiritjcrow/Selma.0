@@ -131,8 +131,13 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
         result["unittest_output_sha256"] = hashlib.sha256(combined.encode()).hexdigest()
         # unittest returns zero for a suite where every method was skipped.
         # Such a run is incomplete, not passing verification evidence.
-        match = re.search(r"^Ran (\d+) tests? in ", process.stderr, re.MULTILINE)
-        count = int(match.group(1)) if match else 0
+        # Test modules may write arbitrary stderr, including a forged
+        # "Ran 999 tests" header before unittest prints its real summary.
+        # Ambiguous summaries cannot establish trustworthy coverage.
+        summary_matches = re.findall(
+            r"^Ran (\d+) tests? in ", process.stderr, re.MULTILINE,
+        )
+        count = int(summary_matches[0]) if len(summary_matches) == 1 else 0
         skipped_match = re.search(
             r"^OK\s*\([^)]*\bskipped=(\d+)", process.stderr, re.MULTILINE,
         )
@@ -146,12 +151,19 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
         expected_failures = (int(expected_failure_match.group(1))
                              if expected_failure_match else 0)
         result["test_methods_reported"] = count
+        result["unittest_summary_count"] = len(summary_matches)
         result["test_methods_skipped"] = skipped
         result["test_methods_expected_failures"] = expected_failures
         result["test_exit_code"] = process.returncode
-        if process.returncode == 0 and (count < declared_methods or skipped or expected_failures):
+        if process.returncode == 0 and (
+            len(summary_matches) != 1 or count < declared_methods
+            or skipped or expected_failures
+        ):
             result["tests"] = "INCOMPLETE"
-            result["blocker"] = "unittest reported fewer methods than declared, skips, or expected failures"
+            result["blocker"] = (
+                "unittest summary ambiguous, fewer methods than declared, "
+                "skips, or expected failures"
+            )
             return result, 2
         result["tests"] = "PASS" if process.returncode == 0 else "FAIL"
         result["state"] = "REVIEW" if process.returncode == 0 else "BLOCKED"
