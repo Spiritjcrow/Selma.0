@@ -50,6 +50,39 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertEqual(report['test_methods_reported'], 4)
         self.assertEqual(report['state'], 'REVIEW')
 
+    def test_pinned_test_module_without_methods_blocks(self):
+        # A clean commit can remove all methods from one pinned test file.
+        # Other modules passing must not conceal the lost coverage.
+        (self.root / runner.TEST_FILES[1]).write_text('import unittest\n', encoding='utf8')
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic lost test module')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'NOT_RUN')
+        self.assertIn('declares no test methods', report['blocker'])
+
+    def test_declared_methods_not_executed_are_incomplete(self):
+        # unittest load_tests can suppress a declared test while exiting 0.
+        path = self.root / runner.TEST_FILES[0]
+        path.write_text(
+            'import unittest\n'
+            'class Synthetic(unittest.TestCase):\n'
+            '    def test_one(self): self.assertTrue(True)\n'
+            '    def test_two(self): self.assertTrue(True)\n'
+            'def load_tests(loader, tests, pattern):\n'
+            '    return loader.loadTestsFromName("Synthetic.test_one", __import__(__name__))\n',
+            encoding='utf8',
+        )
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic hidden declared method')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'INCOMPLETE', report)
+        self.assertEqual(report['test_methods_declared'], 5)
+        self.assertEqual(report['test_methods_reported'], 4)
+
     def test_all_expected_failures_are_incomplete(self):
         # unittest exits zero for suites containing only expected failures.
         # Such a suite has not demonstrated any successful assertions.
