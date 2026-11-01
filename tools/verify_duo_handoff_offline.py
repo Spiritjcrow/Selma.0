@@ -84,7 +84,11 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
                 raise ValueError(f"required source missing or symlink: {path}")
             ast.parse(source.read_text(encoding="utf-8"), filename=path)
         result["syntax"] = "PASS"
-        env = dict(os.environ)
+        # Do not inherit PYTHONPATH/PYTHONHOME or other Python interpreter
+        # environment overrides: they can replace stdlib unittest and fake QA.
+        # Nested CLI subprocesses inherit this sanitized environment too.
+        env = {key: value for key, value in os.environ.items()
+               if not key.upper().startswith("PYTHON")}
         env["PYTHONDONTWRITEBYTECODE"] = "1"
         # -B prevents writes, not reads: Python may otherwise execute an
         # ignored, timestamp-valid __pycache__ payload instead of pinned source.
@@ -93,7 +97,10 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
             env["PYTHONPYCACHEPREFIX"] = cache_dir
             start = time.monotonic()
             process = subprocess.run(
-                [sys.executable, "-B", "-m", "unittest", "discover", "-s", "tests", "-p", "test_duo*.py", "-v"],
+                [sys.executable, "-I", "-B", "-X", f"pycache_prefix={cache_dir}",
+                 "-c", "import sys, unittest; sys.path.insert(0, '.'); "
+                 "unittest.main(module=None, argv=['unittest', 'discover', "
+                 "'-s', 'tests', '-p', 'test_duo*.py', '-v'])"],
                 cwd=root, env=env, text=True, encoding="utf-8", errors="replace",
                 capture_output=True, timeout=timeout, check=False,
             )
