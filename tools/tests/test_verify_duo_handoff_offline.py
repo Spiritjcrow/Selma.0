@@ -56,8 +56,8 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         with tempfile.TemporaryDirectory() as external:
             fake = Path(external) / 'unittest.py'
             fake.write_text(
-                'import sys\\n'
-                'sys.stderr.write("Ran 999 tests in 0.001s\\\\n\\\\nOK\\\\n")\\n',
+                'import sys\n'
+                'sys.stderr.write("Ran 999 tests in 0.001s\\n\\nOK\\n")\n',
                 encoding='utf8',
             )
             with mock.patch.dict(os.environ, {'PYTHONPATH': external}):
