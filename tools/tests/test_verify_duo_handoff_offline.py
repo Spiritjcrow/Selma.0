@@ -79,9 +79,8 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.sha = cmd(self.root, 'rev-parse', 'HEAD')
         report, exit_code = self.verify()
         self.assertEqual(exit_code, 2, report)
-        self.assertEqual(report['tests'], 'INCOMPLETE', report)
-        self.assertEqual(report['test_methods_declared'], 5)
-        self.assertEqual(report['test_methods_reported'], 4)
+        self.assertEqual(report['tests'], 'NOT_RUN', report)
+        self.assertIn('defines load_tests', report['blocker'])
 
     def test_forged_unittest_summary_does_not_inflate_method_count(self):
         # A committed test module can print a fake unittest summary at import
@@ -103,8 +102,8 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.sha = cmd(self.root, 'rev-parse', 'HEAD')
         report, exit_code = self.verify()
         self.assertEqual(exit_code, 2, report)
-        self.assertEqual(report['tests'], 'INCOMPLETE', report)
-        self.assertEqual(report['test_methods_declared'], 5)
+        self.assertEqual(report['tests'], 'NOT_RUN', report)
+        self.assertIn('defines load_tests', report['blocker'])
         self.assertEqual(report['state'], 'BLOCKED')
 
     def test_unexpected_dynamic_test_count_is_incomplete(self):
@@ -126,9 +125,30 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.sha = cmd(self.root, 'rev-parse', 'HEAD')
         report, exit_code = self.verify()
         self.assertEqual(exit_code, 2, report)
-        self.assertEqual(report['tests'], 'INCOMPLETE', report)
-        self.assertEqual(report['test_methods_declared'], 4)
-        self.assertEqual(report['test_methods_reported'], 5)
+        self.assertEqual(report['tests'], 'NOT_RUN', report)
+        self.assertIn('defines load_tests', report['blocker'])
+        self.assertEqual(report['state'], 'BLOCKED')
+
+    def test_duplicate_method_substitution_hook_blocks_before_execution(self):
+        # Equal executed and declared counts do not establish unique coverage:
+        # a load_tests hook could repeat a passing method and omit a failure.
+        path = self.root / runner.TEST_FILES[0]
+        path.write_text(
+            'import unittest\n'
+            'class Synthetic(unittest.TestCase):\n'
+            '    def test_one(self): self.assertTrue(True)\n'
+            '    def test_two(self): self.fail("UNEXECUTED")\n'
+            'def load_tests(loader, tests, pattern):\n'
+            '    return unittest.TestSuite([Synthetic("test_one"), Synthetic("test_one")])\n',
+            encoding='utf8',
+        )
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic duplicated test method')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'NOT_RUN', report)
+        self.assertIn('defines load_tests', report['blocker'])
         self.assertEqual(report['state'], 'BLOCKED')
 
     def test_all_expected_failures_are_incomplete(self):
