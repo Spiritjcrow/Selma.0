@@ -117,6 +117,28 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertEqual(report['tests'], 'NOT_RUN')
         self.assertIn('on-disk Git blob differs', report['blocker'])
 
+    def test_assume_unchanged_package_initializer_blocks(self):
+        # tests/__init__.py can run through imports from the pinned test set.
+        path = 'tests/__init__.py'
+        cmd(self.root, 'update-index', '--assume-unchanged', path)
+        (self.root / path).write_text('raise RuntimeError("UNPINNED_PACKAGE_INIT")\\n')
+        self.assertEqual(cmd(self.root, 'status', '--porcelain', '--untracked-files=all'), '')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'NOT_RUN')
+        self.assertIn('on-disk Git blob differs', report['blocker'])
+
+    def test_skip_worktree_transitive_core_dependency_blocks(self):
+        # core/__init__.py imports core.protocols before core.duo_handoff.
+        path = 'core/protocols.py'
+        cmd(self.root, 'update-index', '--skip-worktree', path)
+        (self.root / path).write_text('raise RuntimeError("UNPINNED_CORE_DEPENDENCY")\\n')
+        self.assertEqual(cmd(self.root, 'status', '--porcelain', '--untracked-files=all'), '')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'NOT_RUN')
+        self.assertIn('on-disk Git blob differs', report['blocker'])
+
     def test_ignored_timestamp_valid_bytecode_cannot_replace_pinned_test(self):
         path = self.root / runner.TEST_FILES[0]
         original = path.read_text(encoding='utf8')
