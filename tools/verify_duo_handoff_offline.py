@@ -24,7 +24,16 @@ TEST_FILES = (
     "tests/test_duo_cli_regression.py",
     "tests/test_duo_boundary_matrix.py",
 )
-SOURCE_FILES = ("core/duo_handoff.py", "tools/selma_duo_validate.py")
+# Python imports package initializers before their child modules.  The
+# duo tests also import core.protocols indirectly through core/__init__.py.
+# These executable dependencies must be pinned just like the test modules.
+SOURCE_FILES = (
+    "core/duo_handoff.py",
+    "tools/selma_duo_validate.py",
+    "core/__init__.py",
+    "core/protocols.py",
+    "tests/__init__.py",
+)
 SHA_PATTERN = re.compile(r"[0-9a-f]{40}\Z")
 
 
@@ -61,7 +70,7 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
         if git(root, "status", "--porcelain", "--untracked-files=all"):
             raise ValueError("working tree or index contains modified or untracked files")
         # Git index flags (assume-unchanged / skip-worktree) can conceal local
-        # edits from status. Compare the six pinned executable inputs against
+        # edits from status. Compare all pinned executable inputs against
         # the exact commit tree before parsing or executing any of them.
         for path in SOURCE_FILES + TEST_FILES:
             source = root / path
