@@ -56,6 +56,11 @@ def main(argv: list[str] | None = None) -> int:
         # filenames or directories. Do not echo it into captured CLI logs.
         print(json.dumps({"ok": False, "error": "input read failed"}))
         return 2
+    except UnicodeDecodeError:
+        # Decoder diagnostics contain input-dependent byte positions/details.
+        # Do not reflect those details into CLI logs or handoff reports.
+        print(json.dumps({"ok": False, "error": "JSON input must be valid UTF-8"}))
+        return 2
     except (json.JSONDecodeError, TypeError, ValueError) as exc:
         print(json.dumps({"ok": False, "error": str(exc)}))
         return 2
