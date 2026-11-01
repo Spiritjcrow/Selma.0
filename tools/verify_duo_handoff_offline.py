@@ -124,12 +124,21 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
             r"^OK\s*\([^)]*\bskipped=(\d+)", process.stderr, re.MULTILINE,
         )
         skipped = int(skipped_match.group(1)) if skipped_match else 0
+        # @unittest.expectedFailure yields exit 0 even if no assertions pass.
+        # Treat any such result as incomplete rather than promoting it to PASS.
+        expected_failure_match = re.search(
+            r"^OK\s*\([^)]*\bexpected failures=(\d+)",
+            process.stderr, re.MULTILINE,
+        )
+        expected_failures = (int(expected_failure_match.group(1))
+                             if expected_failure_match else 0)
         result["test_methods_reported"] = count
         result["test_methods_skipped"] = skipped
+        result["test_methods_expected_failures"] = expected_failures
         result["test_exit_code"] = process.returncode
-        if process.returncode == 0 and (count == 0 or skipped):
+        if process.returncode == 0 and (count == 0 or skipped or expected_failures):
             result["tests"] = "INCOMPLETE"
-            result["blocker"] = "unittest reported no executed methods or skipped methods"
+            result["blocker"] = "unittest reported no tests, skips, or expected failures"
             return result, 2
         result["tests"] = "PASS" if process.returncode == 0 else "FAIL"
         result["state"] = "REVIEW" if process.returncode == 0 else "BLOCKED"
