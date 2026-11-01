@@ -43,6 +43,20 @@ class HarnessProvenanceFixtures(unittest.TestCase):
     def verify(self, expected=None):
         return runner.verify(self.root, expected or self.sha, 20)
 
+    def test_ast_parse_only_does_not_misreport_compilation(self):
+        # ast.parse accepts a module-level return; compile() rejects it.
+        # Syntax evidence must fail before any tests are executed.
+        path = self.root / runner.SOURCE_FILES[0]
+        path.write_text('return 42\n', encoding='utf8')
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic compile-only syntax failure')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['syntax'], 'FAIL', report)
+        self.assertEqual(report['tests'], 'NOT_RUN', report)
+        self.assertEqual(report['blocker'], 'pinned Python input failed compilation')
+
     def test_clean_exact_sha_runs_only_four_tests(self):
         report, exit_code = self.verify()
         self.assertEqual(exit_code, 0, report)
