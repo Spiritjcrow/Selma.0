@@ -189,6 +189,31 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertIn('defines load_tests', report['blocker'])
         self.assertEqual(report['state'], 'BLOCKED')
 
+    def test_module_getattr_cannot_substitute_unittest_suite(self):
+        # unittest getattr(module, 'load_tests') invokes a module-level
+        # __getattr__ even if no load_tests binding appears in the AST.
+        # A hook can repeat a passing method and hide a failing one while
+        # preserving the exact declared test count.
+        path = self.root / runner.TEST_FILES[0]
+        path.write_text(
+            'import unittest\n'
+            'class Synthetic(unittest.TestCase):\n'
+            '    def test_one(self): self.assertTrue(True)\n'
+            '    def test_two(self): self.fail("UNEXECUTED")\n'
+            'def __getattr__(name):\n'
+            '    if name == "load_tests":\n'
+            '        return lambda loader, tests, pattern: unittest.TestSuite([Synthetic("test_one"), Synthetic("test_one")])\n'
+            '    raise AttributeError(name)\n',
+            encoding='utf8',
+        )
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic module getattr test substitution')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'NOT_RUN', report)
+        self.assertIn('defines __getattr__', report['blocker'])
+
     def test_all_expected_failures_are_incomplete(self):
         # unittest exits zero for suites containing only expected failures.
         # Such a suite has not demonstrated any successful assertions.

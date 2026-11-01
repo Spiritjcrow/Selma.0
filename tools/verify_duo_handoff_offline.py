@@ -119,6 +119,21 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
                     for node in ast.walk(tree)
                 ):
                     raise ValueError(f"pinned test module defines load_tests: {path}")
+                # PEP 562 module __getattr__ can synthesize a load_tests hook
+                # at unittest discovery time without a static load_tests name.
+                # This pinned suite needs no dynamic module attribute hooks.
+                if any(
+                    (isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                     and node.name == "__getattr__")
+                    or (isinstance(node, ast.Name)
+                        and isinstance(node.ctx, ast.Store)
+                        and node.id == "__getattr__")
+                    or (isinstance(node, (ast.Import, ast.ImportFrom))
+                        and any((alias.asname or alias.name.split(".")[0])
+                                == "__getattr__" for alias in node.names))
+                    for node in ast.walk(tree)
+                ):
+                    raise ValueError(f"pinned test module defines __getattr__: {path}")
                 # A pinned test module that silently loses all test methods
                 # must not let the remaining modules yield a false PASS.
                 methods = sum(
