@@ -156,12 +156,12 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
         result["test_methods_expected_failures"] = expected_failures
         result["test_exit_code"] = process.returncode
         if process.returncode == 0 and (
-            len(summary_matches) != 1 or count < declared_methods
+            len(summary_matches) != 1 or count != declared_methods
             or skipped or expected_failures
         ):
             result["tests"] = "INCOMPLETE"
             result["blocker"] = (
-                "unittest summary ambiguous, fewer methods than declared, "
+                "unittest summary ambiguous, executed count differs from declared, "
                 "skips, or expected failures"
             )
             return result, 2
