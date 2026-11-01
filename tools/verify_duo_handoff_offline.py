@@ -15,6 +15,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 import time
 
 TEST_FILES = (
@@ -82,12 +83,17 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
         result["syntax"] = "PASS"
         env = dict(os.environ)
         env["PYTHONDONTWRITEBYTECODE"] = "1"
-        start = time.monotonic()
-        process = subprocess.run(
-            [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_duo*.py", "-v"],
-            cwd=root, env=env, text=True, encoding="utf-8", errors="replace",
-            capture_output=True, timeout=timeout, check=False,
-        )
+        # -B prevents writes, not reads: Python may otherwise execute an
+        # ignored, timestamp-valid __pycache__ payload instead of pinned source.
+        # A fresh isolated cache prefix also propagates to nested CLI Python.
+        with tempfile.TemporaryDirectory(prefix="selma-duo-pycache-") as cache_dir:
+            env["PYTHONPYCACHEPREFIX"] = cache_dir
+            start = time.monotonic()
+            process = subprocess.run(
+                [sys.executable, "-B", "-m", "unittest", "discover", "-s", "tests", "-p", "test_duo*.py", "-v"],
+                cwd=root, env=env, text=True, encoding="utf-8", errors="replace",
+                capture_output=True, timeout=timeout, check=False,
+            )
         combined = process.stdout + "\n" + process.stderr
         result["elapsed_ms"] = round((time.monotonic() - start) * 1000)
         result["unittest_output_sha256"] = hashlib.sha256(combined.encode()).hexdigest()
