@@ -81,7 +81,7 @@ class HarnessProvenanceFixtures(unittest.TestCase):
     def test_assume_unchanged_tracked_test_blocks(self):
         path = runner.TEST_FILES[0]
         cmd(self.root, 'update-index', '--assume-unchanged', path)
-        (self.root / path).write_text('raise RuntimeError("must not execute")\\n')
+        (self.root / path).write_text('raise RuntimeError("must not execute")\n')
         self.assertEqual(cmd(self.root, 'status', '--porcelain', '--untracked-files=all'), '')
         report, exit_code = self.verify()
         self.assertEqual(exit_code, 2, report)
@@ -91,7 +91,7 @@ class HarnessProvenanceFixtures(unittest.TestCase):
     def test_skip_worktree_tracked_test_blocks(self):
         path = runner.TEST_FILES[0]
         cmd(self.root, 'update-index', '--skip-worktree', path)
-        (self.root / path).write_text('raise RuntimeError("must not execute")\\n')
+        (self.root / path).write_text('raise RuntimeError("must not execute")\n')
         self.assertEqual(cmd(self.root, 'status', '--porcelain', '--untracked-files=all'), '')
         report, exit_code = self.verify()
         self.assertEqual(exit_code, 2, report)
