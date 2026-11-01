@@ -101,9 +101,19 @@ class DuoCliRegressionTests(unittest.TestCase):
         self.assertIn("exceeds maximum", result["error"])
 
     def test_invalid_utf8_rejected_without_traceback(self):
-        code, result = self.run_cli(b"[\xff]")
-        self.assertEqual(2, code)
-        self.assertFalse(result["ok"])
+        # Stable, input-independent diagnostics for stdin and file inputs.
+        # These are synthetic invalid encodings, not user/device evidence.
+        for raw in (b"[\xff]", b'["\xe2\x82', b'["secret\xc3("]'):
+            with self.subTest(raw=raw):
+                code, result = self.run_cli(raw)
+                self.assertEqual(
+                    (2, False, "JSON input must be valid UTF-8"),
+                    (code, result["ok"], result["error"]),
+                )
+                with tempfile.TemporaryDirectory() as directory:
+                    path = Path(directory) / "invalid.json"
+                    path.write_bytes(raw)
+                    self.assertEqual((code, result), self.run_cli(None, path))
 
     def test_malformed_json_rejected(self):
         code, result = self.run_cli(b"[{]")
