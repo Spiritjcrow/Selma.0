@@ -71,8 +71,11 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
             actual_blob = git(root, "hash-object", "--", path)
             if actual_blob != committed_blob:
                 raise ValueError(f"on-disk Git blob differs from pinned HEAD: {path}")
+        # unittest discovers matching tests recursively through Python packages.
+        # A top-level glob misses nested tracked or Git-ignored tests, which
+        # could execute despite the pinned top-level test-file allowlist.
         discovered = {path.relative_to(root).as_posix()
-                      for path in (root / "tests").glob("test_duo*.py")}
+                      for path in (root / "tests").rglob("test_duo*.py")}
         if discovered != set(TEST_FILES):
             raise ValueError("discovered test files differ from pinned allowlist")
         for path in SOURCE_FILES + TEST_FILES:
