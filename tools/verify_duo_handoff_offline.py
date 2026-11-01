@@ -59,6 +59,17 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
             raise ValueError("checkout SHA does not match expected PR head")
         if git(root, "status", "--porcelain", "--untracked-files=all"):
             raise ValueError("working tree or index contains modified or untracked files")
+        # Git index flags (assume-unchanged / skip-worktree) can conceal local
+        # edits from status. Compare the six pinned executable inputs against
+        # the exact commit tree before parsing or executing any of them.
+        for path in SOURCE_FILES + TEST_FILES:
+            source = root / path
+            if not source.is_file() or source.is_symlink():
+                raise ValueError(f"required source missing or symlink: {path}")
+            committed_blob = git(root, "rev-parse", f"HEAD:{path}")
+            actual_blob = git(root, "hash-object", "--", path)
+            if actual_blob != committed_blob:
+                raise ValueError(f"on-disk Git blob differs from pinned HEAD: {path}")
         discovered = {path.relative_to(root).as_posix()
                       for path in (root / "tests").glob("test_duo*.py")}
         if discovered != set(TEST_FILES):
