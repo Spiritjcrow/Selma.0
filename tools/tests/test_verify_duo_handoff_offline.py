@@ -50,6 +50,48 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertEqual(report['test_methods_reported'], 4)
         self.assertEqual(report['state'], 'REVIEW')
 
+    def test_all_expected_failures_are_incomplete(self):
+        # unittest exits zero for suites containing only expected failures.
+        # Such a suite has not demonstrated any successful assertions.
+        for path in runner.TEST_FILES:
+            (self.root / path).write_text(
+                'import unittest\n'
+                'class Synthetic(unittest.TestCase):\n'
+                '    @unittest.expectedFailure\n'
+                '    def test_known_failure(self):\n'
+                '        self.assertEqual(1, 2)\n',
+                encoding='utf8',
+            )
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic expected-failure suite')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'INCOMPLETE', report)
+        self.assertEqual(report['test_methods_reported'], 4)
+        self.assertEqual(report['test_methods_expected_failures'], 4)
+        self.assertEqual(report['state'], 'BLOCKED')
+
+    def test_partial_expected_failures_are_incomplete(self):
+        path = self.root / runner.TEST_FILES[0]
+        path.write_text(
+            'import unittest\n'
+            'class Synthetic(unittest.TestCase):\n'
+            '    @unittest.expectedFailure\n'
+            '    def test_known_failure(self):\n'
+            '        self.assertEqual(1, 2)\n',
+            encoding='utf8',
+        )
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic mixed expected-failure suite')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'INCOMPLETE', report)
+        self.assertEqual(report['test_methods_reported'], 4)
+        self.assertEqual(report['test_methods_expected_failures'], 1)
+        self.assertEqual(report['state'], 'BLOCKED')
+
     def test_inherited_pythonpath_cannot_replace_unittest_runner(self):
         # A caller-controlled PYTHONPATH must not replace the stdlib unittest
         # module with a fake executable that prints a fabricated PASS summary.
