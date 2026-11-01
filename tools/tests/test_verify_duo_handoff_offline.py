@@ -122,6 +122,35 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertEqual(report['tests'], 'PASS')
         self.assertEqual(report['test_methods_reported'], 4)
 
+    def test_tracked_nested_matching_test_blocks_before_execution(self):
+        nested = self.root / 'tests' / 'nested'
+        nested.mkdir()
+        (nested / '__init__.py').write_text('', encoding='utf8')
+        (nested / 'test_duo_nested.py').write_text(
+            'import unittest\nclass Nested(unittest.TestCase):\n'
+            '    def test_nested(self): self.assertTrue(True)\n', encoding='utf8')
+        cmd(self.root, 'add', 'tests/nested')
+        cmd(self.root, 'commit', '-qm', 'synthetic nested test')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'NOT_RUN')
+        self.assertIn('pinned allowlist', report['blocker'])
+
+    def test_ignored_nested_matching_test_blocks_before_execution(self):
+        nested = self.root / 'tests' / 'hidden'
+        nested.mkdir()
+        (nested / '__init__.py').write_text('', encoding='utf8')
+        (nested / 'test_duo_hidden.py').write_text(
+            'import unittest\nclass Hidden(unittest.TestCase):\n'
+            '    def test_hidden(self): self.assertTrue(True)\n', encoding='utf8')
+        (self.root / '.git/info/exclude').write_text('tests/hidden/\n', encoding='utf8')
+        self.assertEqual(cmd(self.root, 'status', '--porcelain', '--untracked-files=all'), '')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'NOT_RUN')
+        self.assertIn('pinned allowlist', report['blocker'])
+
     def test_missing_allowlisted_file_blocks(self):
         (self.root / runner.TEST_FILES[0]).unlink()
         report, exit_code = self.verify()
