@@ -83,6 +83,30 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertEqual(report['test_methods_declared'], 5)
         self.assertEqual(report['test_methods_reported'], 4)
 
+    def test_forged_unittest_summary_does_not_inflate_method_count(self):
+        # A committed test module can print a fake unittest summary at import
+        # time, before the real summary. The runner must not mistake the first
+        # arbitrary stderr line for unittest's actual completed test count.
+        path = self.root / runner.TEST_FILES[0]
+        path.write_text(
+            'import unittest, sys\n'
+            'sys.stderr.write("Ran 999 tests in 0.000s\\n\\nOK\\n")\n'
+            'class Synthetic(unittest.TestCase):\n'
+            '    def test_one(self): self.assertTrue(True)\n'
+            '    def test_two(self): self.assertTrue(True)\n'
+            'def load_tests(loader, tests, pattern):\n'
+            '    return loader.loadTestsFromName("Synthetic.test_one", __import__(__name__))\n',
+            encoding='utf8',
+        )
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic forged unittest summary')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'INCOMPLETE', report)
+        self.assertEqual(report['test_methods_declared'], 5)
+        self.assertEqual(report['state'], 'BLOCKED')
+
     def test_all_expected_failures_are_incomplete(self):
         # unittest exits zero for suites containing only expected failures.
         # Such a suite has not demonstrated any successful assertions.
