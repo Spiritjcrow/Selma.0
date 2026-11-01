@@ -99,8 +99,21 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
                 # (e.g. repeat one passing method and omit a failing method).
                 # The pinned v0.1 modules do not require custom discovery;
                 # refuse these hooks before executing any test code.
-                if any(isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-                       and node.name == "load_tests" for node in tree.body):
+                # unittest also honors load_tests bound through assignments
+                # (including lambdas) or imported aliases, not just defs.
+                # This is a bounded consistency check, not a sandbox for
+                # arbitrary untrusted Python in a checkout.
+                if any(
+                    (isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                     and node.name == "load_tests")
+                    or (isinstance(node, ast.Name)
+                        and isinstance(node.ctx, ast.Store)
+                        and node.id == "load_tests")
+                    or (isinstance(node, (ast.Import, ast.ImportFrom))
+                        and any((alias.asname or alias.name.split(".")[0])
+                                == "load_tests" for alias in node.names))
+                    for node in ast.walk(tree)
+                ):
                     raise ValueError(f"pinned test module defines load_tests: {path}")
                 # A pinned test module that silently loses all test methods
                 # must not let the remaining modules yield a false PASS.
