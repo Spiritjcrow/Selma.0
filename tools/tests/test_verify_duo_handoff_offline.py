@@ -78,6 +78,26 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertEqual(exit_code, 2)
         self.assertEqual(report['tests'], 'NOT_RUN')
 
+    def test_assume_unchanged_tracked_test_blocks(self):
+        path = runner.TEST_FILES[0]
+        cmd(self.root, 'update-index', '--assume-unchanged', path)
+        (self.root / path).write_text('raise RuntimeError("must not execute")\\n')
+        self.assertEqual(cmd(self.root, 'status', '--porcelain', '--untracked-files=all'), '')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'NOT_RUN')
+        self.assertIn('on-disk Git blob differs', report['blocker'])
+
+    def test_skip_worktree_tracked_test_blocks(self):
+        path = runner.TEST_FILES[0]
+        cmd(self.root, 'update-index', '--skip-worktree', path)
+        (self.root / path).write_text('raise RuntimeError("must not execute")\\n')
+        self.assertEqual(cmd(self.root, 'status', '--porcelain', '--untracked-files=all'), '')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'NOT_RUN')
+        self.assertIn('on-disk Git blob differs', report['blocker'])
+
     def test_missing_allowlisted_file_blocks(self):
         (self.root / runner.TEST_FILES[0]).unlink()
         report, exit_code = self.verify()
