@@ -107,6 +107,30 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertEqual(report['test_methods_declared'], 5)
         self.assertEqual(report['state'], 'BLOCKED')
 
+    def test_unexpected_dynamic_test_count_is_incomplete(self):
+        # A committed load_tests hook can add executable tests outside the
+        # declared pinned test-method count. Do not report exact coverage.
+        path = self.root / runner.TEST_FILES[0]
+        path.write_text(
+            'import unittest\n'
+            'class Synthetic(unittest.TestCase):\n'
+            '    def test_one(self): self.assertTrue(True)\n'
+            'def load_tests(loader, tests, pattern):\n'
+            '    suite = loader.loadTestsFromTestCase(Synthetic)\n'
+            '    suite.addTest(unittest.FunctionTestCase(lambda: None))\n'
+            '    return suite\n',
+            encoding='utf8',
+        )
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic extra dynamic test')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'INCOMPLETE', report)
+        self.assertEqual(report['test_methods_declared'], 4)
+        self.assertEqual(report['test_methods_reported'], 5)
+        self.assertEqual(report['state'], 'BLOCKED')
+
     def test_all_expected_failures_are_incomplete(self):
         # unittest exits zero for suites containing only expected failures.
         # Such a suite has not demonstrated any successful assertions.
