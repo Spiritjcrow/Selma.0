@@ -441,6 +441,30 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertEqual(exit_code, 2)
         self.assertEqual(report['tests'], 'NOT_RUN')
 
+    def test_non_testcase_method_and_alias_cannot_inflate_pass_count(self):
+        # A helper with a test_-named method is not collected by unittest.
+        # Repeating a passing TestCase under a module alias can make the old
+        # AST-all-functions count match the reported count despite the omission.
+        path = self.root / runner.TEST_FILES[0]
+        path.write_text(
+            'import unittest\n'
+            'class HiddenHelper:\n'
+            '    def test_should_fail(self): raise AssertionError("OMITTED")\n'
+            'class TestGood(unittest.TestCase):\n'
+            '    def test_ok(self): self.assertTrue(True)\n'
+            'GoodAlias = TestGood\n',
+            encoding='utf8',
+        )
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic non-TestCase alias inflation')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'INCOMPLETE', report)
+        self.assertEqual(report['test_methods_declared'], 4, report)
+        self.assertEqual(report['test_methods_reported'], 5, report)
+        self.assertEqual(report['state'], 'BLOCKED', report)
+
     def test_module_dir_hook_cannot_hide_failing_test_with_alias(self):
         # unittest uses dir(module) to discover TestCase classes. A custom
         # __dir__ can hide a failing class and list a passing class twice,
