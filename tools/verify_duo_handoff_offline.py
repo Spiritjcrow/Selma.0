@@ -149,8 +149,26 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
                         raise ValueError(f"pinned test module defines {hook_name}: {path}")
                 # A pinned test module that silently loses all test methods
                 # must not let the remaining modules yield a false PASS.
+                # Count only directly declared methods of unittest.TestCase
+                # subclasses in the pinned suite. A non-TestCase helper can
+                # contain a test_-named method that unittest never discovers;
+                # aliasing a passing TestCase under a second module name could
+                # otherwise make the reported count equal the inflated AST
+                # count while a hidden method remains unexecuted.
+                # Inherited/dynamic test definitions are deliberately outside
+                # this bounded, fail-closed suite contract (not a sandbox).
                 methods = sum(
-                    1 for node in ast.walk(tree)
+                    1
+                    for cls in ast.walk(tree)
+                    if isinstance(cls, ast.ClassDef)
+                    and any(
+                        isinstance(base, ast.Attribute)
+                        and isinstance(base.value, ast.Name)
+                        and base.value.id == "unittest"
+                        and base.attr == "TestCase"
+                        for base in cls.bases
+                    )
+                    for node in cls.body
                     if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
                     and node.name.startswith("test_")
                 )
