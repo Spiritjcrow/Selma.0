@@ -214,6 +214,35 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertEqual(report['tests'], 'NOT_RUN', report)
         self.assertIn('defines __getattr__', report['blocker'])
 
+    def test_ignored_package_cannot_shadow_pinned_module(self):
+        # An ignored package wins Python import resolution over the pinned
+        # core/duo_handoff.py, even though Git status and blob hashes match.
+        # Without the guard, the unpinned package can satisfy the test and
+        # produce a false PASS for code that was never actually imported.
+        source = self.root / runner.SOURCE_FILES[0]
+        source.write_text('VALUE = "pinned"\n', encoding='utf8')
+        test = self.root / runner.TEST_FILES[0]
+        test.write_text(
+            'import unittest\nfrom core.duo_handoff import VALUE\n'
+            'class TestShadow(unittest.TestCase):\n'
+            '    def test_ok(self): self.assertEqual(VALUE, "shadow")\n',
+            encoding='utf8',
+        )
+        (self.root / '.gitignore').write_text(
+            'tests/test_duo_ignored.py\ncore/duo_handoff/\n', encoding='utf8'
+        )
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic pinned module shadow')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        shadow = self.root / 'core' / 'duo_handoff'
+        shadow.mkdir()
+        (shadow / '__init__.py').write_text('VALUE = "shadow"\n', encoding='utf8')
+        self.assertEqual(cmd(self.root, 'status', '--porcelain', '--untracked-files=all'), '')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'NOT_RUN', report)
+        self.assertIn('package directory shadows pinned module', report['blocker'])
+
     def test_all_expected_failures_are_incomplete(self):
         # unittest exits zero for suites containing only expected failures.
         # Such a suite has not demonstrated any successful assertions.
