@@ -157,6 +157,37 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
                 # count while a hidden method remains unexecuted.
                 # Inherited/dynamic test definitions are deliberately outside
                 # this bounded, fail-closed suite contract (not a sandbox).
+                # A top-level TestCase declaration may disappear from the
+                # module namespace before discovery (del or rebinding), while
+                # an alias repeats a passing class. The executed test count
+                # can then match the AST count even though a failing class
+                # was never loaded. Fail closed on direct module-level
+                # binding changes and aliases in this fixed test suite.
+                testcase_classes = [
+                    cls for cls in tree.body
+                    if isinstance(cls, ast.ClassDef)
+                    and any(
+                        isinstance(base, ast.Attribute)
+                        and isinstance(base.value, ast.Name)
+                        and base.value.id == "unittest"
+                        and base.attr == "TestCase"
+                        for base in cls.bases
+                    )
+                ]
+                testcase_names = {cls.name for cls in testcase_classes}
+                if len(testcase_names) != len(testcase_classes):
+                    raise ValueError(f"pinned TestCase class name reused: {path}")
+                for statement in tree.body:
+                    targets = (
+                        statement.targets if isinstance(statement, (ast.Assign, ast.Delete))
+                        else [statement.target] if isinstance(statement, (ast.AnnAssign, ast.AugAssign))
+                        else []
+                    )
+                    if any(
+                        isinstance(target, ast.Name) and target.id in testcase_names
+                        for target in targets
+                    ):
+                        raise ValueError(f"pinned TestCase binding changed: {path}")
                 methods = sum(
                     1
                     # unittest discovers module-level TestCase classes; a

@@ -490,6 +490,49 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertEqual(report['test_methods_reported'], 5, report)
         self.assertEqual(report['state'], 'BLOCKED', report)
 
+    def test_deleted_testcase_class_cannot_be_hidden_by_passing_alias(self):
+        # A deleted failing top-level class is still counted by AST, but
+        # unittest cannot discover it. Aliasing the passing class conceals
+        # the omission unless module binding changes are rejected.
+        path = self.root / runner.TEST_FILES[0]
+        path.write_text(
+            'import unittest\n'
+            'class Visible(unittest.TestCase):\n'
+            '    def test_ok(self): self.assertTrue(True)\n'
+            'class Hidden(unittest.TestCase):\n'
+            '    def test_failure(self): self.fail("UNEXECUTED")\n'
+            'del Hidden\n'
+            'VisibleAlias = Visible\n',
+            encoding='utf8',
+        )
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic deleted TestCase and alias')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'NOT_RUN', report)
+        self.assertIn('TestCase binding changed', report['blocker'])
+
+    def test_rebound_testcase_class_cannot_be_hidden_by_passing_alias(self):
+        path = self.root / runner.TEST_FILES[0]
+        path.write_text(
+            'import unittest\n'
+            'class Visible(unittest.TestCase):\n'
+            '    def test_ok(self): self.assertTrue(True)\n'
+            'class Hidden(unittest.TestCase):\n'
+            '    def test_failure(self): self.fail("UNEXECUTED")\n'
+            'Hidden = None\n'
+            'VisibleAlias = Visible\n',
+            encoding='utf8',
+        )
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic rebound TestCase and alias')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'NOT_RUN', report)
+        self.assertIn('TestCase binding changed', report['blocker'])
+
     def test_module_dir_hook_cannot_hide_failing_test_with_alias(self):
         # unittest uses dir(module) to discover TestCase classes. A custom
         # __dir__ can hide a failing class and list a passing class twice,
