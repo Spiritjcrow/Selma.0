@@ -80,6 +80,15 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
             actual_blob = git(root, "hash-object", "--", path)
             if actual_blob != committed_blob:
                 raise ValueError(f"on-disk Git blob differs from pinned HEAD: {path}")
+        # Python import resolution prefers a package directory with
+        # __init__.py over a same-named .py module. An ignored directory
+        # can therefore replace pinned source at import time while Git
+        # status and hash-object still validate the untouched .py file.
+        # This is a conservative import-shadow guard, not a sandbox.
+        for path in SOURCE_FILES + TEST_FILES:
+            package_dir = root / path.removesuffix(".py")
+            if package_dir.is_dir() or package_dir.is_symlink():
+                raise ValueError(f"package directory shadows pinned module: {path}")
         # unittest discovers matching tests recursively through Python packages.
         # A top-level glob misses nested tracked or Git-ignored tests, which
         # could execute despite the pinned top-level test-file allowlist.
