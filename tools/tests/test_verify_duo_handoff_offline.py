@@ -465,6 +465,31 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertEqual(report['test_methods_reported'], 5, report)
         self.assertEqual(report['state'], 'BLOCKED', report)
 
+    def test_nested_testcase_and_alias_cannot_inflate_pass_count(self):
+        # unittest does not discover nested TestCase classes. The old AST
+        # walker counted one hidden method while a top-level alias duplicated
+        # a passing method, allowing a false PASS at the expected count.
+        path = self.root / runner.TEST_FILES[0]
+        path.write_text(
+            'import unittest\n'
+            'class TestGood(unittest.TestCase):\n'
+            '    def test_ok(self): self.assertTrue(True)\n'
+            'class HiddenNamespace:\n'
+            '    class TestNeverLoaded(unittest.TestCase):\n'
+            '        def test_hidden_failure(self): self.fail("OMITTED")\n'
+            'GoodAlias = TestGood\n',
+            encoding='utf8',
+        )
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic nested TestCase alias inflation')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'INCOMPLETE', report)
+        self.assertEqual(report['test_methods_declared'], 4, report)
+        self.assertEqual(report['test_methods_reported'], 5, report)
+        self.assertEqual(report['state'], 'BLOCKED', report)
+
     def test_module_dir_hook_cannot_hide_failing_test_with_alias(self):
         # unittest uses dir(module) to discover TestCase classes. A custom
         # __dir__ can hide a failing class and list a passing class twice,
