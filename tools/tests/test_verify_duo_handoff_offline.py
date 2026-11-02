@@ -441,5 +441,30 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertEqual(exit_code, 2)
         self.assertEqual(report['tests'], 'NOT_RUN')
 
+    def test_module_dir_hook_cannot_hide_failing_test_with_alias(self):
+        # unittest uses dir(module) to discover TestCase classes. A custom
+        # __dir__ can hide a failing class and list a passing class twice,
+        # keeping the declared/reported test counts equal.
+        path = self.root / runner.TEST_FILES[0]
+        path.write_text(
+            'import unittest\n'
+            'class TestGood(unittest.TestCase):\n'
+            '    def test_ok(self): self.assertTrue(True)\n'
+            'class TestBad(unittest.TestCase):\n'
+            '    def test_should_fail(self): self.fail("HIDDEN_FAILURE")\n'
+            'GoodAlias = TestGood\n'
+            'def __dir__():\n'
+            '    return ["TestGood", "GoodAlias"]\n',
+            encoding='utf8',
+        )
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic module __dir__ test substitution')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'NOT_RUN', report)
+        self.assertEqual(report['state'], 'BLOCKED', report)
+        self.assertIn('defines __dir__', report['blocker'])
+
 if __name__ == '__main__':
     unittest.main()
