@@ -194,9 +194,16 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
                             raise ValueError(f"pinned TestCase binding changed: {path}")
                         continue
                     if any(
-                        isinstance(node, ast.Name)
-                        and isinstance(node.ctx, (ast.Store, ast.Del))
-                        and node.id in testcase_names
+                        (isinstance(node, ast.Name)
+                         and isinstance(node.ctx, (ast.Store, ast.Del))
+                         and node.id in testcase_names)
+                        # Function/class definitions bind their names without
+                        # producing an ast.Name(Store). Catch definitions in
+                        # module-level if/try/with/loop blocks too.
+                        or (isinstance(node, (ast.FunctionDef,
+                                              ast.AsyncFunctionDef,
+                                              ast.ClassDef))
+                            and node.name in testcase_names)
                         for node in ast.walk(statement)
                     ):
                         raise ValueError(f"pinned TestCase binding changed: {path}")
