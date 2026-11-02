@@ -577,6 +577,29 @@ class HarnessProvenanceFixtures(unittest.TestCase):
         self.assertEqual(report['tests'], 'NOT_RUN', report)
         self.assertIn('TestCase binding changed', report['blocker'])
 
+    def test_conditional_function_definition_cannot_hide_failing_testcase(self):
+        # Defining a function inside a module-level conditional rebinds a
+        # failing TestCase class without any ast.Name(Store) node.
+        path = self.root / runner.TEST_FILES[0]
+        path.write_text(
+            'import unittest\n'
+            'class Visible(unittest.TestCase):\n'
+            '    def test_ok(self): self.assertTrue(True)\n'
+            'class Hidden(unittest.TestCase):\n'
+            '    def test_failure(self): self.fail("UNEXECUTED")\n'
+            'if True:\n'
+            '    def Hidden(): return None\n'
+            'VisibleAlias = Visible\n',
+            encoding='utf8',
+        )
+        cmd(self.root, 'add', '.')
+        cmd(self.root, 'commit', '-qm', 'synthetic conditional function rebinding')
+        self.sha = cmd(self.root, 'rev-parse', 'HEAD')
+        report, exit_code = self.verify()
+        self.assertEqual(exit_code, 2, report)
+        self.assertEqual(report['tests'], 'NOT_RUN', report)
+        self.assertIn('TestCase binding changed', report['blocker'])
+
     def test_module_dir_hook_cannot_hide_failing_test_with_alias(self):
         # unittest uses dir(module) to discover TestCase classes. A custom
         # __dir__ can hide a failing class and list a passing class twice,
