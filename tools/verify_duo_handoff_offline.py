@@ -177,15 +177,27 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
                 testcase_names = {cls.name for cls in testcase_classes}
                 if len(testcase_names) != len(testcase_classes):
                     raise ValueError(f"pinned TestCase class name reused: {path}")
+                # A module-level if/try/with/loop can delete or rebind a
+                # TestCase class before unittest discovers it. Looking only
+                # at direct tree.body assignment targets misses these paths,
+                # allowing a passing-class alias to mask the lost test.
+                # Inspect module-level executable statements recursively;
+                # skip function/class bodies, which have their own scopes.
                 for statement in tree.body:
-                    targets = (
-                        statement.targets if isinstance(statement, (ast.Assign, ast.Delete))
-                        else [statement.target] if isinstance(statement, (ast.AnnAssign, ast.AugAssign))
-                        else []
-                    )
+                    if isinstance(statement, ast.ClassDef):
+                        if (statement.name in testcase_names
+                                and statement not in testcase_classes):
+                            raise ValueError(f"pinned TestCase binding changed: {path}")
+                        continue
+                    if isinstance(statement, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                        if statement.name in testcase_names:
+                            raise ValueError(f"pinned TestCase binding changed: {path}")
+                        continue
                     if any(
-                        isinstance(target, ast.Name) and target.id in testcase_names
-                        for target in targets
+                        isinstance(node, ast.Name)
+                        and isinstance(node.ctx, (ast.Store, ast.Del))
+                        and node.id in testcase_names
+                        for node in ast.walk(statement)
                     ):
                         raise ValueError(f"pinned TestCase binding changed: {path}")
                 methods = sum(
