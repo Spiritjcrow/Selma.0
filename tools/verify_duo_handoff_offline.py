@@ -159,7 +159,11 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
                 # this bounded, fail-closed suite contract (not a sandbox).
                 methods = sum(
                     1
-                    for cls in ast.walk(tree)
+                    # unittest discovers module-level TestCase classes; a
+                    # nested class is not loaded unless separately exposed.
+                    # Counting nested methods can falsely match an aliased
+                    # passing top-level class and conceal omitted coverage.
+                    for cls in tree.body
                     if isinstance(cls, ast.ClassDef)
                     and any(
                         isinstance(base, ast.Attribute)
