@@ -131,18 +131,22 @@ def verify(root: Path, expected: str, timeout: int) -> tuple[dict, int]:
                 # PEP 562 module __getattr__ can synthesize a load_tests hook
                 # at unittest discovery time without a static load_tests name.
                 # This pinned suite needs no dynamic module attribute hooks.
-                if any(
-                    (isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
-                     and node.name == "__getattr__")
-                    or (isinstance(node, ast.Name)
-                        and isinstance(node.ctx, ast.Store)
-                        and node.id == "__getattr__")
-                    or (isinstance(node, (ast.Import, ast.ImportFrom))
-                        and any((alias.asname or alias.name.split(".")[0])
-                                == "__getattr__" for alias in node.names))
-                    for node in ast.walk(tree)
-                ):
-                    raise ValueError(f"pinned test module defines __getattr__: {path}")
+                # __dir__ can hide a failing TestCase class from unittest
+                # discovery and duplicate a passing class via an alias while
+                # keeping the declared/reported method counts equal.
+                for hook_name in ("__getattr__", "__dir__"):
+                    if any(
+                        (isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                         and node.name == hook_name)
+                        or (isinstance(node, ast.Name)
+                            and isinstance(node.ctx, ast.Store)
+                            and node.id == hook_name)
+                        or (isinstance(node, (ast.Import, ast.ImportFrom))
+                            and any((alias.asname or alias.name.split(".")[0])
+                                    == hook_name for alias in node.names))
+                        for node in ast.walk(tree)
+                    ):
+                        raise ValueError(f"pinned test module defines {hook_name}: {path}")
                 # A pinned test module that silently loses all test methods
                 # must not let the remaining modules yield a false PASS.
                 methods = sum(
