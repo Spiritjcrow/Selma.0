@@ -140,7 +140,10 @@ class BuildFallbackContracts(unittest.TestCase):
                 "python3": (
                     "#!/bin/sh\n"
                     "echo \"python:$*\" >> \"$CALL_LOG\"\n"
-                    "if [ \"${1:-}\" = \"tools/verify_apk.py\" ]; then echo '{}'; fi\n"
+                    "if [ \"${1:-}\" = \"tools/verify_apk.py\" ]; then\n"
+                    "  if [ \"${VERIFY_FAIL:-0}\" = \"1\" ]; then echo '{\"partial\":true}'; exit 1; fi\n"
+                    "  echo '{}'\n"
+                    "fi\n"
                 ),
             }
             for name, source in programs.items():
@@ -174,6 +177,19 @@ class BuildFallbackContracts(unittest.TestCase):
                 ],
                 calls,
             )
+            self.assertEqual("{}", evidence.read_text().strip())
+
+            environment["VERIFY_FAIL"] = "1"
+            failed = subprocess.run(
+                ["/bin/bash", str(SCRIPT)],
+                cwd=ROOT,
+                env=environment,
+                text=True,
+                capture_output=True,
+                timeout=10,
+                check=False,
+            )
+            self.assertNotEqual(0, failed.returncode)
             self.assertEqual("{}", evidence.read_text().strip())
 
 

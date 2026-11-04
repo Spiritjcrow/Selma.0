@@ -46,10 +46,15 @@ else
 fi
 evidence_path="${RF_SENTINEL_EVIDENCE_PATH:-app/build/outputs/apk/debug/rf-sentinel-debug-evidence.json}"
 mkdir -p "$(dirname "$evidence_path")"
-python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk | tee "$evidence_path"
-if [[ ! -s "$evidence_path" ]]; then
+evidence_tmp="$(mktemp "${evidence_path}.tmp.XXXXXX")"
+cleanup_evidence() { rm -f -- "$evidence_tmp"; }
+trap cleanup_evidence EXIT
+python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk | tee "$evidence_tmp"
+if [[ ! -s "$evidence_tmp" ]]; then
   echo "FAIL: APK verification produced no evidence" >&2
   exit 1
 fi
+mv -f -- "$evidence_tmp" "$evidence_path"
+trap - EXIT
 echo "VERIFICATION EVIDENCE: $evidence_path"
 echo "BUILD ARTIFACT EXISTS: physical device install, permission and sensing QA NOT VERIFIED"
