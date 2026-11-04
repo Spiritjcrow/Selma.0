@@ -175,6 +175,13 @@ class ProjectContracts(unittest.TestCase):
         self.assertLess(workflow.index(verify), workflow.index(sha256))
         self.assertLess(workflow.index(verify), workflow.index(upload))
 
+    def test_ci_requires_android_gates_before_apk_verification(self):
+        workflow = (REPO_ROOT / ".github/workflows/rf-sentinel-ci.yml").read_text()
+        gates = "gradle --no-daemon :app:lintDebug :app:testDebugUnitTest :app:assembleDebug"
+        verify = "python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk"
+        self.assertIn(gates, workflow)
+        self.assertLess(workflow.index(gates), workflow.index(verify))
+
 if __name__ == "__main__":
     unittest.main()
 
