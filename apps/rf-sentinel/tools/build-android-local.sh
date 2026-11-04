@@ -28,6 +28,13 @@ if [[ -z "$sdk" || ! -f "$sdk/platforms/android-35/android.jar" ]]; then
   echo "BLOCKED: ANDROID_SDK_ROOT must point to a local SDK with platform 35" >&2
   exit 75
 fi
+build_tools="$sdk/build-tools/35.0.0"
+for tool in aapt2 apksigner; do
+  if [[ ! -f "$build_tools/$tool" && ! -f "$build_tools/$tool.exe" && ! -f "$build_tools/$tool.bat" ]]; then
+    echo "BLOCKED: Android build-tools 35.0.0 missing $tool" >&2
+    exit 75
+  fi
+done
 echo "SOURCE_ONLY_CHECKS"
 python3 -m unittest discover -s tests -v
 if [[ "$allow_network" == 1 ]]; then
