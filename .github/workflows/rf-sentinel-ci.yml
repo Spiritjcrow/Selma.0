@@ -43,13 +43,21 @@ jobs:
         run: gradle --no-daemon :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
       - name: Verify APK contract
         working-directory: apps/rf-sentinel
-        run: python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk
+        run: |
+          set -o pipefail
+          python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk \
+            | tee app/build/outputs/apk/debug/rf-sentinel-debug-verification.json
       - name: Record APK SHA256
         working-directory: apps/rf-sentinel
-        run: sha256sum app/build/outputs/apk/debug/*.apk
+        run: >-
+          sha256sum app/build/outputs/apk/debug/app-debug.apk
+          > app/build/outputs/apk/debug/app-debug.apk.sha256
       - uses: actions/upload-artifact@v4
         with:
           name: rf-sentinel-debug-NOT-DEVICE-TESTED
-          path: apps/rf-sentinel/app/build/outputs/apk/debug/*.apk
+          path: |
+            apps/rf-sentinel/app/build/outputs/apk/debug/app-debug.apk
+            apps/rf-sentinel/app/build/outputs/apk/debug/app-debug.apk.sha256
+            apps/rf-sentinel/app/build/outputs/apk/debug/rf-sentinel-debug-verification.json
           if-no-files-found: error
           retention-days: 7

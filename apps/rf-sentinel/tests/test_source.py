@@ -169,7 +169,7 @@ class ProjectContracts(unittest.TestCase):
     def test_ci_verifies_apk_before_hash_and_upload(self):
         workflow = (REPO_ROOT / ".github/workflows/rf-sentinel-ci.yml").read_text()
         verify = "python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk"
-        sha256 = "sha256sum app/build/outputs/apk/debug/*.apk"
+        sha256 = "sha256sum app/build/outputs/apk/debug/app-debug.apk"
         upload = "uses: actions/upload-artifact@v4"
         self.assertIn(verify, workflow)
         self.assertLess(workflow.index(verify), workflow.index(sha256))
@@ -181,6 +181,20 @@ class ProjectContracts(unittest.TestCase):
         verify = "python3 tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk"
         self.assertIn(gates, workflow)
         self.assertLess(workflow.index(gates), workflow.index(verify))
+
+    def test_ci_artifact_bundles_apk_hash_and_verification(self):
+        workflow = (REPO_ROOT / ".github/workflows/rf-sentinel-ci.yml").read_text()
+        apk = "apps/rf-sentinel/app/build/outputs/apk/debug/app-debug.apk"
+        checksum = apk + ".sha256"
+        verification = (
+            "apps/rf-sentinel/app/build/outputs/apk/debug/"
+            "rf-sentinel-debug-verification.json"
+        )
+        self.assertIn("| tee app/build/outputs/apk/debug/rf-sentinel-debug-verification.json", workflow)
+        self.assertIn("sha256sum app/build/outputs/apk/debug/app-debug.apk", workflow)
+        self.assertIn("> app/build/outputs/apk/debug/app-debug.apk.sha256", workflow)
+        for artifact in (apk, checksum, verification):
+            self.assertIn(artifact, workflow)
 
 if __name__ == "__main__":
     unittest.main()
