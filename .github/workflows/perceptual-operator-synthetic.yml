@@ -1,0 +1,43 @@
+name: Perceptual Operator synthetic smoke test
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 14 * * 1' # Weekly UTC; runs only after workflow is merged to default branch
+permissions:
+  contents: read
+concurrency:
+  group: perceptual-operator-synthetic
+  cancel-in-progress: false
+jobs:
+  simulate-synthetic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install simulation dependencies
+        run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<3' 'pandas>=2,<3' 'matplotlib>=3.8,<4' 'brian2>=2.8,<3'
+      - name: Unit-test verifier
+        run: python -m unittest discover -s labs/perceptual_operator -p 'test_*.py' -v
+      - name: Run bounded, synthetic-only Brian2 simulation
+        run: |
+          python labs/perceptual_operator/simulator.py \
+            labs/perceptual_operator/SYNTHETIC_demo.csv \
+            --epochs 5 --out-dir perceptual-artifacts
+      - name: Verify output provenance, spike counts and plots
+        run: |
+          python labs/perceptual_operator/verify_run.py \
+            labs/perceptual_operator/SYNTHETIC_demo.csv \
+            perceptual-artifacts/perceptual_report.json \
+            perceptual-artifacts/reactor_spikes.csv \
+            --out-dir perceptual-artifacts
+      - name: Save audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perceptual-operator-synthetic-audit
+          path: perceptual-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
