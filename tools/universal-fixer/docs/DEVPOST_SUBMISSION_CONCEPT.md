@@ -10,9 +10,9 @@ An AI engineering workbench that turns scattered GitHub problems into auditable 
 
 1. Import real GitHub issue/PR metadata or an explicitly sourced snapshot.
 2. Show an Android-readable work queue, with linked source evidence and priority.
-3. Select an exact patch against a clean real Git checkout.
+3. Select an exact patch against a clean real Git checkout, then open a token-authenticated local A/B/C/D browser approval screen.
 4. Run a real failing baseline unit test in a disposable Git worktree.
-5. Apply the approved change and rerun the same test; commit to a new local branch **only when the test turns green**.
+5. Use an actual A click to apply the approved change and rerun the same test; commit to a new local branch **only when the test turns green**.
 6. Show the real SHA, failed/passed test output, and explicitly missing external acceptance evidence.
 
 The source includes executable tests for tampering, stale approvals, dirty sources, unsafe paths, duplicate work, fail-closed errors, and end-to-end Git repair. **It does not pretend to be a fully autonomous AI patch generator or deployed cross-platform agent.**
