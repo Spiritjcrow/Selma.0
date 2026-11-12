@@ -1,6 +1,6 @@
-# Selma° Universal Fixer v0.2 — local RED→GREEN repair worker
+# Selma° Universal Fixer v0.3 — real repair worker with local A/B/C/D approval UI
 
-An **executable** cross-platform recovery workbench: real GitHub inventory, source-backed SQLite audit/decisions, searchable Android-friendly HTML report, and a bounded **actual Git repair executor**. No fake remote CI, Android, or deployment status.
+An **executable** cross-platform recovery workbench: real GitHub inventory, source-backed SQLite audit/decisions, searchable Android-friendly HTML report, a bounded **actual Git repair executor**, and an **authenticated local browser A/B/C/D approval UI**. No fake remote CI, Android, or deployment status.
 
 ## Install
 
@@ -28,6 +28,18 @@ python -m fixer repair-run --repo /absolute/path/to/owned/repo --plan /safe/plan
 ```
 
 The executor creates a disposable worktree, runs **real pre-fix failing unit tests**, applies one exact, approved, source-hash-bound text patch, reruns the checks, creates **one new `fixer/` branch and a Git commit** if green, and emits provenance JSON. Existing `main` is not modified. No push, merge, bill, wallet transaction, deployment, secrets import, system setting modification, or external cloud action is performed. Local test commands can execute repository-supplied code: only use trusted/owned workspaces; production needs container/VM isolation.
+
+## One-click local approval (Android browser/desktop)
+
+On the device hosting the checked-out source (Windows/Linux/macOS or Android Termux), start the loopback-only approval server. It prints a **fresh one-session private token**. Open the local address in the same device's browser, enter the token once, then review the exact patch and choose A/B/C/D. A **runs real red/green tests and commits an isolated branch**. B holds, C requests evidence, D rejects; those alternatives never run source code or post external actions.
+
+```sh
+python -m fixer serve --repo /path/to/owned/clean/checkout \
+  --plan /safe/reviewed-plan.json --evidence /safe/repair-001.json --port 8768
+# Open http://127.0.0.1:8768/ in the same device browser.
+```
+
+This is a **local** UI, not a remotely hosted service or Google OAuth login. A valid one-session bearer token and exact same-origin browser request are required for actions. It does not expose a command shell, use cookies, or write credentials to disk. Stop it with Ctrl+C. Never expose this port to a public network. Tests for real loopback HTTP approval and actual Git commit pass locally; browser compatibility must still be checked on the owner's Android device.
 
 ## Reports and detailed issues
 
