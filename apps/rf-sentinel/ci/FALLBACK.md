@@ -5,6 +5,23 @@ The owned GitHub Actions environment has produced repeated `startup_failure`
 runs with **zero jobs** (issue #26). A new workflow file cannot fix a
 runner-admission failure by itself.
 
+## Hosted fallback pre-submit guard
+
+Before starting a manual Codemagic or other hosted build, require the UI to show
+all three exact values:
+
+- workflow: `RF Sentinel Android debug verification`
+- branch: `feature/rf-sentinel-android-ci-20261023`
+- full source commit: the current PR #82 head from `git rev-parse HEAD`
+
+Do not submit when the UI hides, truncates, resets, or changes any value. After
+submission, open the new build detail page and compare its workflow, branch and
+full commit again before treating it as RF Sentinel evidence. If any value
+mismatches, stop that build if the authenticated owner controls it; do not retry
+until the selector state can be independently verified. Never reuse an artifact
+from `main`, another workflow, or an earlier commit as evidence for the current
+PR head.
+
 ## Self-hosted desktop / Chromebook Linux alternative
 Requires a configured **Android SDK platform 35**, **JDK 17**, **Gradle 8.9**,
 and Python 3.8+ (initial Gradle dependency download may require internet).
