@@ -24,6 +24,7 @@ OPTIONAL_RADIO_FEATURES = (
 EXPECTED_PERMISSIONS = frozenset({
     "android.permission.ACCESS_WIFI_STATE",
     "android.permission.CHANGE_WIFI_STATE",
+    "android.permission.ACCESS_COARSE_LOCATION",
     "android.permission.ACCESS_FINE_LOCATION",
     "android.permission.BLUETOOTH",
     "android.permission.BLUETOOTH_ADMIN",
