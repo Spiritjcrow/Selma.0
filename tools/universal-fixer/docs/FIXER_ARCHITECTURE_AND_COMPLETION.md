@@ -4,7 +4,7 @@
 
 Turn a fragmented software estate into a source-grounded **plan → reproduce → patch → validate → commit → review → publish → deploy → verify → close** pipeline. The user should receive brief A/B/C/D or YES/NO approval requests only at consequential boundaries. The Fixer must run useful read-only work and approved low-risk repairs without requiring the user to write code or manually relay logs.
 
-**Honest status:** v0.2 implements repository inventory (GitHub REST), local SQLite evidence registry, browser-readable report, immutable source-digest approval, and a **working RED→GREEN local Git repair worker**. It does not yet contain a general-purpose AI code generator, persistent cloud worker, Google OAuth UI, portable device executor, GitHub PR publisher, remote CI repair, or automatic financial settlement system. Those are pending independently testable milestones, not fake UI buttons.
+**Honest status:** v0.3 implements repository inventory (GitHub REST), local SQLite evidence registry, browser-readable report, immutable source-digest approval, a **working RED→GREEN local Git repair worker**, and a loopback-only browser A/B/C/D UI guarded by a fresh in-memory bearer token. It does not yet contain a general-purpose AI code generator, persistent cloud worker, Google OAuth UI, portable device executor, GitHub PR publisher, remote CI repair, or automatic financial settlement system. Those are pending independently testable milestones, not fake UI buttons.
 
 ## 2. Implemented local repair worker (v0.2)
 
@@ -18,6 +18,13 @@ Turn a fragmented software estate into a source-grounded **plan → reproduce �
 8. It refuses to process dirty checkouts, changed source SHA, unsafe test command shape, stale approval, existing branch, existing result file, ambiguous patch, or unsupported file types.
 
 Tests execute code from the checkout; only use on repositories you own/trust. This version has **no OS-level sandbox** and cannot prove arbitrary tests have no network or other effects. For production, run in a restricted container/VM without credentials/network by default.
+
+### Browser A/B/C/D approval (implemented local scope)
+
+
+default port is 8768; it only binds to `127.0.0.1`, prints a one-session bearer token and serves a local HTML page. The source and test plan are fetched only after token authorization. A runs the same immutable RED→GREEN engine, B/C/D leave nonexecuting local decision records. The POST gate checks exact Host, same Origin, token, bounded JSON schema, current source SHA and exact plan SHA. Browser page token is kept in memory; no cookies, local storage, external analytics, or public listener. `python -m fixer serve --repo <checkout> --plan <plan.json> --evidence <unique-evidence.json>` starts it.
+
+This is **not** a remote centralized approval gateway and it must not be forwarded to the public Internet. Google/passkey identity, secure multi-device access and hardware-tested Android browsers require separate evidence. Never use this simple local gate as authorization for payment, merge or deployment.
 
 ### Complete local run
 
@@ -104,7 +111,7 @@ A/B/C/D cannot grant authority from a model suggestion. In production approvals 
 | G2 | AI code synthesis | Task→hypotheses→minimal patch; executable against real source; automatic negative tests; approval/revert | NOT BUILT: requires selected LLM backend and resource budget |
 | G3 | Repository write/PR agent | Push from authenticated scoped identity; create PR; log SHA; reviewers and comments; no force-push | NOT BUILT IN WORKER: present chat GitHub connector can write on user's behalf |
 | G4 | Reliable test runners | Local CI, Docker sandbox, SDK/JDK/Gradle, Windows/Linux/Android test matrix and real runner proof | PARTIAL: local Python tests; Android/CI unverified |
-| G5 | Mobile private approvals | Secure Google/passkey login and signed one-click A/B/C/D for a specific action | NOT BUILT; plain CLI and read-only browser report currently |
+| G5 | Mobile private approvals | Secure Google/passkey login and signed one-click A/B/C/D for a specific action | **PARTIAL**: browser A/B/C/D runs against local token-authenticated loopback with real Git effect; OAuth/passkey, Android physical browser and remote hosting NOT_VERIFIED |
 | G6 | Autonomous safe orchestration | Durable scheduler, lease fencing, idempotent recovery, bounded self-heal, per-workstream budget, alerts | NOT BUILT as a daemon; existing ChatGPT hourly automations are not continuous workers |
 | G7 | Validated releases | Real install/health telemetry, canary rollout, rollback, acceptance evidence, issue closure | NOT BUILT |
 | G8 | Regulated finance | Separate sandbox/prod ledgers, consent, anti-fraud, audit and settlement reconciliation | SIMULATION ONLY in ARIA; live micropayment settlement not enabled |
