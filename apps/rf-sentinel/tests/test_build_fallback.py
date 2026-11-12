@@ -71,7 +71,9 @@ class BuildFallbackContracts(unittest.TestCase):
             build_tools = base / "sdk/build-tools/35.0.0"
             build_tools.mkdir(parents=True)
             for name in present_tools:
-                (build_tools / name).touch()
+                executable = build_tools / name
+                executable.touch()
+                executable.chmod(executable.stat().st_mode | stat.S_IXUSR)
 
             programs = {
                 "java": (
@@ -109,12 +111,12 @@ class BuildFallbackContracts(unittest.TestCase):
     def test_missing_aapt2_is_blocked_before_build(self):
         result = self.run_with_build_tools("apksigner")
         self.assertEqual(75, result.returncode)
-        self.assertIn("BLOCKED: Android build-tools 35.0.0 or an executable aapt2 override is required", result.stderr)
+        self.assertIn("BLOCKED: RF_SENTINEL_AAPT2 must name an executable file", result.stderr)
 
     def test_missing_apksigner_is_blocked_before_build(self):
         result = self.run_with_build_tools("aapt2")
         self.assertEqual(75, result.returncode)
-        self.assertIn("BLOCKED: Android build-tools 35.0.0 or an executable apksigner override is required", result.stderr)
+        self.assertIn("BLOCKED: RF_SENTINEL_APKSIGNER must name an executable file", result.stderr)
 
     def test_android_gates_run_before_apk_verification(self):
         with tempfile.TemporaryDirectory() as directory:
