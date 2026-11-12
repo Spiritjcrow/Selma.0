@@ -10,6 +10,7 @@ from .core import CHOICES, Registry
 from .github_read import GitHubReadOnly,GitHubError
 from .reporting import generate
 from .repair import RepairError, load_plan, preflight, execute, make_plan, validate_plan
+from .approval_ui import serve
 
 def db_default():
     base=Path(os.getenv("APPDATA") or os.getenv("XDG_DATA_HOME") or Path.home()/".local"/"share")
@@ -26,6 +27,9 @@ def main():
     a=sub.add_parser("decide",help="Record A/B/C/D read-only review decision");a.add_argument("key");a.add_argument("choice",choices=sorted(CHOICES.keys()))
     a=sub.add_parser("check",help="Static AST syntax check of an explicitly selected local source tree");a.add_argument("source")
     sub.add_parser("audit",help="Verify local audit-chain hash consistency")
+    a=sub.add_parser("serve",help="Authenticated loopback-only A/B/C/D UI for an existing source-bound repair plan")
+    a.add_argument("--repo",required=True);a.add_argument("--plan",required=True);a.add_argument("--evidence",required=True)
+    a.add_argument("--port",type=int,default=8768);a.add_argument("--timeout",type=int,default=120)
     a=sub.add_parser("repair-plan",help="Validate an exact proposed patch against an owned local Git checkout")
     a.add_argument("--repo",required=True);a.add_argument("--plan",required=True)
     a=sub.add_parser("repair-run",help="Reproduce RED -> patch -> prove GREEN -> commit on an isolated local branch")
@@ -34,6 +38,10 @@ def main():
     a.add_argument("--evidence",required=True,help="Write-once local JSON evidence record")
     a.add_argument("--timeout",type=int,default=120)
     args=parser.parse_args()
+    if args.command=="serve":
+        if not 1<=args.timeout<=1800:parser.error("timeout must be 1..1800")
+        serve(args.repo,args.plan,args.evidence,port=args.port,timeout=args.timeout)
+        return 0
     if args.command in ("repair-plan","repair-run"):
         plan,digest=load_plan(args.plan)
         root,head=preflight(args.repo,plan)
