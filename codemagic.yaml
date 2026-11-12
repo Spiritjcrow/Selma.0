@@ -1,0 +1,59 @@
+# RF Sentinel only: manual, non-publishing verification on the isolated feature branch.
+# Debug APK is NOT a release and does not establish physical-device QA.
+workflows:
+  rf_sentinel_android_debug:
+    name: RF Sentinel Android debug verification
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      java: 17
+    triggering:
+      events: []
+    scripts:
+      - name: Verify branch and source contracts
+        script: |
+          set -eu
+          test "$CM_BRANCH" = "feature/rf-sentinel-android-ci-20261023"
+          cd apps/rf-sentinel
+          python3 -m unittest discover -s tests -v
+          test ! -e app/src/main/assets
+          ! grep -q 'android.permission.INTERNET' app/src/main/AndroidManifest.xml
+      - name: Install required SDK and Gradle
+        script: |
+          set -eu
+          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0"
+          printf 'sdk.dir=%s\n' "$ANDROID_SDK_ROOT" > apps/rf-sentinel/local.properties
+          TOOLS_DIR="$CM_BUILD_DIR/.tools"
+          GRADLE_ROOT="$TOOLS_DIR/gradle-8.9"
+          if [ ! -x "$GRADLE_ROOT/bin/gradle" ]; then
+            mkdir -p "$TOOLS_DIR"
+            GRADLE_ARCHIVE="$TOOLS_DIR/gradle-8.9-bin.zip"
+            curl --fail --location --silent --show-error \
+              https://services.gradle.org/distributions/gradle-8.9-bin.zip \
+              --output "$GRADLE_ARCHIVE"
+            echo "d725d707bfabd4dfdc958c624003b3c80accc03f7037b5122c4b1d0ef15cecab  $GRADLE_ARCHIVE" \
+              | shasum -a 256 -c -
+            unzip -q "$GRADLE_ARCHIVE" -d "$TOOLS_DIR"
+          fi
+          "$GRADLE_ROOT/bin/gradle" --version
+          "$GRADLE_ROOT/bin/gradle" --version | grep -qx 'Gradle 8.9'
+      - name: Lint, unit tests, assemble debug APK
+        script: |
+          set -eu
+          cd apps/rf-sentinel
+          "$CM_BUILD_DIR/.tools/gradle-8.9/bin/gradle" --no-daemon \
+            :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
+      - name: Verify APK signature, manifest and SHA-256
+        script: |
+          set -eu
+          cd apps/rf-sentinel
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          python3 tools/verify_apk.py "$APK" > app/build/outputs/apk/debug/rf-sentinel-debug-evidence.json
+          sha256sum "$APK" > "$APK.sha256"
+          sha256sum -c "$APK.sha256"
+    artifacts:
+      - apps/rf-sentinel/app/build/outputs/apk/debug/app-debug.apk
+      - apps/rf-sentinel/app/build/outputs/apk/debug/app-debug.apk.sha256
+      - apps/rf-sentinel/app/build/outputs/apk/debug/rf-sentinel-debug-evidence.json

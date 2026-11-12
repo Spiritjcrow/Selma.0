@@ -1,0 +1,9 @@
+# Optional GitLab CI reference, only after a GitLab repository is actually connected.
+# Copy to GitLab repository's root .gitlab-ci.yml; do not override unrelated pipelines.
+stages: [source]
+source-contracts:
+  image: python:3.11-slim
+  stage: source
+  script:
+    - cd apps/rf-sentinel
+    - python -m unittest discover -s tests -v
