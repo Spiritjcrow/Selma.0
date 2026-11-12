@@ -2,7 +2,7 @@ package org.selma.rfsentinel
 
 import android.Manifest
 import android.app.Activity
-import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
@@ -233,11 +233,19 @@ class MainActivity : Activity() {
         render()
     }
 
+    @Suppress("DEPRECATION")
     private fun startBle() {
         stopBle()
         bleSamples.clear()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notice = "BLE scan blocked by Android permissions."
+            render()
+            return
+        }
         try {
-            scanner = getSystemService(BluetoothManager::class.java)?.adapter?.bluetoothLeScanner
+            scanner = BluetoothAdapter.getDefaultAdapter()?.bluetoothLeScanner
             val active = scanner
             if (active == null) {
                 notice = "BLE unavailable or Bluetooth switched off."
@@ -260,14 +268,24 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun stopBleScannerSafely() {
+        val active = scanner ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED
+        ) return
+        try {
+            active.stopScan(bleCallback)
+        } catch (_: SecurityException) {
+            // Permission can be revoked while the activity is running.
+        } catch (_: Exception) {
+            // Cleanup is best-effort; scanner state is discarded by the caller.
+        }
+    }
+
     private fun abortBleStart(message: String) {
         handler.removeCallbacks(stopTask)
         scanningBle = false
-        try {
-            scanner?.stopScan(bleCallback)
-        } catch (_: Exception) {
-            // Cleanup is best-effort; scanner state is still discarded below.
-        }
+        stopBleScannerSafely()
         scanner = null
         bleSamples.clear()
         notice = message
@@ -278,7 +296,7 @@ class MainActivity : Activity() {
         handler.removeCallbacks(stopTask)
         if (!scanningBle) return
         scanningBle = false
-        try { scanner?.stopScan(bleCallback) } catch (_: Exception) {}
+        stopBleScannerSafely()
         scanner = null
         if (!recordResults) {
             bleSamples.clear()
@@ -374,4 +392,5 @@ class MainActivity : Activity() {
         super.onDestroy()
     }
 }
+
 

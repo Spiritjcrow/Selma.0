@@ -10,6 +10,7 @@ class ProjectContracts(unittest.TestCase):
         manifest = (ROOT / "app/src/main/AndroidManifest.xml").read_text()
         self.assertNotIn("android.permission.INTERNET", manifest)
         self.assertIn("android.permission.BLUETOOTH_SCAN", manifest)
+        self.assertNotIn("android.permission.BLUETOOTH_CONNECT", manifest)
         self.assertIn("android.permission.ACCESS_FINE_LOCATION", manifest)
 
     def test_user_initiated_survey(self):
@@ -136,18 +137,38 @@ class ProjectContracts(unittest.TestCase):
 
         abort = code[
             code.index("private fun abortBleStart"):
-            code.index("private fun stopBle")
+            code.index("private fun stopBle(recordResults")
         ]
         for statement in (
             "handler.removeCallbacks(stopTask)",
             "scanningBle = false",
-            "scanner?.stopScan(bleCallback)",
+            "stopBleScannerSafely()",
             "scanner = null",
             "bleSamples.clear()",
         ):
             self.assertIn(statement, abort)
-        self.assertLess(abort.index("scanner?.stopScan"), abort.index("scanner = null"))
+        self.assertLess(abort.index("stopBleScannerSafely()"), abort.index("scanner = null"))
         self.assertLess(abort.index("bleSamples.clear()"), abort.index("render()"))
+
+    def test_ble_scan_calls_are_permission_checked_without_connect_scope(self):
+        code = (ROOT / "app/src/main/java/org/selma/rfsentinel/MainActivity.kt").read_text()
+        self.assertNotIn("BluetoothManager", code)
+        start = code[
+            code.index("private fun startBle"):
+            code.index("private fun stopBleScannerSafely")
+        ]
+        permission_check = "checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN)"
+        self.assertIn(permission_check, start)
+        self.assertLess(start.index(permission_check), start.index("active.startScan("))
+
+        stop = code[
+            code.index("private fun stopBleScannerSafely"):
+            code.index("private fun abortBleStart")
+        ]
+        self.assertIn(permission_check, stop)
+        self.assertLess(stop.index(permission_check), stop.index("active.stopScan(bleCallback)"))
+        self.assertIn("catch (_: SecurityException)", stop)
+        self.assertEqual(code.count("stopScan(bleCallback)"), 1)
 
     def test_no_danger_inference(self):
         code = (ROOT / "app/src/main/java/org/selma/rfsentinel/RfMetrics.kt").read_text()
@@ -198,4 +219,5 @@ class ProjectContracts(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
 
