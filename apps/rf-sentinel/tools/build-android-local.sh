@@ -29,20 +29,50 @@ if [[ -z "$sdk" || ! -f "$sdk/platforms/android-35/android.jar" ]]; then
   exit 75
 fi
 build_tools="$sdk/build-tools/35.0.0"
-for tool in aapt2 apksigner; do
-  if [[ ! -f "$build_tools/$tool" && ! -f "$build_tools/$tool.exe" && ! -f "$build_tools/$tool.bat" ]]; then
-    echo "BLOCKED: Android build-tools 35.0.0 missing $tool" >&2
-    exit 75
+resolve_build_tool() {
+  local name="$1" override_name="$2" override candidate
+  override="${!override_name:-}"
+  if [[ -n "$override" ]]; then
+    if [[ ! -f "$override" || ! -x "$override" ]]; then
+      echo "BLOCKED: $override_name must name an executable file" >&2
+      return 75
+    fi
+    printf '%s\n' "$override"
+    return
   fi
-done
+  for candidate in "$build_tools/$name" "$build_tools/$name.exe" "$build_tools/$name.bat"; do
+    if [[ -f "$candidate" ]]; then
+      printf '%s\n' "$candidate"
+      return
+    fi
+  done
+  candidate="$(command -v "$name" || true)"
+  if [[ -n "$candidate" && -f "$candidate" && -x "$candidate" ]]; then
+    printf '%s\n' "$candidate"
+    return
+  fi
+  echo "BLOCKED: Android build-tools 35.0.0 or an executable $name override is required" >&2
+  return 75
+}
+aapt2_path="$(resolve_build_tool aapt2 RF_SENTINEL_AAPT2)"
+apksigner_path="$(resolve_build_tool apksigner RF_SENTINEL_APKSIGNER)"
+export RF_SENTINEL_AAPT2="$aapt2_path"
+export RF_SENTINEL_APKSIGNER="$apksigner_path"
+gradle_args=(
+  --no-daemon
+  "-Pandroid.aapt2FromMavenOverride=$aapt2_path"
+  :app:lintDebug
+  :app:testDebugUnitTest
+  :app:assembleDebug
+)
 echo "SOURCE_ONLY_CHECKS"
 python3 -m unittest discover -s tests -v
 if [[ "$allow_network" == 1 ]]; then
   echo "NETWORK_AUTHORIZED_FOR_GRADLE_DEPENDENCIES"
-  gradle --no-daemon :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
+  gradle "${gradle_args[@]}"
 else
   echo "GRADLE_OFFLINE_MODE (use --allow-network only after reviewing dependency sources)"
-  gradle --offline --no-daemon :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
+  gradle --offline "${gradle_args[@]}"
 fi
 evidence_path="${RF_SENTINEL_EVIDENCE_PATH:-app/build/outputs/apk/debug/rf-sentinel-debug-evidence.json}"
 mkdir -p "$(dirname "$evidence_path")"

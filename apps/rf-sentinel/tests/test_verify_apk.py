@@ -49,6 +49,20 @@ def synthetic_apk(directory):
 
 
 class VerifyApkTests(unittest.TestCase):
+    def test_explicit_tool_override_requires_executable_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            tool = pathlib.Path(directory) / "aapt2"
+            tool.write_text("#!/bin/sh\n")
+            with mock.patch.dict(
+                os.environ, {"RF_SENTINEL_AAPT2": str(tool)}, clear=False
+            ):
+                self.assertIsNone(MODULE.find_build_tool("aapt2"))
+            tool.chmod(tool.stat().st_mode | 0o100)
+            with mock.patch.dict(
+                os.environ, {"RF_SENTINEL_AAPT2": str(tool)}, clear=False
+            ):
+                self.assertEqual(str(tool), MODULE.find_build_tool("aapt2"))
+
     def run_main(
         self,
         apk,

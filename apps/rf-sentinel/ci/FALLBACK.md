@@ -24,6 +24,49 @@ settings or modify account credentials. No background monitoring starts.
 If the build succeeds, preserve the APK SHA256 and the script's console
 output. An APK archive/hash/signature verification is NOT a device test.
 
+## Termux on Android (manual, no root)
+
+Install only the local prerequisites; this does not change device OS settings:
+
+```bash
+pkg update
+pkg install git python openjdk-17 curl unzip aapt2 apksigner
+export JAVA_HOME="$PREFIX/lib/jvm/java-17-openjdk"
+export PATH="$JAVA_HOME/bin:$PREFIX/bin:$PATH"
+```
+
+Install the pinned Gradle 8.9 distribution after verifying its official checksum:
+
+```bash
+cd "$HOME"
+curl -fL --proto '=https' --tlsv1.2 \
+  -o gradle-8.9-bin.zip https://services.gradle.org/distributions/gradle-8.9-bin.zip
+printf '%s  %s\n' \
+  d725d707bfabd4dfdc958c624003b3c80accc03f7037b5122c4b1d0ef15cecab \
+  gradle-8.9-bin.zip | sha256sum -c -
+unzip -q gradle-8.9-bin.zip
+export PATH="$HOME/gradle-8.9/bin:$PATH"
+```
+
+A trusted ARM-compatible Android SDK platform 35 is still required. Set
+`ANDROID_SDK_ROOT` to that local SDK and verify that
+`$ANDROID_SDK_ROOT/platforms/android-35/android.jar` exists. Google's Linux
+Android Studio package does not support Linux ARM CPUs, so do not run an
+unreviewed installer or pipe a download into a shell to bypass that limit.
+
+Use the Termux-native build tools explicitly, then run the same gates:
+
+```bash
+export RF_SENTINEL_AAPT2="$(command -v aapt2)"
+export RF_SENTINEL_APKSIGNER="$(command -v apksigner)"
+cd /path/to/Selma.0/apps/rf-sentinel
+bash tools/build-android-local.sh --allow-network
+```
+
+The script passes the reviewed native `aapt2` path to Gradle and reuses both
+overrides for APK verification. Missing, non-executable, or incompatible tools
+fail closed; source-only checks do not count as an APK build.
+
 ## Android 11/13+ device acceptance still required
 
 - Install the same hashed APK from a locally trusted build.

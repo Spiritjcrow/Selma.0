@@ -106,12 +106,12 @@ class BuildFallbackContracts(unittest.TestCase):
     def test_missing_aapt2_is_blocked_before_build(self):
         result = self.run_with_build_tools("apksigner")
         self.assertEqual(75, result.returncode)
-        self.assertIn("BLOCKED: Android build-tools 35.0.0 missing aapt2", result.stderr)
+        self.assertIn("BLOCKED: Android build-tools 35.0.0 or an executable aapt2 override is required", result.stderr)
 
     def test_missing_apksigner_is_blocked_before_build(self):
         result = self.run_with_build_tools("aapt2")
         self.assertEqual(75, result.returncode)
-        self.assertIn("BLOCKED: Android build-tools 35.0.0 missing apksigner", result.stderr)
+        self.assertIn("BLOCKED: Android build-tools 35.0.0 or an executable apksigner override is required", result.stderr)
 
     def test_android_gates_run_before_apk_verification(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -121,10 +121,6 @@ class BuildFallbackContracts(unittest.TestCase):
             sdk_jar = base / "sdk/platforms/android-35/android.jar"
             sdk_jar.parent.mkdir(parents=True)
             sdk_jar.touch()
-            build_tools = base / "sdk/build-tools/35.0.0"
-            build_tools.mkdir(parents=True)
-            (build_tools / "aapt2").touch()
-            (build_tools / "apksigner").touch()
             call_log = base / "calls.log"
 
             programs = {
@@ -141,10 +137,13 @@ class BuildFallbackContracts(unittest.TestCase):
                     "#!/bin/sh\n"
                     "echo \"python:$*\" >> \"$CALL_LOG\"\n"
                     "if [ \"${1:-}\" = \"tools/verify_apk.py\" ]; then\n"
+                    "  echo \"verify-tools:$RF_SENTINEL_AAPT2:$RF_SENTINEL_APKSIGNER\" >> \"$CALL_LOG\"\n"
                     "  if [ \"${VERIFY_FAIL:-0}\" = \"1\" ]; then echo '{\"partial\":true}'; exit 1; fi\n"
                     "  echo '{}'\n"
                     "fi\n"
                 ),
+                "aapt2": "#!/bin/sh\nexit 0\n",
+                "apksigner": "#!/bin/sh\nexit 0\n",
             }
             for name, source in programs.items():
                 executable = tools / name
@@ -169,13 +168,20 @@ class BuildFallbackContracts(unittest.TestCase):
 
             self.assertEqual(0, result.returncode, result.stderr)
             calls = call_log.read_text().splitlines()
+            self.assertEqual("python:-m unittest discover -s tests -v", calls[0])
             self.assertEqual(
-                [
-                    "python:-m unittest discover -s tests -v",
-                    "gradle:--offline --no-daemon :app:lintDebug :app:testDebugUnitTest :app:assembleDebug",
-                    "python:tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk",
-                ],
-                calls,
+                "gradle:--offline --no-daemon "
+                f"-Pandroid.aapt2FromMavenOverride={tools / 'aapt2'} "
+                ":app:lintDebug :app:testDebugUnitTest :app:assembleDebug",
+                calls[1],
+            )
+            self.assertEqual(
+                "python:tools/verify_apk.py app/build/outputs/apk/debug/app-debug.apk",
+                calls[2],
+            )
+            self.assertEqual(
+                f"verify-tools:{tools / 'aapt2'}:{tools / 'apksigner'}",
+                calls[3],
             )
             self.assertEqual("{}", evidence.read_text().strip())
 

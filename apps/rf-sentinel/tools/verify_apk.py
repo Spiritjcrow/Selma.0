@@ -32,6 +32,10 @@ EXPECTED_PERMISSIONS = frozenset({
 
 
 def find_build_tool(name):
+    override = os.environ.get("RF_SENTINEL_" + name.upper())
+    if override:
+        path = pathlib.Path(override)
+        return str(path) if path.is_file() and os.access(path, os.X_OK) else None
     tool = shutil.which(name)
     if tool:
         return tool
