@@ -93,6 +93,9 @@ class BuildFallbackContracts(unittest.TestCase):
             environment = os.environ.copy()
             environment["PATH"] = str(tools) + os.pathsep + environment["PATH"]
             environment["ANDROID_SDK_ROOT"] = str(base / "sdk")
+            # Force deterministic missing-tool checks regardless of host PATH/SDK.
+            environment["RF_SENTINEL_AAPT2"] = str(build_tools / "aapt2")
+            environment["RF_SENTINEL_APKSIGNER"] = str(build_tools / "apksigner")
             return subprocess.run(
                 ["/bin/bash", str(SCRIPT)],
                 cwd=ROOT,
