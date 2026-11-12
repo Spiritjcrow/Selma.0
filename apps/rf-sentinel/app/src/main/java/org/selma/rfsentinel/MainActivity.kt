@@ -116,12 +116,12 @@ class MainActivity : Activity() {
             ))
         }
         button("SCAN WI-FI ONCE") {
-            withPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)) { startWifi() }
+            withPermissions(locationPermissions()) { startWifi() }
         }
         button("SCAN BLE (12 SECONDS)") {
             val permissions = if (Build.VERSION.SDK_INT >= 31)
                 arrayOf(Manifest.permission.BLUETOOTH_SCAN)
-            else arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+            else locationPermissions()
             withPermissions(permissions) { startBle() }
         }
         button("STOP BLE SCAN") { stopBle() }
@@ -150,6 +150,11 @@ class MainActivity : Activity() {
             registerReceiver(wifiReceiver, filter)
         }
     }
+
+    private fun locationPermissions() = arrayOf(
+        Manifest.permission.ACCESS_COARSE_LOCATION,
+        Manifest.permission.ACCESS_FINE_LOCATION
+    )
 
     private fun withPermissions(permissions: Array<String>, action: () -> Unit) {
         val missing = permissions.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }

@@ -10,8 +10,21 @@ class ProjectContracts(unittest.TestCase):
         manifest = (ROOT / "app/src/main/AndroidManifest.xml").read_text()
         self.assertNotIn("android.permission.INTERNET", manifest)
         self.assertIn("android.permission.BLUETOOTH_SCAN", manifest)
+        self.assertIn("android.permission.ACCESS_COARSE_LOCATION", manifest)
         self.assertNotIn("android.permission.BLUETOOTH_CONNECT", manifest)
         self.assertIn("android.permission.ACCESS_FINE_LOCATION", manifest)
+
+    def test_precise_location_is_requested_with_coarse_location(self):
+        code = (ROOT / "app/src/main/java/org/selma/rfsentinel/MainActivity.kt").read_text()
+        helper = code[
+            code.index("private fun locationPermissions"):
+            code.index("private fun withPermissions")
+        ]
+        self.assertIn("Manifest.permission.ACCESS_COARSE_LOCATION", helper)
+        self.assertIn("Manifest.permission.ACCESS_FINE_LOCATION", helper)
+        on_create = code[code.index("override fun onCreate"):code.index("override fun onStart")]
+        self.assertIn("withPermissions(locationPermissions()) { startWifi() }", on_create)
+        self.assertIn("else locationPermissions()", on_create)
 
     def test_user_initiated_survey(self):
         code = (ROOT / "app/src/main/java/org/selma/rfsentinel/MainActivity.kt").read_text()
