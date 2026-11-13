@@ -71,6 +71,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - name: Run companion origin security regression
+        working-directory: SELMA0_ANDROID_NATIVE_V1
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/security-tests
+          javac -d build/security-tests app/src/main/java/ai/selma/companion/CompanionOriginPolicy.java security-tests/CompanionOriginPolicyCheck.java
+          java -cp build/security-tests CompanionOriginPolicyCheck
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
       - name: Install Android platform
