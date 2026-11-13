@@ -4,6 +4,10 @@ import urllib.error
 import urllib.request
 
 
+class Selma0OversizedResponseError(ValueError):
+    """Local model responses above the configured safety limit fail closed."""
+
+
 class Selma0LLMRouterAndroidV1:
     """Offline-first router for OpenAI-compatible chat endpoints.
 
@@ -12,6 +16,8 @@ class Selma0LLMRouterAndroidV1:
     an online fallback. No network call is attempted unless local inference
     fails and an online base URL is configured.
     """
+
+    MAX_RESPONSE_BYTES = 1024 * 1024
 
     def __init__(self):
         self.local_base = os.getenv("SELMA0_LOCAL_BASE_URL_V1", "http://127.0.0.1:8080/v1")
@@ -32,7 +38,10 @@ class Selma0LLMRouterAndroidV1:
         if api_key:
             req.add_header("Authorization", f"Bearer {api_key}")
         with urllib.request.urlopen(req, timeout=self.timeout) as response:
-            body = json.loads(response.read().decode("utf-8"))
+            raw = response.read(self.MAX_RESPONSE_BYTES + 1)
+            if len(raw) > self.MAX_RESPONSE_BYTES:
+                raise Selma0OversizedResponseError("LLM response exceeds 1 MiB limit")
+            body = json.loads(raw.decode("utf-8"))
         return body["choices"][0]["message"]["content"]
 
     def reply(self, messages):
@@ -40,6 +49,14 @@ class Selma0LLMRouterAndroidV1:
         try:
             text = self._chat(self.local_base, self.local_model, messages)
             return {"text": text, "route": "offline-local", "error": None}
+        except Selma0OversizedResponseError:
+            # A local resource-limit violation must not forward the user's
+            # conversation to a configured cloud fallback.
+            return {
+                "text": "Selma.0 rejected an oversized local language-model response.",
+                "route": "unavailable",
+                "error": "local_response_size_limit",
+            }
         except Exception as exc:
             local_error = str(exc)
 
