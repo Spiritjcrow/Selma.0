@@ -20,7 +20,9 @@ workflows:
       - name: Install required Android SDK platform
         script: |
           set -eu
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" "platforms;android-35" "build-tools;35.0.0"
       - name: Lint, unit-test, and assemble debug APK
         script: |
           set -eu
