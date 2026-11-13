@@ -1,0 +1,39 @@
+# Manual-only native Android debug APK build.
+# Uses macOS M2 so personal accounts can use their free macOS allocation.
+# No release signing, publishing, destructive Git operations, or injected secrets.
+workflows:
+  selma-android-debug:
+    name: SelmaOS Android Debug APK
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      java: 17
+    scripts:
+      - name: Validate project layout and configure Android SDK path
+        script: |
+          set -eu
+          PROJECT="$CM_BUILD_DIR/SELMA0_ANDROID_NATIVE_V1"
+          test -f "$PROJECT/gradlew"
+          test -f "$PROJECT/settings.gradle"
+          test -f "$PROJECT/app/build.gradle"
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$PROJECT/local.properties"
+      - name: Install required Android SDK platform
+        script: |
+          set -eu
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Lint, unit-test, and assemble debug APK
+        script: |
+          set -eu
+          cd "$CM_BUILD_DIR/SELMA0_ANDROID_NATIVE_V1"
+          chmod +x ./gradlew
+          ./gradlew --no-daemon --stacktrace :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
+      - name: Confirm APK exists and generate SHA-256
+        script: |
+          set -eu
+          APK="$CM_BUILD_DIR/SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          shasum -a 256 "$APK" > "${APK}.sha256"
+    artifacts:
+      - SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/*.apk
+      - SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/*.sha256
+      - SELMA0_ANDROID_NATIVE_V1/app/build/reports/lint-results-debug.html
