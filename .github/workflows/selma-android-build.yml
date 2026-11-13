@@ -1,6 +1,6 @@
 name: Selma Validation and Android Cloud Build
 
-# Manual retry: 2026-11-11T15:00:00-06:00
+# Manual retry PR probe: 2026-11-11T15:05:00-06:00
 on:
   workflow_dispatch:
   push:
