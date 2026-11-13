@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Selma° Browser Companion (CAPS V1)",
+  "version": "0.1.0",
+  "description": "Explicit, read-only status bridge to a local Selma runtime.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Selma° companion"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": ["storage"],
+  "optional_host_permissions": ["http://127.0.0.1:18766/*"]
+}
