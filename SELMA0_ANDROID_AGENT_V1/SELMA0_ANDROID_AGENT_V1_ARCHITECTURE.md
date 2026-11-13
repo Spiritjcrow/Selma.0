@@ -126,3 +126,28 @@ Linux CI validates portable Python behavior; Android permissions and Termux-spec
 - Production sensor measurements are never replaced with invented/random telemetry; inferred values remain labeled as inference.
 - Secrets remain environment variables and are never committed.
 - Heavy modules are loaded only when required.
+
+
+## SelmaSafe V1 safety mesh
+
+SelmaSafe extends the existing Safety Guardian rather than bypassing the command-core policy.
+
+Implemented on the `feature/selmasafe-v1` branch:
+
+- confirmed SOS can immediately request a bounded Termux microphone recording;
+- user-enrolled family devices use SelmaSafe logical IDs rather than IMEI scraping;
+- cross-device SOS envelopes are HMAC-SHA256 signed and expire quickly;
+- unsigned remote fan-out fails closed;
+- pending remote events are written to an auditable outbox for an approved transport adapter;
+- SelmaSafe status, enrollment, device listing, check-in, recording status, and stop-recording controls are registered through the existing permission engine;
+- inactivity handling is staged as active -> warning -> locked/pending verification and never performs irreversible deletion from a missed check-in alone.
+
+Not yet claimed as implemented:
+
+- Firebase/FCM, WebRTC, LAN, or other live delivery adapter between devices;
+- automatic wake-word detection on Android;
+- verified foreground-service/background execution on physical Android devices;
+- automatic contact with 911 or another emergency service;
+- irreversible dead-man deletion.
+
+The next transport layer should consume signed outbox events, verify the HMAC and expiry, display a high-priority local notification, and request recording only under the receiving device's granted Android permissions. Destructive privacy actions require a separate verified and audited approval design rather than a single inactivity timer.

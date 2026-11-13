@@ -9,6 +9,7 @@ from urllib.parse import urlsplit
 
 import selma0_runtime_android_v1 as base
 from selma0_command_router_android_v1 import Selma0CommandRouterAndroidV1
+from selma0_selmasafe_registry_android_v1 import register_selmasafe_tools
 
 REPLIKA_SKILL_DIR_V1 = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
@@ -59,6 +60,7 @@ COMMAND_ROUTER_V1.registry.register(
     risk="external_effect",
     description="Activate the user-confirmed local SOS workflow, which may send configured SMS messages.",
 )
+register_selmasafe_tools(COMMAND_ROUTER_V1.registry, base.SAFETY_V1)
 
 
 def _allow_nonloopback_bind_v1():

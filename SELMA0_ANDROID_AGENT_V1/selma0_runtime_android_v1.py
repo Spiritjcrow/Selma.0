@@ -7,7 +7,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from selma0_llm_router_android_v1 import Selma0LLMRouterAndroidV1
 from selma0_memory_android_v1 import Selma0MemoryAndroidV1
-from selma0_safety_guardian_android_v1 import Selma0SafetyGuardianAndroidV1
+from selma0_selmasafe_guardian_android_v1 import Selma0SelmaSafeGuardianAndroidV1
 
 SELMA0_HOST_V1 = os.getenv("SELMA0_HOST_V1", "127.0.0.1")
 SELMA0_PORT_V1 = int(os.getenv("SELMA0_PORT_V1", "8765"))
@@ -37,7 +37,7 @@ except Exception as exc:
 
 MEMORY_V1 = Selma0MemoryAndroidV1()
 ROUTER_V1 = Selma0LLMRouterAndroidV1()
-SAFETY_V1 = Selma0SafetyGuardianAndroidV1()
+SAFETY_V1 = Selma0SelmaSafeGuardianAndroidV1()
 
 
 class Selma0RuntimeAndroidV1:
