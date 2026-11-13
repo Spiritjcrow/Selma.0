@@ -4,6 +4,7 @@ import io
 import json
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -12,7 +13,6 @@ SCRIPT = Path(__file__).resolve().parents[1] / 'tools' / 'echocopy_worker.py'
 spec = importlib.util.spec_from_file_location('echocopy_worker', SCRIPT)
 echo = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(echo)
-
 
 class EchoCopyTests(unittest.TestCase):
     def setUp(self):
@@ -61,7 +61,6 @@ class EchoCopyTests(unittest.TestCase):
             self.assertEqual(2, echo.main(['once', '--state-dir', str(self.root)]))
             echo.main(['resume', '--state-dir', str(self.root)])
         self.assertFalse((self.root / 'STOP').exists())
-
 
 if __name__ == '__main__':
     unittest.main()
