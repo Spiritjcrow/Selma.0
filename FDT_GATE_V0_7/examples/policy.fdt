@@ -1,0 +1,9 @@
+fdt-policy 0.7
+policy repository-agent
+version 0.7.0
+default DENY
+
+rule repo-read effect=git.status resource=repo/** capability=repo.read decision=ALLOW risk=LOW methods=STATUS max_payload_bytes=1024 max_calls_per_minute=120
+rule source-read effect=fs.read resource=workspace/** capability=workspace.read decision=ALLOW risk=LOW methods=READ max_payload_bytes=4096 max_calls_per_minute=120
+rule source-write effect=fs.write resource=workspace/** capability=workspace.write decision=REQUIRE_APPROVAL risk=HIGH methods=WRITE max_payload_bytes=65536 max_calls_per_minute=30
+rule external-api effect=http.request resource=https://api.example.com/** capability=network.api decision=REQUIRE_APPROVAL risk=HIGH methods=POST,PUT,PATCH,DELETE max_payload_bytes=65536 max_calls_per_minute=10

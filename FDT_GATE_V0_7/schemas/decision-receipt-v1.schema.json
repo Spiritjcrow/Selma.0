@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fdt.local/schema/decision-receipt-v1.json",
+  "title": "FDT Decision Receipt v1",
+  "type": "object",
+  "required": ["decision", "reason_code", "action_hash", "policy_build_id", "evaluated_at", "runtime_key_id", "signature"],
+  "properties": {
+    "version": {"const": "fdt.receipt.v1"},
+    "decision": {"enum": ["ALLOW", "DENY", "REQUIRE_APPROVAL", "ESCALATE"]},
+    "reason_code": {"type": "string"},
+    "action_hash": {"type": "string"},
+    "policy_build_id": {"type": "string"},
+    "evaluated_at": {"type": "string"},
+    "runtime_key_id": {"type": "string"},
+    "rule_id": {"type": ["string", "null"]},
+    "grant_id": {"type": ["string", "null"]},
+    "approval_id": {"type": ["string", "null"]},
+    "state_hash": {"type": ["string", "null"]},
+    "signature": {"type": "string"}
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fdt.local/schema/action-envelope-v1.json",
+  "title": "FDT Action Envelope v1",
+  "type": "object",
+  "required": ["actor", "effect", "resource"],
+  "properties": {
+    "version": {"const": "fdt.action.v1"},
+    "actor": {"type": "string", "minLength": 1},
+    "on_behalf_of": {"type": ["string", "null"]},
+    "effect": {"type": "string", "minLength": 1},
+    "resource": {"type": "string", "minLength": 1},
+    "method": {"type": "string", "minLength": 1},
+    "payload": {"type": "object"},
+    "provenance": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}
