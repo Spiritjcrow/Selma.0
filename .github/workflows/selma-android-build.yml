@@ -81,8 +81,37 @@ jobs:
       - name: Lint, test, and assemble debug APK
         working-directory: SELMA0_ANDROID_NATIVE_V1
         run: ./gradlew --no-daemon --stacktrace :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
+      - name: Verify APK package and launcher icons
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk
+          AAPT2="${ANDROID_HOME}/build-tools/35.0.0/aapt2"
+          APKSIGNER="${ANDROID_HOME}/build-tools/35.0.0/apksigner"
+          ZIPALIGN="${ANDROID_HOME}/build-tools/35.0.0/zipalign"
+          test -s "$APK"
+          unzip -tq "$APK"
+          "$ZIPALIGN" -c -P 16 -v 4 "$APK"
+          "$APKSIGNER" verify --verbose "$APK"
+          "$AAPT2" dump badging "$APK" > "$RUNNER_TEMP/selma-apk-badging.txt"
+          grep -Fq "package: name='ai.selma.companion'" "$RUNNER_TEMP/selma-apk-badging.txt"
+          grep -Fq "versionName='0.10.0'" "$RUNNER_TEMP/selma-apk-badging.txt"
+          grep -Fq "targetSdkVersion:'35'" "$RUNNER_TEMP/selma-apk-badging.txt"
+          "$AAPT2" dump resources "$APK" > "$RUNNER_TEMP/selma-apk-resources.txt"
+          grep -Fq 'ai.selma.companion:drawable/ic_selma:' "$RUNNER_TEMP/selma-apk-resources.txt"
+          grep -Fq 'ai.selma.companion:drawable/ic_selma_home:' "$RUNNER_TEMP/selma-apk-resources.txt"
+          "$AAPT2" dump xmltree "$APK" --file AndroidManifest.xml > "$RUNNER_TEMP/selma-apk-manifest.txt"
+          grep -Fq 'ai.selma.companion.LauncherActivity' "$RUNNER_TEMP/selma-apk-manifest.txt"
+          grep -Fq 'android.intent.category.HOME' "$RUNNER_TEMP/selma-apk-manifest.txt"
+          "$AAPT2" dump permissions "$APK" > "$RUNNER_TEMP/selma-apk-permissions.txt"
+          test "$(grep -Fc 'uses-permission:' "$RUNNER_TEMP/selma-apk-permissions.txt")" -eq 1
+          grep -Fq "uses-permission: name='android.permission.INTERNET'" "$RUNNER_TEMP/selma-apk-permissions.txt"
+
       - name: Record APK checksum
-        run: sha256sum SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk > SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk.sha256
+        working-directory: SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug
+        run: |
+          sha256sum app-debug.apk > app-debug.apk.sha256
+          sha256sum --check app-debug.apk.sha256
       - name: Upload Selma APK
         uses: actions/upload-artifact@v4
         with:
@@ -92,3 +121,35 @@ jobs:
             SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk.sha256
           if-no-files-found: error
           retention-days: 30
+
+  verify-uploaded-apk:
+    name: Reverify uploaded Selma APK
+    needs: native-android
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android build tools
+        run: sdkmanager "build-tools;35.0.0"
+      - name: Download exact Selma APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Selma-Android-v0.10.0-debug
+          path: verified-apk
+      - name: Reverify downloaded APK evidence
+        shell: bash
+        working-directory: verified-apk
+        run: |
+          set -euo pipefail
+          APK=app-debug.apk
+          AAPT2="${ANDROID_HOME}/build-tools/35.0.0/aapt2"
+          test -s "$APK"
+          test -s "$APK.sha256"
+          sha256sum --check app-debug.apk.sha256
+          unzip -tq "$APK"
+          "$AAPT2" dump badging "$APK" > "$RUNNER_TEMP/selma-downloaded-badging.txt"
+          grep -Fq "package: name='ai.selma.companion'" "$RUNNER_TEMP/selma-downloaded-badging.txt"
+          "$AAPT2" dump resources "$APK" > "$RUNNER_TEMP/selma-downloaded-resources.txt"
+          grep -Fq 'ai.selma.companion:drawable/ic_selma:' "$RUNNER_TEMP/selma-downloaded-resources.txt"
+          grep -Fq 'ai.selma.companion:drawable/ic_selma_home:' "$RUNNER_TEMP/selma-downloaded-resources.txt"
