@@ -23,7 +23,7 @@ BUILD_TOOLS = '35.0.0'
 
 def java_major(version_text: str) -> int | None:
     """Extract the Java major from Java/OpenJDK -version output."""
-    match = re.search(r'\bversion\s+["\']?(1\.)?(\d+)(?:[.\+\-"\\']|\s|$)', version_text)
+    match = re.search(r'version\s+"(1\.)?(\d+)', version_text)
     if not match:
         return None
     return int(match.group(2))
