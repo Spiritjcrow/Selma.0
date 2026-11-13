@@ -130,6 +130,7 @@ def run(args) -> int:
                 print(json.dumps(result, sort_keys=True), flush=True)
                 if args.once:
                     break
+                # Frequent stop checks; network polling only every interval.
                 for _ in range(args.interval):
                     if stop.exists():
                         break
