@@ -24,7 +24,8 @@ for file in \
   selma0_crowrf_measurement_store_android_v1.py \
   selma0_crowrf_derived_metrics_android_v1.py \
   selma0_smoke_test_android_v1.sh \
-  selma0_crowrf_hardware_validate_android_v1.sh
+  selma0_crowrf_hardware_validate_android_v1.sh \
+  selma0_first_run_android_v1.py
 do
   cp -f "$SOURCE_DIR/$file" "$SELMA0_HOME_V1/$file"
 done
@@ -42,19 +43,23 @@ cp -R "$SOURCE_DIR/skills/replika_migration_v1" "$SELMA0_HOME_V1/skills/replika_
 
 cat > "$SELMA0_HOME_V1/selma0_start_android_v1.sh" <<'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
-set -e
+set -euo pipefail
 cd "$HOME/SELMA0_ANDROID_AGENT_V1"
 export SELMA0_BASE_V1="$HOME/SELMA0_ANDROID_AGENT_V1"
+if [ ! -f "$SELMA0_BASE_V1/selma0_setup_v1.json" ]; then
+  echo "SelmaOS first-run wizard: http://127.0.0.1:8766"
+  if command -v termux-open-url >/dev/null 2>&1; then
+    (sleep 1; termux-open-url http://127.0.0.1:8766 >/dev/null 2>&1) &
+  fi
+  exec python selma0_first_run_android_v1.py
+fi
 exec python selma0_runtime_device_crowrf_android_v1.py
 EOF
 chmod +x "$SELMA0_HOME_V1/selma0_start_android_v1.sh"
 
 echo "Selma.0 Android Agent V1 installed at: $SELMA0_HOME_V1"
-echo "Validate software stack: $SELMA0_HOME_V1/selma0_smoke_test_android_v1.sh"
-echo "Validate one real CrowRF scan: $SELMA0_HOME_V1/selma0_crowrf_hardware_validate_android_v1.sh --confirmed-sensitive-scan"
+echo "Run checks: $SELMA0_HOME_V1/selma0_smoke_test_android_v1.sh"
 echo "Start: $SELMA0_HOME_V1/selma0_start_android_v1.sh"
-echo "UI: http://127.0.0.1:8765"
-echo "Tools: http://127.0.0.1:8765/api/selma0/tools/v1"
-echo "Offline LLM default endpoint: http://127.0.0.1:8080/v1"
-echo "Command Core, rootless Termux device bridge, measured CrowRF Wi-Fi acquisition, append-only CrowRF session storage, verified derived RSSI summaries, local audit, Replika migration, tests, smoke validation, and Safety Guardian deployed."
-echo "Termux:API Android companion app permissions are still required for Wi-Fi scan, location, notification, vibration, and SMS capabilities."
+echo "First launch: http://127.0.0.1:8766; subsequent runs: http://127.0.0.1:8765"
+echo "Offline model endpoint: http://127.0.0.1:8080/v1 (model/runtime not installed automatically)"
+echo "Termux:API companion and explicit Android permission enrollment are required for device effects."
