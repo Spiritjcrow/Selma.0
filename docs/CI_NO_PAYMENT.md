@@ -16,6 +16,16 @@ Issue #26 tracks GitHub Actions runs that fail at admission with zero jobs, befo
 
 4. An exit code of **0** with a PASS line means those checks ran successfully *on that machine and checkout*. Exit code **1** is failure; code **2** means a partial result with Bash checks not run. Commands are bounded (core 300s, shell syntax 60s each, smoke 240s). Timeouts trigger best-effort process-tree cleanup; smoke nonzero exit additionally cleans its own group. Windows cannot guarantee cleanup of descendants after the parent process exits. Never substitute that output for a GitHub Actions job ID, signed Git history, or independent review.
 
+## Read-only Android toolchain preflight (no fees)
+
+Before spending time on an APK build, run from the complete repository checkout:
+
+```bash
+python tools/selma_android_preflight.py
+```
+
+This read-only check reports whether **Java 17+**, the **Android SDK platform 35**, **build-tools 35.0.0**, and the checked-in **Gradle 8.9 wrapper with distribution SHA-256 pin** are present. It fails with a clear prerequisite list and changes no project files. Its checks are covered by `tests/test_selma_android_preflight.py` using synthetic fixtures; they do **not** run a real Gradle build. A preflight PASS is not evidence that dependencies will resolve, tests will pass, an APK will be produced, or a device installation will succeed. The script does not download toolchains, alter account billing, or touch repository credentials.
+
 ## Optional debug APK build
 Requires Java 17 and an installed Android SDK (set ANDROID_HOME or ANDROID_SDK_ROOT). Gradle may need network access for toolchain dependencies, but it does **not** require paid GitHub Actions minutes.
 
