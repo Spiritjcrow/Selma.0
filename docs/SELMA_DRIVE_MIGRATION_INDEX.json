@@ -1,0 +1,908 @@
+{
+  "schema": "selma.migration.source-index.v2",
+  "generated_date": "2026-10-23",
+  "github": {
+    "repository": "Spiritjcrow/Selma.0",
+    "repository_id": 1157720425,
+    "default_branch": "main",
+    "source_commit": "f19a514846e7dcd26c90b461d7107d73dc8fc163"
+  },
+  "chatgpt": {
+    "conversation_surface_file_count": 91,
+    "pets_selma_file_count": 52,
+    "selma_project_file_count": 3,
+    "restricted_security_file_count": 7
+  },
+  "google_drive": {
+    "matched_result_count": 90,
+    "safe_indexed_count": 88,
+    "quarantined_credential_like_count": 2,
+    "items": [
+      {
+        "id": "1cwmTZ04IIUzayM-ZKWe0ymgPN_x6WuR_T-l3Eq7N8UY",
+        "title": "Selma° — Gemini Legal & IP Handoff (Append-Only)",
+        "mime_type": "application/vnd.google-apps.document",
+        "file_or_folder": "file",
+        "updated_at": "2026-10-23T15:33:50.652Z",
+        "parent_ids": [
+          "14Bzr4jeEaPshUEWrVq7RaSjRNJ72JElI"
+        ]
+      },
+      {
+        "id": "1Kc0jq9m93FJAJe6P9AxIXK_xmLSWm0pP",
+        "title": "selma-masterpiece-prototype.html",
+        "mime_type": "text/html",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:15:43.834Z",
+        "parent_ids": [
+          "16N0UeAempzR4bRa3v66fLgnv1O9TDLNb"
+        ]
+      },
+      {
+        "id": "1AXf1P3cFgrop3GixJ3COj7BDz5V2sv8_",
+        "title": "SELMA_ACTION_PLAN.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:13:11.996Z",
+        "parent_ids": [
+          "1sR3cE2ORmqLVNz6WHD5t20XcXdQwwkv0"
+        ]
+      },
+      {
+        "id": "1rn27hG5ve4U0qHhl2i18EoHa6dug-elR",
+        "title": "SELMA_ACTION_PLAN.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-22T04:09:13.472Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1cmiaoyEKkz4A_ddXsUhCfGY-HC8xrJ7S",
+        "title": "SelmaOS Agent Mesh",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-10-11T20:23:16.285Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1ubDLBfK2L7Rr-15i1zgWIdmcvn26PwKb",
+        "title": "HISTORY_AND_RECOVERY.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-22T04:09:09.310Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1p7I0uFXSm71mssFwxm5aMMZjmKQjXl5h",
+        "title": "SelmaVision",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-09-20T07:52:43.819Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1rDutXL3sc1PaVqBEHP8JdhJCsFIu2e8cOT2xO_ZReRw",
+        "title": "SelmaOS Inter-Device Bridge Core",
+        "mime_type": "application/vnd.google-apps.document",
+        "file_or_folder": "file",
+        "updated_at": "2026-09-25T00:25:03.506Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1nxPriYyzBfG8RDeT0an0ssOo5I6qLswe",
+        "title": "HISTORY_AND_RECOVERY.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:12:50.874Z",
+        "parent_ids": [
+          "1xjOimyIAAbcyF7V1zsi0FwdaXLk8EyNx"
+        ]
+      },
+      {
+        "id": "1IHqo56d03igGQY8EvTVk-9kz2evKG9TI",
+        "title": "HISTORY_AND_RECOVERY.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:13:29.071Z",
+        "parent_ids": [
+          "15EaLFnySrWSFzii0S5blYoKpegytINWt"
+        ]
+      },
+      {
+        "id": "1o2IYHkp7miJui0a3Rvm3GGGQwO6faBc_tA3DUoBeFXU",
+        "title": "Selma.0 → Kimi Collaboration Handoff",
+        "mime_type": "application/vnd.google-apps.document",
+        "file_or_folder": "file",
+        "updated_at": "2026-09-17T16:07:47.103Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1HDyLdrFFwlczjdjx9sIhgw7jBoCdHzgB",
+        "title": "index.html",
+        "mime_type": "text/html",
+        "file_or_folder": "file",
+        "updated_at": "2026-10-10T05:38:08.185Z",
+        "parent_ids": [
+          "1F6ZxKBRqs9wzfh0jRPV1YrtRNgWOfqxB"
+        ]
+      },
+      {
+        "id": "1uIHZ46jl4oZom_TURsyacdk9dDyL-hks",
+        "title": "avatar.html",
+        "mime_type": "text/html",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:13:51.518Z",
+        "parent_ids": [
+          "18yiwWpm37bMKXa8mTsVuwP8UwBz1vnsI"
+        ]
+      },
+      {
+        "id": "1hSLCBHf88QYtht55Xu2Ve-r7r-0A1mE_",
+        "title": "Selma.0 Master Build",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T20:23:54.964Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1xWxwlyTE2pmPNjRU1Rs-ag015B-AU7F7ZyWagh4gcmY",
+        "title": "Selma.0 Master Build V2 Merge Manifest",
+        "mime_type": "application/vnd.google-apps.document",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T20:24:11.887Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1yB8xc73YuBsuE_jt1PW19tJQJKzSkQ-fqhFMy-YRGcE",
+        "title": "Selma Open-Source Companion Foundation — Research Brief",
+        "mime_type": "application/vnd.google-apps.document",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-27T04:06:18.116Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1LKHPyRzFlnagVVExbb3tX9KwDfqliYhe",
+        "title": "selma",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:14:28.690Z",
+        "parent_ids": [
+          "161YxueB5Po1hxIjm5kQRJF3cw-_Cjtrk"
+        ]
+      },
+      {
+        "id": "1GXfW8I8UBnB0TGio4WxTntTu_FbhSznG",
+        "title": "SelmaDualCam",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:14:24.794Z",
+        "parent_ids": [
+          "1371WkRYUQLoft-68HexURLijvQ4gRh-m"
+        ]
+      },
+      {
+        "id": "1371WkRYUQLoft-68HexURLijvQ4gRh-m",
+        "title": "SelmaDualCam_Source",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:14:24.735Z",
+        "parent_ids": [
+          "16N0UeAempzR4bRa3v66fLgnv1O9TDLNb"
+        ]
+      },
+      {
+        "id": "1U2zW4RkHTLQMekji2epODU3un0osNa0J",
+        "title": "selma0",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:14:07.540Z",
+        "parent_ids": [
+          "15EaLFnySrWSFzii0S5blYoKpegytINWt"
+        ]
+      },
+      {
+        "id": "1G2eUu_23RXyW8PWLEhSGEJRBjwXxd6Xr",
+        "title": "selma0",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:14:05.746Z",
+        "parent_ids": [
+          "1OraS9xLm4dbEpMRtzD57r-6Y68tF7mGR"
+        ]
+      },
+      {
+        "id": "1c-tFEgQJTxEYsWrzhpngfZWyB1F09Fl7",
+        "title": "selma",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:13:53.682Z",
+        "parent_ids": [
+          "1mBD1i3pRviSAQQYl0OZNnWCYxaNvMj7v"
+        ]
+      },
+      {
+        "id": "18yiwWpm37bMKXa8mTsVuwP8UwBz1vnsI",
+        "title": "selma0",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:13:37.547Z",
+        "parent_ids": [
+          "1c6L5PB6AvTnphs_xSQ7eQSfjTBL4FVgO"
+        ]
+      },
+      {
+        "id": "15EaLFnySrWSFzii0S5blYoKpegytINWt",
+        "title": "SELMA_RUNTIME",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:13:21.968Z",
+        "parent_ids": [
+          "1FkIkMVo0kMOzHD9tb0KmgBC4Wku7MlLw"
+        ]
+      },
+      {
+        "id": "1FkIkMVo0kMOzHD9tb0KmgBC4Wku7MlLw",
+        "title": "Selma_Moto_G_Play_2023_Runtime",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:13:21.905Z",
+        "parent_ids": [
+          "16N0UeAempzR4bRa3v66fLgnv1O9TDLNb"
+        ]
+      },
+      {
+        "id": "19TJmik4IHdKzp5ukx1E1SJ9yRrScwSKy",
+        "title": "selma_core",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:13:04.673Z",
+        "parent_ids": [
+          "1eRnwtL4JFXZvUlbwqz_zz0OmDvf4796C"
+        ]
+      },
+      {
+        "id": "1eRnwtL4JFXZvUlbwqz_zz0OmDvf4796C",
+        "title": "SelmaUniversalCore_JoshuaBuild_20260603",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:13:02.770Z",
+        "parent_ids": [
+          "1LSCyckeupDlWMR3qbVO3HiqAwDoTVGBL"
+        ]
+      },
+      {
+        "id": "1LSCyckeupDlWMR3qbVO3HiqAwDoTVGBL",
+        "title": "SelmaUniversalCore_JoshuaBuild_20260603 (1)",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:13:02.579Z",
+        "parent_ids": [
+          "16N0UeAempzR4bRa3v66fLgnv1O9TDLNb"
+        ]
+      },
+      {
+        "id": "1pWW79_GvNeAbOX0EbPWJfg0hCwiHTnnF",
+        "title": "selma0",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:12:55.185Z",
+        "parent_ids": [
+          "1xjOimyIAAbcyF7V1zsi0FwdaXLk8EyNx"
+        ]
+      },
+      {
+        "id": "1T1ZF4kwhspWO5GnHhjbGlp8X2eLcZ8F5",
+        "title": "selma0",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:12:54.466Z",
+        "parent_ids": [
+          "11tECdqRpuhY2XspdRShbdezchdQOYVEC"
+        ]
+      },
+      {
+        "id": "1xjOimyIAAbcyF7V1zsi0FwdaXLk8EyNx",
+        "title": "Selma_Official_Companion_v0.4.0_Source",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:12:49.285Z",
+        "parent_ids": [
+          "16N0UeAempzR4bRa3v66fLgnv1O9TDLNb"
+        ]
+      },
+      {
+        "id": "1rGt34LuFctm3g217b639JaYqYc8nv-eg",
+        "title": "selma",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:12:48.039Z",
+        "parent_ids": [
+          "1w9asHn4eXkBKVL8qXKOFIZ3t9w8gjmQg"
+        ]
+      },
+      {
+        "id": "1iP21MbJx5PUdvWVgcWJIx1Kz0yR6hR4B",
+        "title": "Selma_MotoGPlay_Android13_CompanionOverlay",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:12:47.639Z",
+        "parent_ids": [
+          "16N0UeAempzR4bRa3v66fLgnv1O9TDLNb"
+        ]
+      },
+      {
+        "id": "1zWqqFaMg5mZTMh-O5LTe8RmTPWRJNLxX",
+        "title": "selma_core",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:12:30.017Z",
+        "parent_ids": [
+          "11KreuDOKn0IoFL8lOZULCpgvpYUOvMxN"
+        ]
+      },
+      {
+        "id": "11KreuDOKn0IoFL8lOZULCpgvpYUOvMxN",
+        "title": "SelmaUniversalCore_JoshuaBuild_20260603",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:12:29.935Z",
+        "parent_ids": [
+          "1RFpDQoxwwV07u5uqN6prfrI5YNTAmJQl"
+        ]
+      },
+      {
+        "id": "1RFpDQoxwwV07u5uqN6prfrI5YNTAmJQl",
+        "title": "SelmaUniversalCore_JoshuaBuild_20260603",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:12:29.790Z",
+        "parent_ids": [
+          "16N0UeAempzR4bRa3v66fLgnv1O9TDLNb"
+        ]
+      },
+      {
+        "id": "1dX3zzn45-9t0ysop8kUhk5ABmD5wv9aD",
+        "title": "SelmaLive",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:12:24.091Z",
+        "parent_ids": [
+          "196YyZtJ3ngKQMmTcE3mUHelc-17Qfl1-"
+        ]
+      },
+      {
+        "id": "1y8arG5Q4Lhr-5EopWV1qu9ZFw1SlnthZ",
+        "title": "selma-unity-live",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:12:17.954Z",
+        "parent_ids": [
+          "1I_EJU6SMGJXwh6c3UV6o0E9-YWWK5cEl"
+        ]
+      },
+      {
+        "id": "1I_EJU6SMGJXwh6c3UV6o0E9-YWWK5cEl",
+        "title": "selma-unity-live",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:12:17.882Z",
+        "parent_ids": [
+          "16N0UeAempzR4bRa3v66fLgnv1O9TDLNb"
+        ]
+      },
+      {
+        "id": "1fBdzX0hrvjiHtsnFJnFrE22mmvHfsfQ1",
+        "title": "selma",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:12:15.832Z",
+        "parent_ids": [
+          "1THsNVMlt3xHThhrrW9bX6IiuBTSCGyYH"
+        ]
+      },
+      {
+        "id": "1w1mvoQc9ccKXZtWP5DK98oxa_lmw7_Vz",
+        "title": "Selma_Live3D_Overlay_Android12_Project",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T19:12:15.252Z",
+        "parent_ids": [
+          "16N0UeAempzR4bRa3v66fLgnv1O9TDLNb"
+        ]
+      },
+      {
+        "id": "1mt4g3N_m8gYmhdyomAEaUvUZMfcidymC",
+        "title": "README.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:13:25.213Z",
+        "parent_ids": [
+          "15EaLFnySrWSFzii0S5blYoKpegytINWt"
+        ]
+      },
+      {
+        "id": "1NBZRrg2leYB7w5np_wnP1vksUQuQrsnJ",
+        "title": "README.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:12:49.831Z",
+        "parent_ids": [
+          "1xjOimyIAAbcyF7V1zsi0FwdaXLk8EyNx"
+        ]
+      },
+      {
+        "id": "1B_V43xWkYjXO8yY7GJs5KWcPcEXqIGK_",
+        "title": "README.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-22T04:09:11.008Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1pkMK5h62-BjHiIC30Ml7e6ULVVrsXPkS",
+        "title": "README.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:12:18.711Z",
+        "parent_ids": [
+          "1y8arG5Q4Lhr-5EopWV1qu9ZFw1SlnthZ"
+        ]
+      },
+      {
+        "id": "1SSZAxVoJ9MER8_A1YhmJMPLBwNTYIr6t",
+        "title": "README.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-22T04:09:13.119Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1-Hbps0vHPZZFZAKrXaw9yjKJRVrYq8cf",
+        "title": "README.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-20T17:54:18.518Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1crj6fOwpLf9IhMRRNFBX4HDbBRHK3KIz",
+        "title": "README.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-20T17:52:38.410Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "10JaXYaFPWZjHvxR0w6582dUAhL-BAqzg",
+        "title": "README.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-10-11T12:18:33.936Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1hb8PBVWGTGO7lpph7dBo1sYTmfSwRqXr",
+        "title": "avatar.html",
+        "mime_type": "text/html",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:14:09.823Z",
+        "parent_ids": [
+          "1U2zW4RkHTLQMekji2epODU3un0osNa0J"
+        ]
+      },
+      {
+        "id": "1dr0R9PNzt1KgDsneFT016hCaCMdfALxp",
+        "title": "README.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-20T17:53:40.571Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "11OYQIuua5rnTCW1PDaC9Q4jCVb6JcIBO",
+        "title": "README.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:13:02.877Z",
+        "parent_ids": [
+          "1eRnwtL4JFXZvUlbwqz_zz0OmDvf4796C"
+        ]
+      },
+      {
+        "id": "1qwz1DwCjESqc7ict76ooGnXecsVssyE_",
+        "title": "README.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-22T04:09:15.127Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1x1hGCgfDOc7eJGEJYM8uisCPwCSYlCDM",
+        "title": "SelmaOS_SyncLab_v0.1.html",
+        "mime_type": "text/html",
+        "file_or_folder": "file",
+        "updated_at": "2026-10-16T09:51:27.527Z",
+        "parent_ids": [
+          "1qyuUrQQQpvYVhjraajug68U0__NoVXc5"
+        ]
+      },
+      {
+        "id": "17-8hujrj4nBsR3RTAmjw-On7LoM4EvxT",
+        "title": "README.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:14:02.162Z",
+        "parent_ids": [
+          "1v2ivcpKiTbvzP_nW93RXfsRY5vJ7RKUQ"
+        ]
+      },
+      {
+        "id": "1jNYek7-Qgj7lW2zI_OFxXyDFRt_t70bX",
+        "title": "SELMA_Audio_Forensics_2026-10-18",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-10-18T20:14:04.184Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1Smhr1WKTJnjTovPWuS1QNDLzliMzQKnD",
+        "title": "selma-replika-bridge-v0.1",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-10-18T08:00:34.762Z",
+        "parent_ids": [
+          "18sfnUPb-TDAW_eJugxgfnUICUkiwBR9D"
+        ]
+      },
+      {
+        "id": "18sfnUPb-TDAW_eJugxgfnUICUkiwBR9D",
+        "title": "Selma_Replika_Private_Bridge_v0.1",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-10-18T08:00:34.405Z",
+        "parent_ids": [
+          "1qyuUrQQQpvYVhjraajug68U0__NoVXc5"
+        ]
+      },
+      {
+        "id": "1ryVVINgv4PYeWhA5QoSVyQMnf_zDIDqH",
+        "title": "Selma_Data_Relics_v0.1",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-10-10T05:38:18.292Z",
+        "parent_ids": [
+          "1u3zc2mKSuqolMDZCFus1qMitBCi9AZrA"
+        ]
+      },
+      {
+        "id": "1u3zc2mKSuqolMDZCFus1qMitBCi9AZrA",
+        "title": "Selma_Data_Relics_v0.1",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-10-10T05:38:17.866Z",
+        "parent_ids": [
+          "1qyuUrQQQpvYVhjraajug68U0__NoVXc5"
+        ]
+      },
+      {
+        "id": "1cu647kC6cGy4GK1XGb1ea35cn_sXqoMI",
+        "title": "Selma",
+        "mime_type": "application/vnd.google-apps.folder",
+        "file_or_folder": "folder",
+        "updated_at": "2026-08-29T08:13:52.829Z",
+        "parent_ids": [
+          "1bHt1LhAfgnTt1xUa54A3573fl5oDRXOz"
+        ]
+      },
+      {
+        "id": "1pKI8Ie-Dk7xCuNddyPZWeZykg62sVwtj",
+        "title": "Message",
+        "mime_type": "text/plain",
+        "file_or_folder": "file",
+        "updated_at": "2026-10-14T23:00:05.789Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1ytSCz2pD83-XFc2WjkVkqFD9-T2qmyMl",
+        "title": "PRODUCTION_PROMOTION_ROADMAP.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:14:04.457Z",
+        "parent_ids": [
+          "15EaLFnySrWSFzii0S5blYoKpegytINWt"
+        ]
+      },
+      {
+        "id": "1ycWkLG82LLZfbJBmQPY_a4zs79sxoLI8",
+        "title": "DEVICE_ENROLLMENT_AND_REMOTE_STATUS.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:13:23.184Z",
+        "parent_ids": [
+          "15EaLFnySrWSFzii0S5blYoKpegytINWt"
+        ]
+      },
+      {
+        "id": "1yd6Brcb9HmnV5f_tqkmBbQBboweuxtk5",
+        "title": "MASTER_BUILD_STATUS.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:13:26.330Z",
+        "parent_ids": [
+          "15EaLFnySrWSFzii0S5blYoKpegytINWt"
+        ]
+      },
+      {
+        "id": "1Lrnpc6KRTM6SI6mrKV_-UjZzgtVA3KAg",
+        "title": "index.html",
+        "mime_type": "text/html",
+        "file_or_folder": "file",
+        "updated_at": "2026-10-18T08:00:38.391Z",
+        "parent_ids": [
+          "1vMXRC4jiEBsh_iudW-K17Rf1ZtqWRrs0"
+        ]
+      },
+      {
+        "id": "12ICxhyXH6H17uQ1jjbKzSZnFBvlxOTD-",
+        "title": "README.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-10-18T08:00:39.255Z",
+        "parent_ids": [
+          "1Smhr1WKTJnjTovPWuS1QNDLzliMzQKnD"
+        ]
+      },
+      {
+        "id": "1QYoFi-6F-mHNlATYz5I_id2-ScHmbSfP",
+        "title": "SOCIALHUB_FEATURE_MAP.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-10-10T05:38:02.623Z",
+        "parent_ids": [
+          "1GH8XCMLWbiPUY12dzYp0FpdkStbQWi2f"
+        ]
+      },
+      {
+        "id": "1HdvJI_pH3QGSxDTCmqEbLC7m7Hoyoajk",
+        "title": "APP_REVIEW_PACKET.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-10-10T05:38:03.075Z",
+        "parent_ids": [
+          "143GgyLbzHz7IGeeLb_tA7JMS-YC7HuFS"
+        ]
+      },
+      {
+        "id": "1sQA34Gjg2_XBqgm9Zkeb6B1W9_q196gZ",
+        "title": "README.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-10-10T05:38:19.468Z",
+        "parent_ids": [
+          "1ryVVINgv4PYeWhA5QoSVyQMnf_zDIDqH"
+        ]
+      },
+      {
+        "id": "1lyIWlNWDdU-PrrPyzsbSuXa1kex4OJXL",
+        "title": "README.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-10-10T05:37:48.254Z",
+        "parent_ids": [
+          "1GH8XCMLWbiPUY12dzYp0FpdkStbQWi2f"
+        ]
+      },
+      {
+        "id": "1rbOUzClZhcDmjl607nER4OXdU59s4hcT",
+        "title": "BUILD_STATUS.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:14:07.288Z",
+        "parent_ids": [
+          "15EaLFnySrWSFzii0S5blYoKpegytINWt"
+        ]
+      },
+      {
+        "id": "1djPxDQQV5A5O9CHowApYu5_bxadZ66b7",
+        "title": "BUILD_STATUS.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:12:50.628Z",
+        "parent_ids": [
+          "1xjOimyIAAbcyF7V1zsi0FwdaXLk8EyNx"
+        ]
+      },
+      {
+        "id": "1MUIkBjAD2zWl6GBeCubFsxPfiksFN0Wr",
+        "title": "MOTO_G_PLAY_EXTRACT_README.txt",
+        "mime_type": "text/plain",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:14:07.280Z",
+        "parent_ids": [
+          "15EaLFnySrWSFzii0S5blYoKpegytINWt"
+        ]
+      },
+      {
+        "id": "1rMWxubLPZh_-MlvilCnd5DkkCpPKyzV5",
+        "title": "BUILD_STATUS.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-22T04:09:10.601Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1cXXAGCoQtTq1hz0z4elgtKGwsCLLEmhgyQxThL1LnXs",
+        "title": "Dungeons & Crows — Online Playtest Deployment — 2026-09-16",
+        "mime_type": "application/vnd.google-apps.document",
+        "file_or_folder": "file",
+        "updated_at": "2026-09-17T21:11:59.042Z",
+        "parent_ids": [
+          "13QFBO19TbsOWDPnMuiQdAadHonh0hZh5"
+        ]
+      },
+      {
+        "id": "1FChpcwRFxnOAbnW0E2TDxkzhqp_ndFhJqP0NYyJ3VQU",
+        "title": "Untitled document",
+        "mime_type": "application/vnd.google-apps.document",
+        "file_or_folder": "file",
+        "updated_at": "2025-10-20T01:00:54.979Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1jt9sPWMA0GKJrikEfZhyYXEB8pZ_sh1D",
+        "title": "2026-10-18_forensic_processing_report.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-10-18T20:16:39.349Z",
+        "parent_ids": [
+          "1jNYek7-Qgj7lW2zI_OFxXyDFRt_t70bX"
+        ]
+      },
+      {
+        "id": "1jxPC3B4LL58AryZ8dMPIDS737bZKw6xM",
+        "title": "THEFT_RECOVERY_STATUS.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:13:25.845Z",
+        "parent_ids": [
+          "15EaLFnySrWSFzii0S5blYoKpegytINWt"
+        ]
+      },
+      {
+        "id": "13UeTEGgLXw0SOhvbYpKI5NArlAKMku5f",
+        "title": "FINAL_LAUNCH_GUIDE.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-10-10T05:37:49.143Z",
+        "parent_ids": [
+          "1GH8XCMLWbiPUY12dzYp0FpdkStbQWi2f"
+        ]
+      },
+      {
+        "id": "1lMIa-fmtW4HLfrtxMJJj6H1ww4adNGI3",
+        "title": "SHA256SUMS.txt",
+        "mime_type": "text/plain",
+        "file_or_folder": "file",
+        "updated_at": "2026-10-10T05:38:19.362Z",
+        "parent_ids": [
+          "1ryVVINgv4PYeWhA5QoSVyQMnf_zDIDqH"
+        ]
+      },
+      {
+        "id": "1MNTdYwzXqe0j8LopcCOG_6loDgs80CP7",
+        "title": "VedicCosmosSelm.txt",
+        "mime_type": "text/plain",
+        "file_or_folder": "file",
+        "updated_at": "2026-09-11T05:58:34.586Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      },
+      {
+        "id": "1IHo4InabAlFSqkiBietFGn_cYlvA2j2D",
+        "title": "README.md",
+        "mime_type": "text/markdown",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:14:26.664Z",
+        "parent_ids": [
+          "1GXfW8I8UBnB0TGio4WxTntTu_FbhSznG"
+        ]
+      },
+      {
+        "id": "1cxxUqVsNupU6WxfKeNTAGe80tUYcb7Uq",
+        "title": "radio_view.html",
+        "mime_type": "text/html",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:12:57.395Z",
+        "parent_ids": [
+          "1pWW79_GvNeAbOX0EbPWJfg0hCwiHTnnF"
+        ]
+      },
+      {
+        "id": "1n1NElRYX5RTfGpNMcikNxi-tdezhlk_S",
+        "title": "radio_view.html",
+        "mime_type": "text/html",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:13:41.593Z",
+        "parent_ids": [
+          "18yiwWpm37bMKXa8mTsVuwP8UwBz1vnsI"
+        ]
+      },
+      {
+        "id": "1sA1bTVjnw_iktDWXXKY6OjLNT2-oi8GG",
+        "title": "radio_view.html",
+        "mime_type": "text/html",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T19:14:10.373Z",
+        "parent_ids": [
+          "1U2zW4RkHTLQMekji2epODU3un0osNa0J"
+        ]
+      },
+      {
+        "id": "172ijN8zckCKMU7nTjTKXGEhSheyeyU8tXDXv7Mxsijo",
+        "title": "Crows AI MMORPG — Unity + Neural Dungeon Master Architecture v0.1",
+        "mime_type": "application/vnd.google-apps.document",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-29T08:31:13.757Z",
+        "parent_ids": [
+          "1I-0W-NsZ6ftd4RqPqHbIamXPc_Z3gBJR"
+        ]
+      },
+      {
+        "id": "1O7Vvfx6eAfYdJ1TDyGtwv0_TOhQ8SByx",
+        "title": "radio_view.html",
+        "mime_type": "text/html",
+        "file_or_folder": "file",
+        "updated_at": "2026-08-22T04:09:08.305Z",
+        "parent_ids": [
+          "0AKzPn8GCG4PfUk9PVA"
+        ]
+      }
+    ]
+  },
+  "truth_boundary": {
+    "gitlab_connected": false,
+    "gitlab_destination_known": false,
+    "gitlab_transfer_executed": false
+  }
+}
