@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "units": [
+    {"id": "context", "kind": "note", "segments": ["Selma", "Tesarac", "session"], "separator": " / ", "required": false},
+    {"id": "interfaces", "kind": "interfaces", "required": true},
+    {"id": "logcat", "kind": "logcat", "depends_on": ["interfaces"], "required": true}
+  ]
+}
