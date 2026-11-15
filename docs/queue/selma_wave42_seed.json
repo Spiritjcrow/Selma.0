@@ -68,7 +68,7 @@
       "planning_state": "DISCOVERED",
       "lane": "coordinator",
       "operation": "READ_ONLY_TRIAGE",
-      "conflict_group": "selma-88",
+      "conflict_group": "coordination-88",
       "next_action": "Reconcile ownership and recent checkpoint IDs; append only a meaningful changed checkpoint.",
       "verification": "NOT_RUN",
       "approval_to_mutate": false
@@ -84,7 +84,7 @@
       "planning_state": "DISCOVERED",
       "lane": "coordinator",
       "operation": "READ_ONLY_TRIAGE",
-      "conflict_group": "selma-17",
+      "conflict_group": "coordination-88",
       "next_action": "Map active WP-01..12 requirements to current source/PR evidence without claiming closure.",
       "verification": "NOT_RUN",
       "approval_to_mutate": false
@@ -100,7 +100,7 @@
       "planning_state": "DISCOVERED",
       "lane": "build",
       "operation": "READ_ONLY_TRIAGE",
-      "conflict_group": "selma-114",
+      "conflict_group": "hypercore-114",
       "next_action": "Review mobile dashboard privacy and persistence; Android installation/remote hosting not evidenced.",
       "verification": "NOT_RUN",
       "approval_to_mutate": false
@@ -116,7 +116,7 @@
       "planning_state": "DISCOVERED",
       "lane": "build",
       "operation": "READ_ONLY_TRIAGE",
-      "conflict_group": "selma-108",
+      "conflict_group": "codemagic-108",
       "next_action": "Inspect actual Codemagic build logs and APK digest before considering merge.",
       "verification": "NOT_RUN",
       "approval_to_mutate": false
@@ -132,7 +132,7 @@
       "planning_state": "DISCOVERED",
       "lane": "build",
       "operation": "READ_ONLY_TRIAGE",
-      "conflict_group": "selma-113",
+      "conflict_group": "tesarac-112",
       "next_action": "Review real Tesarac checkpoint tests, input boundaries, and provenance chain.",
       "verification": "NOT_RUN",
       "approval_to_mutate": false
@@ -148,7 +148,7 @@
       "planning_state": "DISCOVERED",
       "lane": "build",
       "operation": "READ_ONLY_TRIAGE",
-      "conflict_group": "selma-112",
+      "conflict_group": "tesarac-112",
       "next_action": "Compare Tesarac acceptance criteria against PR #113; no notary/legal conclusion.",
       "verification": "NOT_RUN",
       "approval_to_mutate": false
@@ -164,7 +164,7 @@
       "planning_state": "DISCOVERED",
       "lane": "coordinator",
       "operation": "READ_ONLY_TRIAGE",
-      "conflict_group": "selma-104",
+      "conflict_group": "fixer-104",
       "next_action": "Inspect Universal Fixer v0.3 existing 119-item inventory; identify one real repo repair with RED→GREEN proof.",
       "verification": "NOT_RUN",
       "approval_to_mutate": false
@@ -244,7 +244,7 @@
       "planning_state": "DISCOVERED",
       "lane": "review",
       "operation": "READ_ONLY_TRIAGE",
-      "conflict_group": "selma-107",
+      "conflict_group": "ioc-106",
       "next_action": "Read latest head/source and test evidence, identify one bounded nonconflicting review-only next action.",
       "verification": "NOT_RUN",
       "approval_to_mutate": false
@@ -260,7 +260,7 @@
       "planning_state": "DISCOVERED",
       "lane": "review",
       "operation": "READ_ONLY_TRIAGE",
-      "conflict_group": "selma-106",
+      "conflict_group": "ioc-106",
       "next_action": "Check scoped public IOC evidence and defensive audit completeness; do not assume a compromise.",
       "verification": "NOT_RUN",
       "approval_to_mutate": false
@@ -516,7 +516,7 @@
       "planning_state": "DISCOVERED",
       "lane": "relay",
       "operation": "READ_ONLY_TRIAGE",
-      "conflict_group": "selma-86",
+      "conflict_group": "handoff-85",
       "next_action": "Read latest head/source and test evidence, identify one bounded nonconflicting review-only next action.",
       "verification": "NOT_RUN",
       "approval_to_mutate": false
@@ -532,7 +532,7 @@
       "planning_state": "DISCOVERED",
       "lane": "relay",
       "operation": "READ_ONLY_TRIAGE",
-      "conflict_group": "selma-85",
+      "conflict_group": "handoff-85",
       "next_action": "Read latest head/source and test evidence, identify one bounded nonconflicting review-only next action.",
       "verification": "NOT_RUN",
       "approval_to_mutate": false
@@ -548,7 +548,7 @@
       "planning_state": "DISCOVERED",
       "lane": "relay",
       "operation": "READ_ONLY_TRIAGE",
-      "conflict_group": "selma-84",
+      "conflict_group": "kimi-83",
       "next_action": "Read latest head/source and test evidence, identify one bounded nonconflicting review-only next action.",
       "verification": "NOT_RUN",
       "approval_to_mutate": false
@@ -564,7 +564,7 @@
       "planning_state": "DISCOVERED",
       "lane": "relay",
       "operation": "READ_ONLY_TRIAGE",
-      "conflict_group": "selma-83",
+      "conflict_group": "kimi-83",
       "next_action": "Read latest head/source and test evidence, identify one bounded nonconflicting review-only next action.",
       "verification": "NOT_RUN",
       "approval_to_mutate": false
