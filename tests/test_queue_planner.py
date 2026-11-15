@@ -57,6 +57,20 @@ class PlannerTests(unittest.TestCase):
         self.assertEqual(len(result["selected"]), 2)
         self.assertEqual(result["deferred_same_conflict_group"], ["test-2"])
 
+    def test_conflict_deferred_without_repeat_across_batches(self):
+        data = manifest(
+            item(1, group="shared"),
+            item(2, group="shared"),
+            item(3, group="solo"),
+            item(4, group="other"),
+            item(5, group="shared"),
+        )
+        waves = [plan(data, batch=i, limit=2)["selected"] for i in range(5)]
+        flat = [task["task_id"] for wave in waves for task in wave]
+        self.assertEqual(len(flat), 5)
+        self.assertEqual(len(flat), len(set(flat)))
+        self.assertEqual(set(flat), {f"test-{i}" for i in range(1, 6)})
+
     def test_reject_duplicate(self):
         with self.assertRaises(ValueError):
             validate(manifest(item(1), item(1)))
