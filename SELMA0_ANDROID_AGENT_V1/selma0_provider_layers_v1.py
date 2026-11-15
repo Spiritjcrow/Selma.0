@@ -32,6 +32,8 @@ PROVIDERS = {
     "deepseek": Provider("chat", "https://api.deepseek.com/chat/completions", "DEEPSEEK_API_KEY", "SELMA_DEEPSEEK_MODEL", "deepseek-flash"),
 }
 MODEL_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+MOCK_PROVIDER = "mock"
+MOCK_MODEL = "selma-local-mock-v1"
 
 
 def _messages(messages):
@@ -88,16 +90,35 @@ def _extract(protocol, data):
     return text
 
 
-def request(provider_name, messages, *, allow_network=False, model=None, max_tokens=512, transport=None, environ=None):
+def request(provider_name, messages, *, allow_network=False, approved_paid=False, model=None, max_tokens=512, transport=None, environ=None):
     """Execute a single explicitly approved provider call, never automatic fallback.
 
     Returns a status dictionary. Never returns API keys or raw HTTP error bodies.
     Production callers must independently enforce Selma's permission policy.
     """
-    if provider_name not in PROVIDERS:
+    if provider_name not in PROVIDERS and provider_name != MOCK_PROVIDER:
         return {"status": "blocked", "reason": "unknown provider"}
-    if not allow_network:
+    # The local mock is available without credentials and cannot invoke transport.
+    # It never sends, stores, or echoes the prompt.
+    if provider_name == MOCK_PROVIDER:
+        try:
+            _messages(messages)
+            if type(max_tokens) is not int or not 1 <= max_tokens <= 4096:
+                raise ValueError("invalid max_tokens")
+        except (ValueError, TypeError):
+            return {"status": "error", "provider": MOCK_PROVIDER, "reason": "invalid input"}
+        return {
+            "status": "ok",
+            "provider": MOCK_PROVIDER,
+            "model": MOCK_MODEL,
+            "text": "Selma mock response: validated locally; no external model contacted.",
+            "network": False,
+            "billable": False,
+        }
+    if allow_network is not True:
         return {"status": "blocked", "provider": provider_name, "reason": "network approval required"}
+    if approved_paid is not True:
+        return {"status": "blocked", "provider": provider_name, "reason": "explicit paid-provider approval required"}
     try:
         checked = _messages(messages)
         if not isinstance(max_tokens, int) or isinstance(max_tokens, bool) or not 1 <= max_tokens <= 4096:
@@ -133,17 +154,25 @@ def request(provider_name, messages, *, allow_network=False, model=None, max_tok
 def main():
     parser = argparse.ArgumentParser(description="Opt-in Selma multimodel text adapter")
     parser.add_argument("--list", action="store_true", help="list provider IDs without network")
-    parser.add_argument("--provider", choices=sorted(PROVIDERS))
+    parser.add_argument("--provider", choices=[MOCK_PROVIDER, *sorted(PROVIDERS)])
     parser.add_argument("--model", help="provider model ID override")
     parser.add_argument("--message", help="single text message to send")
-    parser.add_argument("--execute", action="store_true", help="explicitly permit one external request, which may incur charges")
+    parser.add_argument("--execute", action="store_true", help="permit exactly one external request")
+    parser.add_argument("--approve-paid", action="store_true", help="explicitly approve possible API charges and sharing this message with the selected provider")
     args = parser.parse_args()
-    if args.list or not args.provider:
-        print(json.dumps({"providers": sorted(PROVIDERS), "network": "disabled by default"}))
+    if args.list or (args.message is None and args.provider is None):
+        print(json.dumps({"providers": [MOCK_PROVIDER, *sorted(PROVIDERS)], "default": MOCK_PROVIDER, "network": "disabled by default"}))
         return 0
     if not args.message:
-        parser.error("--message required with --provider")
-    result = request(args.provider, [{"role": "user", "content": args.message}], allow_network=args.execute, model=args.model)
+        parser.error("--message required")
+    selected_provider = args.provider or MOCK_PROVIDER
+    result = request(
+        selected_provider,
+        [{"role": "user", "content": args.message}],
+        allow_network=args.execute,
+        approved_paid=args.approve_paid,
+        model=args.model,
+    )
     print(json.dumps(result))
     return 0 if result["status"] == "ok" else 2
 
