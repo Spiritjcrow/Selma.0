@@ -3,11 +3,12 @@
 An Android-friendly, dependency-free **local-only** web prototype for the SelmaOS visual system. Open `index.html` in a browser. The file works without a web server or network, though outbound documentation/build links require connectivity and authentication.
 
 ## Implemented (web only)
-- Responsive dark blue/orange HyperCore style and original cubic core icon.
+- Responsive dark blue/orange HyperCore style, cubic core mark and the six original editable vector assets in `assets/icons/`.
 - Eight build evidence gates and a local evidence count.
 - Save, clear, export and import (size + schema validated) evidence as JSON.
 - A copyable pinned native Gradle command and links to GitHub/Codemagic.
 - Browser localStorage persistence. No credential or network requests are made by the app.
+- Importable `assets/tokens.json` and reusable `assets/hypercore.css` design primitives.
 
 ## Deliberately not implemented / not verified
 - No Codemagic API, live build, APK download, checksum computation, Android install, evidence authenticity check, or device management.
