@@ -57,27 +57,39 @@ def plan(data: dict, batch: int = 0, limit: int = 7) -> dict:
     ]
     # Stable priority ordering; preserve seed order within each priority.
     candidates.sort(key=lambda item: PRIORITIES[item["priority"]])
-    # One source conflict group per page. Competing tasks are deferred, not claimed.
-    groups: set[str] = set()
-    selected = []
-    skipped_conflict = []
-    for item in candidates[batch * limit:]:
-        group = item["conflict_group"]
-        if group in groups:
-            skipped_conflict.append(item["task_id"])
-            continue
-        if len(selected) >= limit:
-            break
-        groups.add(group)
-        selected.append({
-            "task_id": item["task_id"],
-            "source_url": item["source_url"],
-            "priority": item["priority"],
-            "lane": item["lane"],
-            "operation": item["operation"],
-            "next_action": item["next_action"],
-            "source_updated_at": item.get("source_updated_at"),
-        })
+    # Partition all tasks exactly once; defer collisions into later batches.
+    # Do not use a raw offset after skipping collisions: that repeats tasks.
+    remaining = list(candidates)
+    waves = []
+    deferred_by_wave = []
+    while remaining:
+        wave = []
+        later = []
+        groups: set[str] = set()
+        deferred = []
+        for item in remaining:
+            group = item["conflict_group"]
+            if len(wave) < limit and group not in groups:
+                wave.append(item)
+                groups.add(group)
+            else:
+                later.append(item)
+                if group in groups:
+                    deferred.append(item["task_id"])
+        waves.append(wave)
+        deferred_by_wave.append(deferred)
+        remaining = later
+    wave = waves[batch] if batch < len(waves) else []
+    skipped_conflict = deferred_by_wave[batch] if batch < len(waves) else []
+    selected = [{
+        "task_id": item["task_id"],
+        "source_url": item["source_url"],
+        "priority": item["priority"],
+        "lane": item["lane"],
+        "operation": item["operation"],
+        "next_action": item["next_action"],
+        "source_updated_at": item.get("source_updated_at"),
+    } for item in wave]
     digest = hashlib.sha256(json.dumps(selected, sort_keys=True).encode("utf-8")).hexdigest()
     return {
         "mode": "READ_ONLY_DRY_RUN",
