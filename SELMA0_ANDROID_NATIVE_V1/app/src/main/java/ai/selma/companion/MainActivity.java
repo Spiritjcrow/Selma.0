@@ -20,10 +20,12 @@ public final class MainActivity extends Activity {
     private static final String SELMA_HOST = "selma-official-companion.spiritjcrow1990.chatgpt.site";
     private static final int UNLOCK_REQUEST = 401;
     private WebView webView;
+    private EncryptedLocalStore localStore;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        localStore = new EncryptedLocalStore(this);
         requestUnlock();
     }
 
