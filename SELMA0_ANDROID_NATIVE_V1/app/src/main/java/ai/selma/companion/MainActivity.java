@@ -2,8 +2,16 @@ package ai.selma.companion;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.KeyguardManager;
+import android.hardware.biometrics.BiometricPrompt;
+import android.os.CancellationSignal;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
+import android.widget.TextView;
 import android.os.Bundle;
 import android.webkit.PermissionRequest;
+import android.webkit.WebSettings;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
@@ -11,19 +19,98 @@ import android.webkit.WebViewClient;
 
 public final class MainActivity extends Activity {
     private static final String SELMA_URL = "https://selma-official-companion.spiritjcrow1990.chatgpt.site";
+    private static final String SELMA_HOST = "selma-official-companion.spiritjcrow1990.chatgpt.site";
+    private static final int UNLOCK_REQUEST = 401;
     private WebView webView;
+    private SelmaMemoryStore memoryStore;
+    private boolean unlockInProgress;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        memoryStore = new SelmaMemoryStore(new EncryptedLocalStore(this));
+        requestUnlock();
+    }
+
+    private void requestUnlock() {
+        KeyguardManager manager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+        if (manager == null || !manager.isDeviceSecure()) {
+            TextView locked = new TextView(this);
+            locked.setText("Selma requires a secure device screen lock. Set a PIN, password, or pattern in Android Settings.");
+            setContentView(locked);
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= 28) {
+            requestBiometricUnlock();
+            return;
+        }
+        requestDeviceCredentialUnlock(manager);
+    }
+
+    private void requestBiometricUnlock() {
+        if (unlockInProgress) return;
+        unlockInProgress = true;
+        BiometricPrompt prompt = new BiometricPrompt.Builder(this)
+                .setTitle("Unlock Selma")
+                .setSubtitle("Authenticate to open your companion")
+                .setNegativeButton("Use device PIN or password", getMainExecutor(),
+                        (dialog, which) -> {
+                            unlockInProgress = false;
+                            KeyguardManager manager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+                            if (manager != null) requestDeviceCredentialUnlock(manager);
+                            else finish();
+                        })
+                .build();
+        prompt.authenticate(new CancellationSignal(), getMainExecutor(),
+                new BiometricPrompt.AuthenticationCallback() {
+                    @Override public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result) {
+                        unlockInProgress = false;
+                        openCompanion();
+                    }
+                    @Override public void onAuthenticationError(int errorCode, CharSequence errString) {
+                        if (!unlockInProgress) return;
+                        unlockInProgress = false;
+                        KeyguardManager manager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+                        if (manager != null) requestDeviceCredentialUnlock(manager);
+                        else finish();
+                    }
+                });
+    }
+
+    private void requestDeviceCredentialUnlock(KeyguardManager manager) {
+        Intent intent = manager.createConfirmDeviceCredentialIntent(
+                "Unlock Selma", "Confirm device credentials to open Selma");
+        if (intent == null) {
+            TextView locked = new TextView(this);
+            locked.setText("Device credential confirmation is unavailable.");
+            setContentView(locked);
+            return;
+        }
+        startActivityForResult(intent, UNLOCK_REQUEST);
+    }
+
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != UNLOCK_REQUEST) return;
+        if (resultCode == RESULT_OK) openCompanion();
+        else finish();
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private void openCompanion() {
+        if (webView != null) return;
         webView = new WebView(this);
         setContentView(webView);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setDomStorageEnabled(true);
+        webView.getSettings().setAllowFileAccess(false);
+        webView.getSettings().setAllowContentAccess(false);
+        webView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
         webView.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return !request.getUrl().getHost().endsWith("chatgpt.site");
+                return !"https".equalsIgnoreCase(request.getUrl().getScheme())
+                    || !SELMA_HOST.equalsIgnoreCase(request.getUrl().getHost());
             }
         });
         webView.setWebChromeClient(new WebChromeClient() {
@@ -32,6 +119,19 @@ public final class MainActivity extends Activity {
             }
         });
         webView.loadUrl(SELMA_URL);
+    }
+
+    // Close the authenticated session whenever the app leaves the foreground.
+    // Returning to Selma then requires a fresh device-credential confirmation.
+    @Override protected void onStop() {
+        super.onStop();
+        if (webView != null && !isChangingConfigurations()) {
+            webView.stopLoading();
+            webView.loadUrl("about:blank");
+            webView.destroy();
+            webView = null;
+            finish();
+        }
     }
 
     @Override public void onBackPressed() {
