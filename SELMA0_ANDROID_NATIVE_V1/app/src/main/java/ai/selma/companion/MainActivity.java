@@ -3,6 +3,8 @@ package ai.selma.companion;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.KeyguardManager;
+import android.hardware.biometrics.BiometricPrompt;
+import android.os.CancellationSignal;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -21,6 +23,7 @@ public final class MainActivity extends Activity {
     private static final int UNLOCK_REQUEST = 401;
     private WebView webView;
     private SelmaMemoryStore memoryStore;
+    private boolean unlockInProgress;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override public void onCreate(Bundle state) {
@@ -37,6 +40,44 @@ public final class MainActivity extends Activity {
             setContentView(locked);
             return;
         }
+        if (Build.VERSION.SDK_INT >= 28) {
+            requestBiometricUnlock();
+            return;
+        }
+        requestDeviceCredentialUnlock(manager);
+    }
+
+    private void requestBiometricUnlock() {
+        if (unlockInProgress) return;
+        unlockInProgress = true;
+        BiometricPrompt prompt = new BiometricPrompt.Builder(this)
+                .setTitle("Unlock Selma")
+                .setSubtitle("Authenticate to open your companion")
+                .setNegativeButton("Use device PIN or password", getMainExecutor(),
+                        (dialog, which) -> {
+                            unlockInProgress = false;
+                            KeyguardManager manager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+                            if (manager != null) requestDeviceCredentialUnlock(manager);
+                            else finish();
+                        })
+                .build();
+        prompt.authenticate(new CancellationSignal(), getMainExecutor(),
+                new BiometricPrompt.AuthenticationCallback() {
+                    @Override public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result) {
+                        unlockInProgress = false;
+                        openCompanion();
+                    }
+                    @Override public void onAuthenticationError(int errorCode, CharSequence errString) {
+                        if (!unlockInProgress) return;
+                        unlockInProgress = false;
+                        KeyguardManager manager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+                        if (manager != null) requestDeviceCredentialUnlock(manager);
+                        else finish();
+                    }
+                });
+    }
+
+    private void requestDeviceCredentialUnlock(KeyguardManager manager) {
         Intent intent = manager.createConfirmDeviceCredentialIntent(
                 "Unlock Selma", "Confirm device credentials to open Selma");
         if (intent == null) {
