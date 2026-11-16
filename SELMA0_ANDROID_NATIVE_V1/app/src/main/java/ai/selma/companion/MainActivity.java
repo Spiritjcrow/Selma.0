@@ -1,6 +1,7 @@
 package ai.selma.companion;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.KeyguardManager;
 import android.hardware.biometrics.BiometricPrompt;
@@ -47,6 +48,7 @@ public final class MainActivity extends Activity {
         requestDeviceCredentialUnlock(manager);
     }
 
+    @TargetApi(Build.VERSION_CODES.P) // only called when SDK_INT >= 28 (see requestUnlock)
     private void requestBiometricUnlock() {
         if (unlockInProgress) return;
         unlockInProgress = true;
