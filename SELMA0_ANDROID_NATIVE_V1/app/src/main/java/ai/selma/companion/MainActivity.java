@@ -11,6 +11,7 @@ import android.webkit.WebViewClient;
 
 public final class MainActivity extends Activity {
     private static final String SELMA_URL = "https://selma-official-companion.spiritjcrow1990.chatgpt.site";
+    private static final String SELMA_HOST = "selma-official-companion.spiritjcrow1990.chatgpt.site";
     private WebView webView;
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -23,7 +24,8 @@ public final class MainActivity extends Activity {
         webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
         webView.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return !request.getUrl().getHost().endsWith("chatgpt.site");
+                return !"https".equalsIgnoreCase(request.getUrl().getScheme())
+                    || !SELMA_HOST.equalsIgnoreCase(request.getUrl().getHost());
             }
         });
         webView.setWebChromeClient(new WebChromeClient() {
