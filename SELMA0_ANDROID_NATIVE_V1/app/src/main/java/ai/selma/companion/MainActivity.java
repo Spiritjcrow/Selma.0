@@ -78,6 +78,19 @@ public final class MainActivity extends Activity {
         webView.loadUrl(SELMA_URL);
     }
 
+    // Close the authenticated session whenever the app leaves the foreground.
+    // Returning to Selma then requires a fresh device-credential confirmation.
+    @Override protected void onStop() {
+        super.onStop();
+        if (webView != null && !isChangingConfigurations()) {
+            webView.stopLoading();
+            webView.loadUrl("about:blank");
+            webView.destroy();
+            webView = null;
+            finish();
+        }
+    }
+
     @Override public void onBackPressed() {
         if (webView != null && webView.canGoBack()) webView.goBack();
         else super.onBackPressed();
