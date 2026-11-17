@@ -56,6 +56,71 @@
     }
     return entries;
   }
+  function parseBuildReceipt(raw) {
+    function object(value, keys, field) {
+      if (!value || typeof value !== 'object' || Array.isArray(value) ||
+          Object.keys(value).some(k => !keys.includes(k))) throw new Error('Invalid receipt ' + field);
+      return value;
+    }
+    const main = object(raw, ['schema_version', 'source_type', 'attestation', 'build'], 'root');
+    if (main.schema_version !== 1 || main.source_type !== 'owner_import' ||
+        main.attestation !== 'UNVERIFIED_USER_SUPPLIED') throw new Error('Receipt must remain unverified');
+    const build = object(main.build, ['app_id','build_id','workflow_id','commit_sha','branch',
+      'status','source_url','started_utc','finished_utc','environment','artifact'], 'build');
+    const hex = (s,n) => typeof s==='string' && new RegExp('^[0-9a-fA-F]{'+n+'}$').test(s);
+    if (!hex(build.app_id,24) || !hex(build.build_id,24) || !hex(build.commit_sha,40)) {
+      throw new Error('Invalid app/build/commit identifier');
+    }
+    if (typeof build.workflow_id!=='string' || !/^[a-zA-Z0-9_.-]{1,100}$/.test(build.workflow_id) ||
+        !['unknown','queued','building','finished','failed','cancelled'].includes(build.status)) {
+      throw new Error('Invalid workflow/status');
+    }
+    if (build.branch !== undefined && (typeof build.branch !== 'string' ||
+        !/^[a-zA-Z0-9_./-]{1,160}$/.test(build.branch))) throw new Error('Invalid branch');
+    let url='';
+    if (build.source_url!==undefined) {
+      if (typeof build.source_url!=='string') throw new Error('Invalid URL');
+      let u;
+      try { u=new URL(build.source_url); } catch { throw new Error('Invalid URL'); }
+      if (u.protocol!=='https:' || u.hostname!=='codemagic.io' ||
+          !u.pathname.startsWith('/app/') || u.username || u.password || u.search || u.hash) {
+        throw new Error('Unapproved receipt URL');
+      }
+      url=u.href;
+    }
+    if (build.started_utc!==undefined || build.finished_utc!==undefined) {
+      for (const v of [build.started_utc, build.finished_utc]) {
+        if (v!==undefined && (typeof v!=='string' || !/^\d{4}-\d{2}-\d{2}T/.test(v) ||
+            !Number.isFinite(Date.parse(v)))) throw new Error('Invalid UTC timestamp');
+      }
+    }
+    let env;
+    if (build.environment!==undefined) {
+      env=object(build.environment,['machine','java','android_sdk','gradle'],'environment');
+      for (const k of Object.keys(env)) if (typeof env[k]!=='string' || env[k].length>100) {
+        throw new Error('Invalid environment text');
+      }
+    }
+    let artifact;
+    if (build.artifact!==undefined) {
+      artifact=object(build.artifact,['filename','bytes','sha256_claimed'],'artifact');
+      if (typeof artifact.filename!=='string' || !/^[a-zA-Z0-9._-]+\.apk$/.test(artifact.filename) ||
+          artifact.filename.length>180 || !Number.isSafeInteger(artifact.bytes) || artifact.bytes<1 ||
+          (artifact.sha256_claimed!==undefined && !hex(artifact.sha256_claimed,64))) {
+        throw new Error('Invalid artifact metadata');
+      }
+    }
+    const entries=Object.create(null);
+    entries.source='commit: '+build.commit_sha+(build.branch ? '\nbranch: '+build.branch : '');
+    entries.runner='build_id: '+build.build_id+'\nworkflow: '+build.workflow_id+'\nstatus: '+build.status+
+      (url ? '\n'+url : '')+'\napp_id: '+build.app_id;
+    if (env) entries.sdk=Object.entries(env).map(([k,v])=>k+': '+v).join('\n');
+    if (artifact) {
+      entries.apk=artifact.filename+'\nsize: '+artifact.bytes;
+      if (artifact.sha256_claimed) entries.sha256='Claimed only: '+artifact.sha256_claimed;
+    }
+    return entries;
+  }
   function evaluate(entries) {
     return CHECKS.map(function (check) {
       const value = own(entries, check.gate) ? entries[check.gate] : '';
@@ -132,6 +197,17 @@
       } catch (error) { message('Import rejected: ' + error.message); }
       finally { event.target.value = ''; }
     });
+    byId('receipt-import').addEventListener('change', async function (event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      try {
+        if (file.size > MAX_JSON_BYTES) throw new Error('Receipt exceeds 100 KB');
+        const mapped = parseBuildReceipt(JSON.parse(await file.text()));
+        entries = mapped; sourceName = 'Owner-imported receipt (unverified; in memory only)';
+        draw(); message('Receipt mapped locally; provider status and digest remain UNVERIFIED claims.');
+      } catch (error) { message('Receipt rejected: ' + error.message); }
+      finally { event.target.value = ''; }
+    });
     byId('export').addEventListener('click', function () {
       const artifact = {
         schema: 1, type: 'selma-hypercore-preflight-summary',
@@ -149,5 +225,5 @@
     });
     draw(); loadLocal();
   }
-  return { CHECKS, parseLedger, evaluate, summarize, mount };
+  return { CHECKS, parseLedger, parseBuildReceipt, evaluate, summarize, mount };
 });
