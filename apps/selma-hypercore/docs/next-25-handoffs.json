@@ -1,0 +1,337 @@
+{
+  "schema_version": 1,
+  "scope": "Selma° HyperCore PR #114 follow-on delivery queue",
+  "canonical_issue": "https://github.com/Spiritjcrow/Selma.0/issues/88",
+  "source_pr": "https://github.com/Spiritjcrow/Selma.0/pull/114",
+  "created_date": "2026-11-16",
+  "selection_policy": "Source evidence/dependencies first; choose nonconflicting ready item; complete bounded work and hand off immediately within same activation when eligible. Maximum seven bounded operations per activation. No continuous background agent.",
+  "authority": "PROPOSAL_ONLY",
+  "no_auto_approvals": true,
+  "items": [
+    {
+      "id": "HC-NEXT-01",
+      "key": "BROWSER_ENTRY",
+      "title": "Review 25-check preflight load on a permitted local browser",
+      "acceptance": "Verify 25 cards render and no runtime errors.",
+      "depends_on": [],
+      "owner_role_proposed": "White",
+      "state": "PARTIAL_LOCAL_TESTED",
+      "execution_evidence": "Isolated Chromium page.set_content: 25 card elements render with no pageerror. Normal localhost/file navigation blocked by environment policy; Android browser NOT_RUN.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-02",
+      "key": "IMPORT_UI",
+      "title": "Exercise JSON import with real user-selected file",
+      "acceptance": "Reject malformed/overlarge data without changing ledger.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Chromium inline DOM: malformed JSON rejected and prior displayed count unchanged; 100KB limit remains source-tested; physical Android NOT_RUN.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-03",
+      "key": "EXPORT_UI",
+      "title": "Exercise summary export without excerpts",
+      "acceptance": "Export contains counts and statuses, no raw evidence.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Chromium download tested; JSON summary verdict STRUCTURE_ONLY_UNVERIFIED, 0 independently verified, no commit/digest raw excerpts leaked.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-04",
+      "key": "KEYBOARD_NAV",
+      "title": "Check next-item focus and keyboard traversal",
+      "acceptance": "Focus moves to first outstanding checkpoint.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Chromium: Focus next review item moved document.activeElement to check-01.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-05",
+      "key": "MOBILE_320",
+      "title": "Inspect 320px screen fit",
+      "acceptance": "No horizontal scroll or clipped controls.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Original 320px overflow 343px (receipt-import). Corrected responsive selector; 320px viewport scrollWidth=320 after change, Chromium inline DOM.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-06",
+      "key": "MOBILE_360",
+      "title": "Inspect 360px screen fit",
+      "acceptance": "Cards and controls fit without clipping.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Chromium inline DOM 360px viewport scrollWidth=360.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-07",
+      "key": "TABLET_768",
+      "title": "Inspect 768px screen fit",
+      "acceptance": "Responsive two-column layout is readable.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Chromium inline DOM 768px viewport scrollWidth=768.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-08",
+      "key": "DESKTOP_1200",
+      "title": "Inspect 1200px screen fit",
+      "acceptance": "Cards and statistics align without overflow.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Chromium inline DOM 1200px viewport scrollWidth=1200.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-09",
+      "key": "A11Y_NAMES",
+      "title": "Check screen-reader semantics",
+      "acceptance": "Controls and status messages have accessible names.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "PARTIAL_LOCAL_TESTED",
+      "execution_evidence": "Chromium accessible-name lookup confirms next, export and receipt-input labels; full screen-reader test NOT_RUN.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-10",
+      "key": "CONTRAST",
+      "title": "Measure contrast of text and status chips",
+      "acceptance": "Record actual measured contrast results.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "PARTIAL_LOCAL_TESTED",
+      "execution_evidence": "Calculated token-pair contrast: muted #A8B8CF on #101722 = 8.93:1; cyan #35D5FF on #101722 = 10.37:1; not a complete CSS/overlaid-gradient contrast audit.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-11",
+      "key": "MOTION",
+      "title": "Verify reduced-motion preference",
+      "acceptance": "Animation respects reduced-motion settings.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "PARTIAL_LOCAL_TESTED",
+      "execution_evidence": "Emulated reduced-motion preference in Chromium. CSS transitions are behind prefers-reduced-motion:no-preference; no complete animation inventory.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-12",
+      "key": "LOCALSTORE",
+      "title": "Validate same-origin storage read/refresh",
+      "acceptance": "Updates to original ledger reflected without modification.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-13",
+      "key": "IMPORT_PRIVACY",
+      "title": "Threat-model user-controlled evidence imports",
+      "acceptance": "Sensitive excerpts never sent or echoed; no script injection.",
+      "depends_on": [
+        "IMPORT_UI"
+      ],
+      "owner_role_proposed": "SolRed",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-14",
+      "key": "NO_NETWORK",
+      "title": "Instrument live browser for outbound requests",
+      "acceptance": "No app-initiated external requests on local preflight.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "PARTIAL_LOCAL_TESTED",
+      "execution_evidence": "Chromium inline DOM request listener recorded no outbound requests. Normal localhost/file execution blocked, not a network egress certification.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-15",
+      "key": "CROSS_LINK",
+      "title": "Verify main ledger navigates to preflight",
+      "acceptance": "Click opens correct local page, preserves source ledger.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-16",
+      "key": "SOURCE_CONTRACT",
+      "title": "Reconcile source commit fields against GitHub",
+      "acceptance": "Separate entered SHA format from fetched commit authenticity.",
+      "depends_on": [],
+      "owner_role_proposed": "Black",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-17",
+      "key": "CODEMAGIC_SCHEMA",
+      "title": "Specify bounded read-only Codemagic evidence format",
+      "acceptance": "Schema handles app/job IDs, exact SHA, timestamps and missing fields.",
+      "depends_on": [],
+      "owner_role_proposed": "Black",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Owner-imported build-receipt.schema.json + test_receipt_schema.py on PR #114; isolated Python jsonschema Draft202012Validator 9/9 PASS locally; source Git blobs ef9e9e254cf359836b1395a70b25b9b8670414fc and 9efa2333ab94a1f22c4314ea981d6aaafd807cb4 read back MATCH; no Codemagic API or runner execution.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-18",
+      "key": "CODEMAGIC_IMPORT",
+      "title": "Implement opt-in local build metadata import",
+      "acceptance": "No secret input, triggers or implicit server API request.",
+      "depends_on": [
+        "CODEMAGIC_SCHEMA"
+      ],
+      "owner_role_proposed": "Black",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Local-only build receipt mapper integrated in assets/preflight.js, preflight.html and tests/preflight.test.cjs. Node 36/36 PASS including receipt secret-field and host-spoof rejection; schema tests 9/9 PASS. New source blobs match exact local test hashes 4e3cd37c5710e4bee96e8e5ee08c498e893162a2 / 8655cdfdd1d978ce8f49ad63c9b7f9497e7ccfaa / a0a00370b6f79f650953d8708eff892eefce217a. Browser navigation and authenticated Codemagic NOT_RUN.",
+      "mutations_preapproved": false,
+      "next_step": "Independent browser test of receipt import from owner-controlled file; validate rendered statuses and ensure original ledger persists."
+    },
+    {
+      "id": "HC-NEXT-19",
+      "key": "LOG_PARSER",
+      "title": "Classify lint/test report results separately",
+      "acceptance": "Real fail outputs remain FAIL; no optimistic coercion.",
+      "depends_on": [
+        "CODEMAGIC_IMPORT"
+      ],
+      "owner_role_proposed": "Black",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Added tools/classify_gradle_log.py with 10/10 local tests including failed, cached, missing, incomplete, size cap and redacted output; live CI logs NOT_IMPORTED.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-20",
+      "key": "APK_METADATA",
+      "title": "Define APK filename/size receipt schema",
+      "acceptance": "Preserve original artifact identity and exact source.",
+      "depends_on": [
+        "CODEMAGIC_SCHEMA"
+      ],
+      "owner_role_proposed": "Black",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Existing build-receipt.schema.json plus new receipt comparator require exact APK basename, positive claimed byte size and 64-hex digest; real artifact NOT_RECEIVED.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-21",
+      "key": "LOCAL_HASH",
+      "title": "Implement user-selected APK SHA-256 with memory limits",
+      "acceptance": "Hash actual selected bytes without upload and record digest only.",
+      "depends_on": [
+        "APK_METADATA"
+      ],
+      "owner_role_proposed": "Black",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Added tools/check_apk_receipt.py; 16/16 local tests on actual temporary files including >2 MiB streaming, size mismatch, digest mismatch, symlinks, secret-field rejection; no actual APK received.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-22",
+      "key": "DIGEST_COMPARE",
+      "title": "Compare selected APK hash with trusted receipt",
+      "acceptance": "Mismatches explicitly FAIL; unchecked metadata not accepted.",
+      "depends_on": [
+        "LOCAL_HASH",
+        "CODEMAGIC_IMPORT"
+      ],
+      "owner_role_proposed": "White",
+      "state": "PARTIAL_LOCAL_TESTED",
+      "execution_evidence": "Local temporary file vs owner-imported *claimed* receipt comparison PASS/MISMATCH tested. External provider authenticity and real APK SHA unknown, so do not promote VERIFIED.",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-23",
+      "key": "ANDROID_SMOKE",
+      "title": "Run owned-device Android 11+ install/smoke checklist",
+      "acceptance": "Capture actual device model/version, install and launch results.",
+      "depends_on": [
+        "DIGEST_COMPARE"
+      ],
+      "owner_role_proposed": "White",
+      "state": "BLOCKED_DEPENDENCY",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-24",
+      "key": "SECURITY_REVIEW",
+      "title": "Independent privacy/accessibility/code review",
+      "acceptance": "Document findings with evidence and current commit SHA.",
+      "depends_on": [
+        "IMPORT_PRIVACY",
+        "LOG_PARSER"
+      ],
+      "owner_role_proposed": "SolRed",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-25",
+      "key": "RELEASE_GATE",
+      "title": "Owner-gated integration/merge readiness review",
+      "acceptance": "No merge or release until tests, approvals and APK/device evidence exist.",
+      "depends_on": [
+        "ANDROID_SMOKE",
+        "SECURITY_REVIEW"
+      ],
+      "owner_role_proposed": "UltraViolet",
+      "state": "BLOCKED_DEPENDENCY",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    }
+  ],
+  "last_evidence_checkpoint": "2026-11-16 LOCAL_TESTED source SHA-matched; 43 Python and 36 Node tests pass; inline Chromium tests pass, direct browser navigation blocked. Next: real-origin UI acceptance, localStorage, independent log inspection, physical Android APK/device proof; no deployment.",
+  "batch_execution_mode": "SOURCE_TESTED_NOT_RUNNING_BACKGROUND"
+}

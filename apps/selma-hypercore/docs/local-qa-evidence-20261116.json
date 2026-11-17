@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "recorded_date_utc": "2026-11-17",
+  "project": "Selma° HyperCore",
+  "provenance": "Local sandbox execution and exact GitHub connector blob readback; NOT an independent hosted runner",
+  "head_branch": "feat/hypercore-build-proof-dashboard-20261115",
+  "build_state": "SOURCE_ONLY_NOT_DEPLOYED",
+  "qa": {
+    "command": "python3 tools/run_local_qa.py",
+    "python_tests": {
+      "passed": 43,
+      "failed": 0,
+      "runner": "Python 3.13 local"
+    },
+    "javascript_tests": {
+      "passed": 36,
+      "failed": 0,
+      "runner": "Node 22 local"
+    },
+    "javascript_syntax": "PASS",
+    "javascript_browser": {
+      "type": "Chromium inline DOM using page.set_content",
+      "result": "PASS",
+      "cards": 25,
+      "viewports_px": [
+        320,
+        360,
+        768,
+        1200
+      ],
+      "checks": [
+        "focus-next",
+        "malformed JSON rejects without changing view",
+        "receipt remains unverified",
+        "summary export without raw evidence",
+        "zero app-initiated requests in inline DOM"
+      ],
+      "limitations": "Direct file/localhost navigation blocked by execution policy; not a normal browser-origin or Android on-device test"
+    },
+    "static_test_red_green": "Original checked-in test expected six SVGs while source contains seven; reproduced 1 failing test on initial 5-img layout; patched test accepts either aria-label or aria-labelledby and seven expected icons; 4/4 static PASS",
+    "artifacts_tested": "Synthetic locally created APK-like temporary bytes and log fixtures only; no real owner APK, real build log or Codemagic receipt was available",
+    "statuses": [
+      "LOCAL_TESTED",
+      "PARTIAL_LOCAL_TESTED",
+      "QUEUED",
+      "BLOCKED_DEPENDENCY"
+    ]
+  },
+  "source_blobs": {
+    "apps/selma-hypercore/preflight.html": "a3c899424edf2aee05110250c8c2e820ce8754f9",
+    "apps/selma-hypercore/assets/preflight.js": "8655cdfdd1d978ce8f49ad63c9b7f9497e7ccfaa",
+    "apps/selma-hypercore/tools/check_apk_receipt.py": "e5d9695042b7f123d07b3cd24b9cf6f849d5c4e0",
+    "apps/selma-hypercore/tests/test_check_apk_receipt.py": "da0c5a0e1c3aa657fe38d960fff2c44c664786c3",
+    "apps/selma-hypercore/tools/classify_gradle_log.py": "13b5d2d9d19371f497941c1e56b4ec3e0aa73fa5",
+    "apps/selma-hypercore/tests/test_classify_gradle_log.py": "0902204895a325864d6206fc503cc25357af0380",
+    "apps/selma-hypercore/tools/run_local_qa.py": "405246cd237d0bfdca245c835c098422646c1549",
+    "apps/selma-hypercore/tests/test_local_qa.py": "22ca35ff9d4eabb95569d56be868096bc8196922",
+    "apps/selma-hypercore/tests/test_static.py": "0d8f80bc122bd7f10212be941a22e8de6a9838a1"
+  },
+  "unverified": [
+    "GitHub Actions admitted runner and hosted test execution",
+    "Authenticated Codemagic job and source linkage",
+    "Actual owner's APK artifact bytes and trusted digest",
+    "Real Android 11+/13+ install or accessibility acceptance",
+    "Release signing, merge, publication, deployment"
+  ],
+  "next_safe_action": "Fresh checkout of exact PR #114 head; rerun run_local_qa.py, then normal-origin browser check for localStorage and mobile UI; obtain user-approved actual build receipt/log/APK to continue SHA and install verification."
+}

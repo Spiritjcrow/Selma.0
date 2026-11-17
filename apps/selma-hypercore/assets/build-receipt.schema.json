@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/selma/hypercore/build-receipt/v1",
+  "title": "Selma HyperCore owner-imported build receipt v1",
+  "description": "Locally supplied unverified metadata. This does not validate Codemagic identity, runner results, artifact bytes, or device installation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "source_type", "build", "attestation"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "source_type": {"const": "owner_import"},
+    "attestation": {"const": "UNVERIFIED_USER_SUPPLIED"},
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["app_id", "build_id", "workflow_id", "commit_sha", "status"],
+      "properties": {
+        "app_id": {"type": "string", "pattern": "^[a-fA-F0-9]{24}$"},
+        "build_id": {"type": "string", "pattern": "^[a-fA-F0-9]{24}$"},
+        "workflow_id": {"type": "string", "minLength": 1, "maxLength": 100},
+        "commit_sha": {"type": "string", "pattern": "^[a-fA-F0-9]{40}$"},
+        "branch": {"type": "string", "minLength": 1, "maxLength": 160},
+        "status": {"type": "string", "enum": ["unknown", "queued", "building", "finished", "failed", "cancelled"]},
+        "source_url": {"type": "string", "format": "uri", "pattern": "^https://codemagic[.]io/app/"},
+        "started_utc": {"type": "string", "format": "date-time"},
+        "finished_utc": {"type": "string", "format": "date-time"},
+        "environment": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "machine": {"type": "string", "maxLength": 100},
+            "java": {"type": "string", "maxLength": 40},
+            "android_sdk": {"type": "string", "maxLength": 40},
+            "gradle": {"type": "string", "maxLength": 40}
+          }
+        },
+        "artifact": {
+          "type": "object", "additionalProperties": false,
+          "required": ["filename", "bytes"],
+          "properties": {
+            "filename": {"type": "string", "pattern": "^[A-Za-z0-9._-]+[.]apk$", "maxLength": 180},
+            "bytes": {"type": "integer", "minimum": 1},
+            "sha256_claimed": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"}
+          }
+        }
+      }
+    }
+  }
+}
