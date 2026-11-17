@@ -10,3 +10,9 @@
 - **License / branding:** Original project-specific vector design drafted for Selma°; repository licensing and final trademark/brand ownership must be checked before public redistribution. No third-party logos or proprietary icon fonts incorporated.
 - **Reference:** `apps/selma-hypercore/index.html`, `apps/selma-hypercore/README.md`; review [PR #114](https://github.com/Spiritjcrow/Selma.0/pull/114).
 - **Next safe action:** Render SVG in a browser at 24/32/64 px, inspect light/dark contrast and screen-reader labeling, then wire it to the *recorded evidence* affordance on the existing proof ledger in a separate reviewed change. Do not infer machine verification or start an APK build from the icon.
+
+## Integration checkpoint: preflight v0.3
+- Source icon is now referenced by `apps/selma-hypercore/preflight.html` at 72 CSS px with empty `alt` because adjacent header text names the function.
+- The icon represents **evidence capture/inspection**, NOT verified authenticity, completed jobs, signed code, or successful device installation.
+- `node --test tests/preflight.test.cjs` 32/32 PASS locally for checkpoint logic; **browser rendering not yet verified**, so no accessibility sign-off.
+- See [implementation checklist](../docs/preflight-25.md) and [draft PR #114](https://github.com/Spiritjcrow/Selma.0/pull/114). No merge or release.
