@@ -219,8 +219,8 @@
       "acceptance": "Schema handles app/job IDs, exact SHA, timestamps and missing fields.",
       "depends_on": [],
       "owner_role_proposed": "Black",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Owner-imported build-receipt.schema.json + test_receipt_schema.py on PR #114; isolated Python jsonschema Draft202012Validator 9/9 PASS locally; source Git blobs ef9e9e254cf359836b1395a70b25b9b8670414fc and 9efa2333ab94a1f22c4314ea981d6aaafd807cb4 read back MATCH; no Codemagic API or runner execution.",
       "mutations_preapproved": false
     },
     {
@@ -234,7 +234,8 @@
       "owner_role_proposed": "Black",
       "state": "QUEUED",
       "execution_evidence": "NOT_RUN",
-      "mutations_preapproved": false
+      "mutations_preapproved": false,
+      "next_step": "Implement separate local opt-in import against strict owner-imported schema; never silently import tokens or call Codemagic endpoints."
     },
     {
       "id": "HC-NEXT-19",
@@ -330,5 +331,6 @@
       "execution_evidence": "NOT_RUN",
       "mutations_preapproved": false
     }
-  ]
+  ],
+  "last_evidence_checkpoint": "2026-11-16 CODEMAGIC_SCHEMA LOCAL_TESTED; next unblocked SOURCE_CONTRACT or CODEMAGIC_IMPORT source-only"
 }
