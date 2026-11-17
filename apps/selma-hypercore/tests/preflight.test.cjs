@@ -52,3 +52,33 @@ test('no runtime network API needed',()=>{
   assert.equal(typeof P.mount,'function');
   assert.equal(typeof P.parseLedger,'function');
 });
+
+test('owner build receipt maps into ledger without authentication/verification',()=>{
+  const receipt={schema_version:1,source_type:'owner_import',attestation:'UNVERIFIED_USER_SUPPLIED',
+    build:{app_id:'a'.repeat(24),build_id:'b'.repeat(24),workflow_id:'selma-android-debug',
+      commit_sha:'c'.repeat(40),status:'failed',artifact:{filename:'app-debug.apk',bytes:512,
+      sha256_claimed:'d'.repeat(64)}}};
+  const mapped=P.parseBuildReceipt(receipt);
+  assert.match(mapped.runner,/status: failed/);
+  assert.match(mapped.apk,/app-debug\.apk/);
+  assert.equal(P.summarize(P.evaluate(mapped)).independently_verified,0);
+  assert.equal(Object.getPrototypeOf(mapped),null);
+});
+test('reject receipt claiming verification',()=>{
+  const receipt={schema_version:1,source_type:'owner_import',attestation:'VERIFIED',build:{}};
+  assert.throws(()=>P.parseBuildReceipt(receipt));
+});
+test('reject receipt that adds tokens or secret fields',()=>{
+  const receipt={schema_version:1,source_type:'owner_import',attestation:'UNVERIFIED_USER_SUPPLIED',build:{
+    app_id:'a'.repeat(24),build_id:'b'.repeat(24),workflow_id:'selma-android-debug',
+    commit_sha:'c'.repeat(40),status:'finished',access_token:'SENSITIVE'
+  }};
+  assert.throws(()=>P.parseBuildReceipt(receipt));
+});
+test('reject host spoofing in receipt source URL',()=>{
+  const receipt={schema_version:1,source_type:'owner_import',attestation:'UNVERIFIED_USER_SUPPLIED',build:{
+    app_id:'a'.repeat(24),build_id:'b'.repeat(24),workflow_id:'selma-android-debug',
+    commit_sha:'c'.repeat(40),status:'finished',source_url:'https://codemagic.io.evil.test/app/a'
+  }};
+  assert.throws(()=>P.parseBuildReceipt(receipt));
+});
