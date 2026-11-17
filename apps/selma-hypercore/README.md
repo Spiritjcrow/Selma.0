@@ -20,3 +20,18 @@ Run `python3 -m http.server 8766` from this folder, then open `http://127.0.0.1:
 
 ## Next integration step
 Review the PR; connect actual read-only Codemagic/Android artifact metadata through an authenticated adapter with explicit permission gates and independent digest verification. Do not mark VERIFIED from user-entered text alone.
+
+## 25-point offline preflight (v0.3 draft)
+
+Open [preflight.html](preflight.html) from the same directory as `index.html`. It uses the committed evidence-provenance SVG and checks **25 structural evidence references** across the existing eight local ledger categories. It reads the v0.2 localStorage key, but does not change it. JSON import is in-memory only, and exports exclude raw evidence excerpts. Pattern matches are labelled **RECORDED (UNVERIFIED)**. No network API, tokens, live build or release operation is connected.
+
+Run offline source tests with Node 18+:
+
+```bash
+node --check assets/preflight.js
+node --test tests/preflight.test.cjs
+```
+
+Local authoring result: **32/32 Node tests PASS**, exact uploaded source blob SHA matches; Chromium browser route blocked by the execution environment, so **real browser/device acceptance NOT VERIFIED**. See [25-check implementation/handoff map](docs/preflight-25.md).
+
+**Next gated step:** independent Android 11+/13+ browser UI test and permissioned read-only Codemagic evidence adapter. Neither preflight nor saved user references authorize deployment, publishing, merging, APK installation or a claim of machine verification.
