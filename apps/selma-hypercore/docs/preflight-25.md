@@ -38,7 +38,7 @@
 
 ## Evidence for this source slice
 - `node --check assets/preflight.js`: PASS in local authoring runtime.
-- `node --test tests/preflight.test.cjs`: **32/32 PASS** in local Node 22; one fixture for each of 25 patterns, plus schema/safety/collision and integrity invariants.
+- `node --test tests/preflight.test.cjs`: **36/36 PASS** in local Node 22; one fixture for each of 25 patterns, plus schema/safety/collision and integrity invariants.
 - Local Git blob hashes matched the three connector readbacks on draft PR #114 exactly.
 - Browser viewport/DOM automation **BLOCKED** in the current container by `net::ERR_BLOCKED_BY_ADMINISTRATOR`, both file and loopback localhost. Do not claim browser/device rendering validated.
 - Codemagic API, APK install, checksum verification, signed release and live deployment: **NOT RUN**.
@@ -60,3 +60,6 @@
 
 ## Brand and license
 Palette: graphite `#101722`, dark background `#080D15`, modular blue `#0078FF`, cyan `#35D5FF`, orange accents `#FF7A00`. Source icon `assets/icons/evidence-provenance.svg`, original project-specific draft design. Project rights, trademark usage and third-party license compliance require review before public redistribution. No third-party marks added in this increment.
+
+- `python -m unittest discover -s tests -p test_receipt_schema.py -v`: **9/9 PASS** locally using `jsonschema` solely for isolated testing; production has no jsonschema dependency.
+- Owner-imported build receipt schema and gated in-memory mapping added; no credentials, HTTP calls or verification state written.
