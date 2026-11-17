@@ -15,8 +15,8 @@
       "acceptance": "Verify 25 cards render and no runtime errors.",
       "depends_on": [],
       "owner_role_proposed": "White",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "PARTIAL_LOCAL_TESTED",
+      "execution_evidence": "Isolated Chromium page.set_content: 25 card elements render with no pageerror. Normal localhost/file navigation blocked by environment policy; Android browser NOT_RUN.",
       "mutations_preapproved": false
     },
     {
@@ -28,8 +28,8 @@
         "BROWSER_ENTRY"
       ],
       "owner_role_proposed": "White",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Chromium inline DOM: malformed JSON rejected and prior displayed count unchanged; 100KB limit remains source-tested; physical Android NOT_RUN.",
       "mutations_preapproved": false
     },
     {
@@ -41,8 +41,8 @@
         "BROWSER_ENTRY"
       ],
       "owner_role_proposed": "White",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Chromium download tested; JSON summary verdict STRUCTURE_ONLY_UNVERIFIED, 0 independently verified, no commit/digest raw excerpts leaked.",
       "mutations_preapproved": false
     },
     {
@@ -54,8 +54,8 @@
         "BROWSER_ENTRY"
       ],
       "owner_role_proposed": "White",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Chromium: Focus next review item moved document.activeElement to check-01.",
       "mutations_preapproved": false
     },
     {
@@ -67,8 +67,8 @@
         "BROWSER_ENTRY"
       ],
       "owner_role_proposed": "White",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Original 320px overflow 343px (receipt-import). Corrected responsive selector; 320px viewport scrollWidth=320 after change, Chromium inline DOM.",
       "mutations_preapproved": false
     },
     {
@@ -80,8 +80,8 @@
         "BROWSER_ENTRY"
       ],
       "owner_role_proposed": "White",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Chromium inline DOM 360px viewport scrollWidth=360.",
       "mutations_preapproved": false
     },
     {
@@ -93,8 +93,8 @@
         "BROWSER_ENTRY"
       ],
       "owner_role_proposed": "White",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Chromium inline DOM 768px viewport scrollWidth=768.",
       "mutations_preapproved": false
     },
     {
@@ -106,8 +106,8 @@
         "BROWSER_ENTRY"
       ],
       "owner_role_proposed": "White",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Chromium inline DOM 1200px viewport scrollWidth=1200.",
       "mutations_preapproved": false
     },
     {
@@ -119,8 +119,8 @@
         "BROWSER_ENTRY"
       ],
       "owner_role_proposed": "White",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "PARTIAL_LOCAL_TESTED",
+      "execution_evidence": "Chromium accessible-name lookup confirms next, export and receipt-input labels; full screen-reader test NOT_RUN.",
       "mutations_preapproved": false
     },
     {
@@ -132,8 +132,8 @@
         "BROWSER_ENTRY"
       ],
       "owner_role_proposed": "White",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "PARTIAL_LOCAL_TESTED",
+      "execution_evidence": "Calculated token-pair contrast: muted #A8B8CF on #101722 = 8.93:1; cyan #35D5FF on #101722 = 10.37:1; not a complete CSS/overlaid-gradient contrast audit.",
       "mutations_preapproved": false
     },
     {
@@ -145,8 +145,8 @@
         "BROWSER_ENTRY"
       ],
       "owner_role_proposed": "White",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "PARTIAL_LOCAL_TESTED",
+      "execution_evidence": "Emulated reduced-motion preference in Chromium. CSS transitions are behind prefers-reduced-motion:no-preference; no complete animation inventory.",
       "mutations_preapproved": false
     },
     {
@@ -184,8 +184,8 @@
         "BROWSER_ENTRY"
       ],
       "owner_role_proposed": "White",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "PARTIAL_LOCAL_TESTED",
+      "execution_evidence": "Chromium inline DOM request listener recorded no outbound requests. Normal localhost/file execution blocked, not a network egress certification.",
       "mutations_preapproved": false
     },
     {
@@ -246,8 +246,8 @@
         "CODEMAGIC_IMPORT"
       ],
       "owner_role_proposed": "Black",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Added tools/classify_gradle_log.py with 10/10 local tests including failed, cached, missing, incomplete, size cap and redacted output; live CI logs NOT_IMPORTED.",
       "mutations_preapproved": false
     },
     {
@@ -259,8 +259,8 @@
         "CODEMAGIC_SCHEMA"
       ],
       "owner_role_proposed": "Black",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Existing build-receipt.schema.json plus new receipt comparator require exact APK basename, positive claimed byte size and 64-hex digest; real artifact NOT_RECEIVED.",
       "mutations_preapproved": false
     },
     {
@@ -272,8 +272,8 @@
         "APK_METADATA"
       ],
       "owner_role_proposed": "Black",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Added tools/check_apk_receipt.py; 16/16 local tests on actual temporary files including >2 MiB streaming, size mismatch, digest mismatch, symlinks, secret-field rejection; no actual APK received.",
       "mutations_preapproved": false
     },
     {
@@ -286,8 +286,8 @@
         "CODEMAGIC_IMPORT"
       ],
       "owner_role_proposed": "White",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "PARTIAL_LOCAL_TESTED",
+      "execution_evidence": "Local temporary file vs owner-imported *claimed* receipt comparison PASS/MISMATCH tested. External provider authenticity and real APK SHA unknown, so do not promote VERIFIED.",
       "mutations_preapproved": false
     },
     {
@@ -332,5 +332,6 @@
       "mutations_preapproved": false
     }
   ],
-  "last_evidence_checkpoint": "2026-11-16 CODEMAGIC_IMPORT LOCAL_TESTED; next unblocked SOURCE_CONTRACT, LOG_PARSER, APK_METADATA or owner device browser acceptance"
+  "last_evidence_checkpoint": "2026-11-16 LOCAL_TESTED source SHA-matched; 43 Python and 36 Node tests pass; inline Chromium tests pass, direct browser navigation blocked. Next: real-origin UI acceptance, localStorage, independent log inspection, physical Android APK/device proof; no deployment.",
+  "batch_execution_mode": "SOURCE_TESTED_NOT_RUNNING_BACKGROUND"
 }
