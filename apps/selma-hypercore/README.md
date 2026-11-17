@@ -39,3 +39,38 @@ Local authoring result: **36/36 Node tests PASS and 9/9 receipt-schema tests PAS
 ### Owner-imported Codemagic metadata (still unverified)
 
 The preflight page also accepts a separate **owner-imported build receipt** with strict project-defined schema `assets/build-receipt.schema.json`. A local parser rejects unknown fields and credential-like additions and maps accepted metadata into the temporary preflight view without modifying localStorage. It does **not** connect to the Codemagic API, prove the provider supplied those values, or verify APK bytes. To run the optional schema tests locally: `python3 -m unittest discover -s tests -p 'test_receipt_schema.py' -v` (requires the `jsonschema` package for tests only).
+
+
+## v0.6 local test-while-wiring and artifact evidence helpers
+
+Run from `apps/selma-hypercore` on a workstation with Python 3.10+, Node 18+ and optional Python `jsonschema` for schema contract tests:
+
+```bash
+python3 tools/run_local_qa.py
+```
+
+This fail-closed, one-shot command runs the local Python regression suite, a JavaScript syntax check, then the Node regression suite, stopping at the first failure. Results are JSON on stdout. `--python-only` or `--node-only` are available for constrained systems; skipping one lane does **not** certify the other.
+
+For a **user-supplied Gradle text log**, use:
+
+```bash
+python3 tools/classify_gradle_log.py build.log
+```
+
+The output distinguishes `REPORTED_FAILED`, `REPORTED_SUCCESSFUL`, `INCOMPLETE_OR_UNKNOWN` and task-level states including `NOT_OBSERVED` and `REPORTED_REUSED`. It never authenticates the runner, reads more than 2 MiB of log text or echoes raw log lines.
+
+For an actual local **APK** and a locally supplied receipt following `assets/build-receipt.schema.json` with `artifact.sha256_claimed`:
+
+```bash
+python3 tools/check_apk_receipt.py --apk app-debug.apk --receipt build-receipt.json
+```
+
+The SHA-256 is computed incrementally from actual file bytes (1 MiB chunks); filename, byte count and digest must all match the claimed receipt. Return code 0 means **LOCAL_BYTES_MATCH_CLAIM**, 1 means **MISMATCH**, 2 means **ERROR**. This is not independent proof of Codemagic authenticity, build completion, APK safety or Android installation. No uploads, provider API calls, tokens, cost or Android signing are involved.
+
+### Executed evidence (2026-11-16 local authoring environment)
+- RED reproduced: older static test expected six icons while the branch includes seven, causing one test failure. Corrected for seven SVG icons and either `aria-label` or valid `aria-labelledby` title references.
+- `python3 tools/run_local_qa.py`: PASS; **43/43 Python tests** and **36/36 Node tests**, JavaScript syntax PASS. This is a local test of source reconstructed from the branch and exact SHA-matched new source files; GitHub hosted CI remains NOT_RUN.
+- Chromium `page.set_content` acceptance: 25 cards, keyboard focus, 320/360/768/1200 viewport fit, imported receipt, malformed import rejection, summary export without excerpts and no app-initiated requests passed. Direct HTTP/file navigation was blocked by execution policy; real Android browser test NOT_RUN.
+- All uploaded new source files and changes read back at their actual GitHub blob SHA. The existing Android project, SDK, Codemagic job, and release pipeline are untouched.
+
+**Current draft-only status:** No APK was provided or hashed during this run; no provider receipt has been authenticated; Android install/smoke, deployment, GitHub Actions runner jobs, publishing and merge remain unverified. Read [the 25-item handoff ledger](docs/next-25-handoffs.json) for next safe work.
