@@ -32,6 +32,10 @@ node --check assets/preflight.js
 node --test tests/preflight.test.cjs
 ```
 
-Local authoring result: **32/32 Node tests PASS**, exact uploaded source blob SHA matches; Chromium browser route blocked by the execution environment, so **real browser/device acceptance NOT VERIFIED**. See [25-check implementation/handoff map](docs/preflight-25.md).
+Local authoring result: **36/36 Node tests PASS and 9/9 receipt-schema tests PASS**, exact uploaded source blob SHA matches; Chromium browser route blocked by the execution environment, so **real browser/device acceptance NOT VERIFIED**. See [25-check implementation/handoff map](docs/preflight-25.md).
 
 **Next gated step:** independent Android 11+/13+ browser UI test and permissioned read-only Codemagic evidence adapter. Neither preflight nor saved user references authorize deployment, publishing, merging, APK installation or a claim of machine verification.
+
+### Owner-imported Codemagic metadata (still unverified)
+
+The preflight page also accepts a separate **owner-imported build receipt** with strict project-defined schema `assets/build-receipt.schema.json`. A local parser rejects unknown fields and credential-like additions and maps accepted metadata into the temporary preflight view without modifying localStorage. It does **not** connect to the Codemagic API, prove the provider supplied those values, or verify APK bytes. To run the optional schema tests locally: `python3 -m unittest discover -s tests -p 'test_receipt_schema.py' -v` (requires the `jsonschema` package for tests only).
