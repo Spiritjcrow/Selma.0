@@ -1,0 +1,334 @@
+{
+  "schema_version": 1,
+  "scope": "Selma° HyperCore PR #114 follow-on delivery queue",
+  "canonical_issue": "https://github.com/Spiritjcrow/Selma.0/issues/88",
+  "source_pr": "https://github.com/Spiritjcrow/Selma.0/pull/114",
+  "created_date": "2026-11-16",
+  "selection_policy": "Source evidence/dependencies first; choose nonconflicting ready item; complete bounded work and hand off immediately within same activation when eligible. Maximum seven bounded operations per activation. No continuous background agent.",
+  "authority": "PROPOSAL_ONLY",
+  "no_auto_approvals": true,
+  "items": [
+    {
+      "id": "HC-NEXT-01",
+      "key": "BROWSER_ENTRY",
+      "title": "Review 25-check preflight load on a permitted local browser",
+      "acceptance": "Verify 25 cards render and no runtime errors.",
+      "depends_on": [],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-02",
+      "key": "IMPORT_UI",
+      "title": "Exercise JSON import with real user-selected file",
+      "acceptance": "Reject malformed/overlarge data without changing ledger.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-03",
+      "key": "EXPORT_UI",
+      "title": "Exercise summary export without excerpts",
+      "acceptance": "Export contains counts and statuses, no raw evidence.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-04",
+      "key": "KEYBOARD_NAV",
+      "title": "Check next-item focus and keyboard traversal",
+      "acceptance": "Focus moves to first outstanding checkpoint.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-05",
+      "key": "MOBILE_320",
+      "title": "Inspect 320px screen fit",
+      "acceptance": "No horizontal scroll or clipped controls.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-06",
+      "key": "MOBILE_360",
+      "title": "Inspect 360px screen fit",
+      "acceptance": "Cards and controls fit without clipping.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-07",
+      "key": "TABLET_768",
+      "title": "Inspect 768px screen fit",
+      "acceptance": "Responsive two-column layout is readable.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-08",
+      "key": "DESKTOP_1200",
+      "title": "Inspect 1200px screen fit",
+      "acceptance": "Cards and statistics align without overflow.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-09",
+      "key": "A11Y_NAMES",
+      "title": "Check screen-reader semantics",
+      "acceptance": "Controls and status messages have accessible names.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-10",
+      "key": "CONTRAST",
+      "title": "Measure contrast of text and status chips",
+      "acceptance": "Record actual measured contrast results.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-11",
+      "key": "MOTION",
+      "title": "Verify reduced-motion preference",
+      "acceptance": "Animation respects reduced-motion settings.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-12",
+      "key": "LOCALSTORE",
+      "title": "Validate same-origin storage read/refresh",
+      "acceptance": "Updates to original ledger reflected without modification.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-13",
+      "key": "IMPORT_PRIVACY",
+      "title": "Threat-model user-controlled evidence imports",
+      "acceptance": "Sensitive excerpts never sent or echoed; no script injection.",
+      "depends_on": [
+        "IMPORT_UI"
+      ],
+      "owner_role_proposed": "SolRed",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-14",
+      "key": "NO_NETWORK",
+      "title": "Instrument live browser for outbound requests",
+      "acceptance": "No app-initiated external requests on local preflight.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-15",
+      "key": "CROSS_LINK",
+      "title": "Verify main ledger navigates to preflight",
+      "acceptance": "Click opens correct local page, preserves source ledger.",
+      "depends_on": [
+        "BROWSER_ENTRY"
+      ],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-16",
+      "key": "SOURCE_CONTRACT",
+      "title": "Reconcile source commit fields against GitHub",
+      "acceptance": "Separate entered SHA format from fetched commit authenticity.",
+      "depends_on": [],
+      "owner_role_proposed": "Black",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-17",
+      "key": "CODEMAGIC_SCHEMA",
+      "title": "Specify bounded read-only Codemagic evidence format",
+      "acceptance": "Schema handles app/job IDs, exact SHA, timestamps and missing fields.",
+      "depends_on": [],
+      "owner_role_proposed": "Black",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-18",
+      "key": "CODEMAGIC_IMPORT",
+      "title": "Implement opt-in local build metadata import",
+      "acceptance": "No secret input, triggers or implicit server API request.",
+      "depends_on": [
+        "CODEMAGIC_SCHEMA"
+      ],
+      "owner_role_proposed": "Black",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-19",
+      "key": "LOG_PARSER",
+      "title": "Classify lint/test report results separately",
+      "acceptance": "Real fail outputs remain FAIL; no optimistic coercion.",
+      "depends_on": [
+        "CODEMAGIC_IMPORT"
+      ],
+      "owner_role_proposed": "Black",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-20",
+      "key": "APK_METADATA",
+      "title": "Define APK filename/size receipt schema",
+      "acceptance": "Preserve original artifact identity and exact source.",
+      "depends_on": [
+        "CODEMAGIC_SCHEMA"
+      ],
+      "owner_role_proposed": "Black",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-21",
+      "key": "LOCAL_HASH",
+      "title": "Implement user-selected APK SHA-256 with memory limits",
+      "acceptance": "Hash actual selected bytes without upload and record digest only.",
+      "depends_on": [
+        "APK_METADATA"
+      ],
+      "owner_role_proposed": "Black",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-22",
+      "key": "DIGEST_COMPARE",
+      "title": "Compare selected APK hash with trusted receipt",
+      "acceptance": "Mismatches explicitly FAIL; unchecked metadata not accepted.",
+      "depends_on": [
+        "LOCAL_HASH",
+        "CODEMAGIC_IMPORT"
+      ],
+      "owner_role_proposed": "White",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-23",
+      "key": "ANDROID_SMOKE",
+      "title": "Run owned-device Android 11+ install/smoke checklist",
+      "acceptance": "Capture actual device model/version, install and launch results.",
+      "depends_on": [
+        "DIGEST_COMPARE"
+      ],
+      "owner_role_proposed": "White",
+      "state": "BLOCKED_DEPENDENCY",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-24",
+      "key": "SECURITY_REVIEW",
+      "title": "Independent privacy/accessibility/code review",
+      "acceptance": "Document findings with evidence and current commit SHA.",
+      "depends_on": [
+        "IMPORT_PRIVACY",
+        "LOG_PARSER"
+      ],
+      "owner_role_proposed": "SolRed",
+      "state": "QUEUED",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    },
+    {
+      "id": "HC-NEXT-25",
+      "key": "RELEASE_GATE",
+      "title": "Owner-gated integration/merge readiness review",
+      "acceptance": "No merge or release until tests, approvals and APK/device evidence exist.",
+      "depends_on": [
+        "ANDROID_SMOKE",
+        "SECURITY_REVIEW"
+      ],
+      "owner_role_proposed": "UltraViolet",
+      "state": "BLOCKED_DEPENDENCY",
+      "execution_evidence": "NOT_RUN",
+      "mutations_preapproved": false
+    }
+  ]
+}
