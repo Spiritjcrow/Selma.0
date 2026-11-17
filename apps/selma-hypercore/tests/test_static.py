@@ -18,7 +18,7 @@ class AssetParser(HTMLParser):
         if tag=='script': self.scripts.append(d.get('src'))
 
 class HyperCoreStaticTests(unittest.TestCase):
-    def test_html_exists_and_uses_six_gate_styles(self):
+    def test_html_exists_and_tracks_eight_evidence_gates(self):
         html=(ROOT/'index.html').read_text(encoding='utf-8')
         self.assertIn('Selma° HyperCore', html)
         self.assertIn('NOT VERIFIED',html)
@@ -35,11 +35,18 @@ class HyperCoreStaticTests(unittest.TestCase):
             self.assertTrue((ROOT/path).is_file(),path)
     def test_svg_xml_and_accessible_names(self):
         icons=list((ROOT/'assets/icons').glob('*.svg'))
-        self.assertEqual(len(icons),6)
+        self.assertEqual(len(icons),7)
+        self.assertIn('evidence-provenance.svg', {path.name for path in icons})
+        ns='{http://www.w3.org/2000/svg}'
         for path in icons:
             root=ET.parse(path).getroot()
-            self.assertEqual(root.tag,'{http://www.w3.org/2000/svg}svg')
-            self.assertTrue(root.attrib.get('aria-label'))
+            self.assertEqual(root.tag,ns+'svg')
+            label=root.attrib.get('aria-label')
+            labelledby=root.attrib.get('aria-labelledby','').split()
+            if not label:
+                ids={node.attrib['id'] for node in root.iter() if node.tag in (ns+'title',ns+'desc') and 'id' in node.attrib}
+                self.assertTrue(labelledby and all(ref in ids for ref in labelledby),path.name)
+            self.assertFalse(any(node.tag in (ns+'script',ns+'foreignObject') for node in root.iter()))
     def test_tokens_are_parseable(self):
         tokens=json.loads((ROOT/'assets/tokens.json').read_text(encoding='utf-8'))
         self.assertEqual(tokens['colors']['coreBlue'],'#0078FF')
