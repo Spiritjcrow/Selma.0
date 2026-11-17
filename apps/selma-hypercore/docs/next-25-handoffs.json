@@ -232,10 +232,10 @@
         "CODEMAGIC_SCHEMA"
       ],
       "owner_role_proposed": "Black",
-      "state": "QUEUED",
-      "execution_evidence": "NOT_RUN",
+      "state": "LOCAL_TESTED",
+      "execution_evidence": "Local-only build receipt mapper integrated in assets/preflight.js, preflight.html and tests/preflight.test.cjs. Node 36/36 PASS including receipt secret-field and host-spoof rejection; schema tests 9/9 PASS. New source blobs match exact local test hashes 4e3cd37c5710e4bee96e8e5ee08c498e893162a2 / 8655cdfdd1d978ce8f49ad63c9b7f9497e7ccfaa / a0a00370b6f79f650953d8708eff892eefce217a. Browser navigation and authenticated Codemagic NOT_RUN.",
       "mutations_preapproved": false,
-      "next_step": "Implement separate local opt-in import against strict owner-imported schema; never silently import tokens or call Codemagic endpoints."
+      "next_step": "Independent browser test of receipt import from owner-controlled file; validate rendered statuses and ensure original ledger persists."
     },
     {
       "id": "HC-NEXT-19",
@@ -332,5 +332,5 @@
       "mutations_preapproved": false
     }
   ],
-  "last_evidence_checkpoint": "2026-11-16 CODEMAGIC_SCHEMA LOCAL_TESTED; next unblocked SOURCE_CONTRACT or CODEMAGIC_IMPORT source-only"
+  "last_evidence_checkpoint": "2026-11-16 CODEMAGIC_IMPORT LOCAL_TESTED; next unblocked SOURCE_CONTRACT, LOG_PARSER, APK_METADATA or owner device browser acceptance"
 }
