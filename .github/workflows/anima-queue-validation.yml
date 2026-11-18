@@ -1,0 +1,30 @@
+name: Selma Anima Queue Validation
+on:
+  push:
+    paths:
+      - 'experiments/anima_queue/**'
+      - '.github/workflows/anima-queue-validation.yml'
+  pull_request:
+    paths:
+      - 'experiments/anima_queue/**'
+      - '.github/workflows/anima-queue-validation.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+permissions:
+  contents: read
+jobs:
+  white-independent-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify queue planner
+        run: python -m unittest discover -s experiments/anima_queue -p 'test_*.py' -v
+      - name: Verify queue dry run
+        run: python experiments/anima_queue/queue_dry_run.py > /tmp/selma-anima-plan.json
+      - name: Verify no autonomous execution
+        run: python -c "import json; d=json.load(open('/tmp/selma-anima-plan.json')); assert d['execution_enabled'] is False"
