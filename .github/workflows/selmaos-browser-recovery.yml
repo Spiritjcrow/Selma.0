@@ -1,0 +1,53 @@
+name: SelmaOS Offline Browser Recovery
+on:
+  push:
+    paths:
+      - 'sites/selmaos/**'
+      - 'tests/test_selmaos_recovery_html.py'
+      - 'tools/build_selmaos_recovery.py'
+      - '.github/workflows/selmaos-browser-recovery.yml'
+  pull_request:
+    paths:
+      - 'sites/selmaos/**'
+      - 'tests/test_selmaos_recovery_html.py'
+      - 'tools/build_selmaos_recovery.py'
+      - '.github/workflows/selmaos-browser-recovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: selmaos-browser-recovery-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify standalone desktop contracts
+        run: python3 -m unittest -v tests.test_selmaos_recovery_html
+      - name: Package offline desktop
+        run: python3 tools/build_selmaos_recovery.py
+      - name: Verify build digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum --check selmaos-recovery.zip.sha256
+      - name: Upload review artifact (not a release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: selmaos-browser-recovery-${{ github.sha }}
+          path: |
+            dist/selmaos-recovery.zip
+            dist/selmaos-recovery.zip.sha256
+          if-no-files-found: error
+          retention-days: 14

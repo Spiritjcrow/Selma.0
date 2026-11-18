@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1021"><title>SelmaOS | Offline Recovery Desktop</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#090f20;color:#f2f6ff}*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top right,#20376e,transparent 55%),#090f20}
+button,input,textarea{font:inherit}button{background:#1a2b4d;border:1px solid #415576;color:#fff;border-radius:12px;padding:.7rem .9rem;cursor:pointer}
+button:hover{background:#28446f}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #68e5e2;outline-offset:2px}
+button:disabled{opacity:.55;cursor:not-allowed}
+input,textarea{min-width:0;background:#0d1930;border:1px solid #3f5173;border-radius:10px;color:#fff;padding:.75rem}
+textarea{width:100%;min-height:190px;resize:vertical}h1,h2,p{margin:.4rem 0 .9rem}h1{font-size:1.35rem}h2{font-size:1.1rem}
+.hidden{display:none!important}.shell{max-width:1200px;margin:auto;padding:1rem}
+header,.panel{background:#111e36eb;border:1px solid #354766;border-radius:18px;padding:1rem;box-shadow:0 12px 28px #0005}
+header{display:flex;gap:.7rem;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.brand{font-size:1.35rem;font-weight:800}.brand span{color:#79e6d8}.hint{color:#bacbe3;font-size:.9rem;line-height:1.5}
+.controls,.row{display:flex;gap:.5rem;flex-wrap:wrap}.row input{flex:1;min-width:140px}
+.layout{display:grid;grid-template-columns:minmax(230px,285px) minmax(0,1fr);gap:1rem;margin-top:1rem}
+.portrait{height:190px;background:radial-gradient(circle,#284c89,#101a36 72%);display:grid;place-items:center;border-radius:14px}
+.orb{width:106px;height:106px;border-radius:36% 64% 60% 40%;display:grid;place-items:center;font-size:2.5rem;color:#0d1a38;background:linear-gradient(125deg,#4c79ff,#79dff2,#b67bff);filter:drop-shadow(0 0 18px #5267d9);animation:float 4s ease-in-out infinite alternate}
+@keyframes float{to{transform:translateY(-10px) rotate(12deg);border-radius:60% 40% 40% 60%}}
+#boot{position:fixed;inset:0;z-index:10;background:#090f20;display:grid;place-items:center;text-align:center}
+#boot strong{font-size:4rem;color:#88a4ff;text-shadow:0 0 30px #5270c8}
+nav{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:1rem}
+nav button[aria-current=page]{background:#164453;border-color:#62e0ce}
+.view{display:none}.view.active{display:block}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.7rem;margin-top:1.5rem}
+.tiles button{text-align:left;min-height:90px}.tiles small{display:block;color:#c1d5e8;margin-top:.5rem}
+#taskList{list-style:none;margin:1rem 0;padding:0;display:grid;gap:.5rem}
+#taskList li{display:flex;align-items:center;gap:.5rem;padding:.5rem;border:1px solid #314665;border-radius:12px;overflow-wrap:anywhere}
+#taskList li span{flex:1}#taskList li.done span{text-decoration:line-through;opacity:.6}
+#clock{font-size:clamp(3rem,8vw,5rem);font-variant-numeric:tabular-nums}#calcResult{font-size:1.5rem;overflow-wrap:anywhere}
+#filePreview{white-space:pre-wrap;max-height:260px;overflow:auto;overflow-wrap:anywhere}#previewImage{max-width:100%;max-height:260px;border-radius:8px}
+#status{min-height:1.5rem;color:#78f1cc;font-size:.8rem}
+footer{text-align:center;color:#b5c4e0;font-size:.78rem;padding:1rem}
+@media(max-width:700px){.layout{grid-template-columns:1fr}.portrait{height:120px}.orb{height:70px;width:70px}nav{grid-template-columns:repeat(3,1fr)}nav button{padding:.7rem .25rem;font-size:.8rem}.shell{padding:.5rem}}
+@media(prefers-reduced-motion:reduce){.orb{animation:none}}
+</style></head>
+<body>
+<div id="boot" role="status"><div><strong>✦</strong><h1>SELMAOS</h1><p>Starting standalone workspace...</p></div></div>
+<div id="desktop" class="shell hidden">
+<header><div><div class="brand">SELMA<span>OS</span></div><div id="runtime" class="hint">Offline-first browser desktop</div></div>
+<div class="controls"><button id="secondary">↗ Second window</button><button id="backup">↓ Export</button><button id="restore">↑ Import</button><input id="restoreFile" class="hidden" type="file" accept=".json,application/json" aria-label="Backup file"></div></header>
+<div class="layout"><aside class="panel">
+<div class="portrait"><div class="orb" role="img" aria-label="Animated abstract assistant placeholder">✦</div></div>
+<h2>Selma Assistant</h2><p class="hint">Abstract portrait placeholder. 3D rig and conversational AI are not connected.</p>
+<nav aria-label="App drawer" id="drawer">
+<button data-view="home" aria-current="page">⌂ Home</button><button data-view="notes">▤ Notes</button>
+<button data-view="reminders">☑ Tasks</button><button data-view="focus">◷ Focus</button>
+<button data-view="calculator">＋ Calc</button><button data-view="files">▣ Files</button></nav>
+<p id="status" role="status" aria-live="polite">Ready, offline.</p></aside>
+<main class="panel">
+<section id="home" class="view active"><h1>SelmaOS Recovery Desktop</h1><p class="hint">No cloud workspace, SSID, provider, or API key needed. Notes and tasks are local to this browser. Export backups regularly.</p>
+<div class="tiles"><button data-view="notes">▤ Notes <small>Local autosave</small></button><button data-view="reminders">☑ Reminders <small>Task list</small></button><button data-view="focus">◷ Focus <small>25-minute timer</small></button><button data-view="files">▣ Files <small>Safe local preview</small></button></div></section>
+<section id="notes" class="view"><h1>Notes</h1><label for="noteText" class="hint">Saved locally as you type</label><textarea id="noteText" maxlength="100000"></textarea><p id="noteState" class="hint">Not cloud synced.</p></section>
+<section id="reminders" class="view"><h1>Reminders</h1><form id="taskForm" class="row"><input id="taskText" required maxlength="180" placeholder="New reminder" aria-label="Reminder"><button type="submit">Add</button></form><ul id="taskList" aria-live="polite" aria-label="Reminders"></ul></section>
+<section id="focus" class="view"><h1>Focus Timer</h1><div id="clock" role="timer" aria-label="Remaining focus time">25:00</div><div class="controls"><button id="startTimer">Start</button><button id="pauseTimer">Pause</button><button id="resetTimer">Reset</button></div><p class="hint">Runs only while this tab remains open.</p></section>
+<section id="calculator" class="view"><h1>Calculator</h1><form id="calcForm"><label for="calcExpr" class="hint">Arithmetic with + − × ÷ and parentheses</label><input id="calcExpr" maxlength="180" placeholder="(15 + 5)/2"><button type="submit">Calculate</button></form><div id="calcResult" aria-live="polite"></div></section>
+<section id="files" class="view"><h1>Local File Preview</h1><input id="previewFile" type="file" accept="image/png,image/jpeg,image/gif,image/webp,text/plain,.md,.json,.csv" aria-label="Choose local file"><p class="hint">Selected files stay on this device. Preview limit: 256 KB.</p><img id="previewImage" alt="Image preview" class="hidden"><pre id="filePreview"></pre></section>
+</main></div><footer>Standalone browser UI • Not a Linux VM or native OS • No external dependencies</footer></div>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id),KEY='selmaos.recovery.v1';
+let state={version:1,notes:'',tasks:[]};let writable=true;
+function say(message){$('status').textContent=message}
+function validate(raw){
+ if(!raw||raw.version!==1||typeof raw.notes!=='string'||raw.notes.length>100000||!Array.isArray(raw.tasks)||raw.tasks.length>500)throw Error('Unsupported or oversized backup');
+ return {version:1,notes:raw.notes,tasks:raw.tasks.map(t=>{
+ if(!t||typeof t.id!=='string'||t.id.length>80||typeof t.text!=='string'||t.text.length>180||typeof t.done!=='boolean')throw Error('Invalid task');
+ return {id:t.id,text:t.text,done:t.done}})}
+}
+try{const saved=localStorage.getItem(KEY);if(saved)state=validate(JSON.parse(saved))}catch(e){writable=false;say('Saved data unavailable. Use export to preserve new notes.')}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));writable=true;say('Saved on this device.')}catch(e){writable=false;say('Storage blocked: please export your data.')}}
+function view(id){const target=$(id);if(!target)return;
+ document.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el.id===id));
+ document.querySelectorAll('#drawer button').forEach(b=>{if(b.dataset.view===id)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
+ const heading=target.querySelector('h1');if(heading){heading.tabIndex=-1;heading.focus()}}
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>view(b.dataset.view)));
+$('noteText').value=state.notes;
+$('noteText').addEventListener('input',e=>{state.notes=e.target.value;save();$('noteState').textContent=writable?'Saved locally':'Storage unavailable. Export data.'});
+function renderTasks(){
+ const list=$('taskList');list.replaceChildren();
+ for(const task of state.tasks){
+  const li=document.createElement('li');if(task.done)li.className='done';
+  const check=document.createElement('input');check.type='checkbox';check.checked=task.done;check.setAttribute('aria-label',(task.done?'Mark incomplete ':'Mark complete ')+task.text);
+  check.addEventListener('change',()=>{task.done=check.checked;li.classList.toggle('done',task.done);check.setAttribute('aria-label',(task.done?'Mark incomplete ':'Mark complete ')+task.text);save()});
+  const span=document.createElement('span');span.textContent=task.text;
+  const del=document.createElement('button');del.textContent='Delete';del.setAttribute('aria-label','Delete '+task.text);del.addEventListener('click',()=>{state.tasks=state.tasks.filter(t=>t.id!==task.id);save();renderTasks();$('taskText').focus();say('Reminder deleted: '+task.text)});
+  li.append(check,span,del);list.append(li)
+ }
+}
+$('taskForm').addEventListener('submit',e=>{
+ e.preventDefault();const txt=$('taskText').value.trim();if(!txt)return;
+ if(state.tasks.length>=500){say('Task limit reached');return}
+ state.tasks.push({id:(crypto.randomUUID?.()??String(Date.now())+Math.random()),text:txt,done:false});
+  $('taskText').value='';save();renderTasks();$('taskText').focus();say('Reminder added: '+txt)
+});renderTasks();
+let remain=1500,interval=null,deadline=0;const format=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+function syncTimerControls(){$('startTimer').disabled=interval!==null||!remain;$('pauseTimer').disabled=interval===null}
+function stop(){if(interval!==null){clearInterval(interval);interval=null}syncTimerControls()}
+function tick(){remain=Math.max(0,Math.ceil((deadline-Date.now())/1000));$('clock').textContent=format(remain);if(!remain){stop();say('Focus session complete')}}
+$('startTimer').addEventListener('click',()=>{if(interval!==null||!remain)return;deadline=Date.now()+remain*1000;interval=setInterval(tick,250);syncTimerControls();tick();say('Focus timer started')});
+$('pauseTimer').addEventListener('click',()=>{if(interval!==null){tick();if(remain){stop();say('Focus timer paused')}}});
+$('resetTimer').addEventListener('click',()=>{stop();remain=1500;$('clock').textContent=format(remain);syncTimerControls();say('Focus timer reset to 25 minutes')});
+syncTimerControls();
+// Restricted arithmetic parser, not arbitrary JavaScript execution.
+function calc(expr){
+ const s=expr.replace(/\s+/g,'').replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
+ if(!s||s.length>180)throw Error('Invalid expression');
+ const ts=s.match(/(?:\d*\.\d+|\d+\.?\d*|[()+*/-])/g);
+ if(!ts||ts.join('')!==s)throw Error('Unsupported character');
+ let pos=0;
+ function atom(){const t=ts[pos++];if(t==='('){const n=add();if(ts[pos++]!==')')throw Error('Missing parenthesis');return n}
+ if(t==='+'||t==='-')return(t==='-'?-1:1)*atom();
+ if(!t||!/^\d*\.?\d+$/.test(t))throw Error('Expected number');return Number(t)}
+ function mul(){let n=atom();while(ts[pos]==='*'||ts[pos]==='/'){const op=ts[pos++],b=atom();if(op==='/'&&b===0)throw Error('Division by zero');n=op==='*'?n*b:n/b}return n}
+ function add(){let n=mul();while(ts[pos]==='+'||ts[pos]==='-'){const op=ts[pos++],b=mul();n=op==='+'?n+b:n-b}return n}
+ const n=add();if(pos!==ts.length||!Number.isFinite(n))throw Error('Invalid calculation');return n
+}
+$('calcForm').addEventListener('submit',e=>{e.preventDefault();try{$('calcResult').textContent=String(calc($('calcExpr').value))}catch(error){$('calcResult').textContent=error.message}});
+let previewUrl=null;
+$('previewFile').addEventListener('change',async e=>{
+ const f=e.target.files?.[0],out=$('filePreview'),img=$('previewImage');out.textContent='';img.classList.add('hidden');
+ if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null}if(!f)return;
+ if(f.size>256*1024){out.textContent='File exceeds preview limit.';say('File exceeds preview limit.');return}
+ if(/^image\/(png|jpeg|gif|webp)$/.test(f.type)){previewUrl=URL.createObjectURL(f);img.src=previewUrl;img.alt='Preview of '+f.name;img.classList.remove('hidden');say('Image preview ready: '+f.name);return}
+ if(f.type==='text/plain'||/\.(txt|md|json|csv)$/.test(f.name.toLowerCase())){out.textContent=await f.text();say('Text preview ready: '+f.name);return}
+ out.textContent='Unsupported format.';say('Unsupported preview format.')
+});
+$('backup').addEventListener('click',()=>{
+ const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='selmaos-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);say('Backup exported')
+});
+$('restore').addEventListener('click',()=>$('restoreFile').click());
+$('restoreFile').addEventListener('change',async e=>{
+ const f=e.target.files?.[0];if(!f)return;
+ try{if(f.size>256*1024)throw Error('Backup exceeds limit');const next=validate(JSON.parse(await f.text()));
+ if(!confirm('Replace local notes and reminders with imported backup?'))return;
+ state=next;$('noteText').value=state.notes;renderTasks();save();say('Backup restored')
+ }catch(err){say('Import failed: '+err.message)}finally{e.target.value='';$('restore').focus()}
+});
+$('secondary').addEventListener('click',()=>{
+ const url=new URL(location.href);url.searchParams.set('window','secondary');
+ const win=window.open(url.href,'_blank');if(win)win.opener=null;else say('Popup blocked. Open this page in a new tab.')
+});
+$('runtime').textContent='Local storage: '+(writable?'available':'unavailable')+' • No network required';
+setTimeout(()=>{$('boot').classList.add('hidden');$('desktop').classList.remove('hidden');view('home');if(new URL(location.href).searchParams.get('window')==='secondary')say('Secondary workspace ready.')},650);
+})();
+</script></body></html>
+
+
+
+
+
+
