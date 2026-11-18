@@ -23,6 +23,26 @@ from replika_migration_v1 import register_replika_migration_tools
 
 COMMAND_ROUTER_V1 = Selma0CommandRouterAndroidV1()
 register_replika_migration_tools(COMMAND_ROUTER_V1.registry)
+
+def _telegram_status_v1():
+    # Only expose non-sensitive, OFFLINE state through the audited router.
+    # Its raw argument/result audit is not appropriate for message bodies.
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+    try:
+        from adapters.telegram_bridge import status
+    except ImportError:
+        return {"adapter": "telegram_personal_v1", "installed": False, "live_chatgpt_connector": False}
+    return status()
+
+
+COMMAND_ROUTER_V1.registry.register(
+    "telegram.status",
+    _telegram_status_v1,
+    risk="read",
+    description="Report local Telegram bridge setup only; no Telegram login, messages, or credentials are read.",
+)
 COMMAND_ROUTER_V1.registry.register(
     "selma.status",
     lambda: base.SELMA0_V1.status(),
