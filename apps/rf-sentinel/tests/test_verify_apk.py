@@ -23,6 +23,7 @@ SPEC.loader.exec_module(MODULE)
 EXPECTED_PERMISSIONS = (
     "uses-permission: name='android.permission.ACCESS_WIFI_STATE'\n"
     "uses-permission: name='android.permission.CHANGE_WIFI_STATE'\n"
+    "uses-permission: name='android.permission.ACCESS_COARSE_LOCATION'\n"
     "uses-permission: name='android.permission.ACCESS_FINE_LOCATION'\n"
     "uses-permission: name='android.permission.BLUETOOTH'\n"
     "uses-permission: name='android.permission.BLUETOOTH_ADMIN'\n"
