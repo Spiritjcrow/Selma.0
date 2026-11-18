@@ -1,0 +1,40 @@
+name: Somagram Android APK
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'SOMAGRAM_ANDROID_V1/**'
+      - '.github/workflows/somagram-android-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Android platform setup
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Verify wrapper and build APK
+        run: ./SELMA0_ANDROID_NATIVE_V1/gradlew --no-daemon -p SOMAGRAM_ANDROID_V1 :app:lintDebug :app:assembleDebug
+      - name: Record SHA256 checksum
+        run: sha256sum SOMAGRAM_ANDROID_V1/app/build/outputs/apk/debug/app-debug.apk > SOMAGRAM_ANDROID_V1/app/build/outputs/apk/debug/app-debug.apk.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Somagram-Android-0.1.0-debug
+          path: |
+            SOMAGRAM_ANDROID_V1/app/build/outputs/apk/debug/app-debug.apk
+            SOMAGRAM_ANDROID_V1/app/build/outputs/apk/debug/app-debug.apk.sha256
+          if-no-files-found: error
+          retention-days: 30
