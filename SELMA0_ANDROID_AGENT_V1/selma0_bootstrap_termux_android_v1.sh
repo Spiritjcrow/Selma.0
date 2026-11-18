@@ -10,6 +10,7 @@ pkg install -y python git termux-api
 
 for file in \
   selma0_runtime_android_v1.py \
+  selma0_telegram_account_readonly_v1.py \
   selma0_runtime_command_core_android_v1.py \
   selma0_runtime_device_crowrf_android_v1.py \
   selma0_llm_router_android_v1.py \
