@@ -62,3 +62,39 @@ python3 tools/generate_support_matrix.py --check
 ~~~
 
 The support matrix records repository evidence only. It does not claim APK installation, physical-device behavior, offline model output, live avatar rendering, or sensor results without direct evidence.
+
+## Network-agnostic local diagnostics
+
+The Android agent can evaluate user-supplied router device lists **offline** and
+rank caller-supplied connection-quality data without probing or changing the
+router. The implementation is not specific to AT&T, any SSID, a LAN subnet,
+one carrier, or even Wi-Fi. Supported reported transports include Wi-Fi,
+cellular, Ethernet, USB, Bluetooth, satellite, other and offline.
+
+Registered tools:
+
+- `network.audit_router_snapshot` (sensitive read, requires explicit approval)
+- `network.plan_transport` (pure advisory, no actual network switching)
+
+The router audit cannot determine device owners or prove intrusion from MAC
+addresses alone. Neither tool performs live measurements. Android remains in
+charge of interface selection, permissions, and network handoff. Local/offline
+state and app-level retry/synchronization require separate implementation.
+
+See `docs/architecture/NETWORK_DIAGNOSTICS.md` for the JSON input contract
+and data-handling guidance.
+
+## Verified build targets
+
+From the repository root:
+
+```bash
+bash build.sh --agent      # Python, shell, offline regression and local smoke checks
+bash build.sh --android    # JDK 17 + configured Android SDK; produce debug APK or fail
+bash build.sh --all        # Both targets required; no partial-success claim
+```
+
+An APK is **only** built by `--android` (or `--all`) and is a minimal native
+WebView shell, not the on-device Python/LLM stack. In GitHub Actions, the APK
+build is performed separately using the installed Android toolchain. None of
+these steps changes Android MDM restrictions or grants overlay permissions.

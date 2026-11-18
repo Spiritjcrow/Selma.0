@@ -21,6 +21,7 @@ for file in \
   selma0_tool_registry_android_v1.py \
   selma0_device_bridge_android_v1.py \
   selma0_crowrf_wifi_scan_android_v1.py \
+  selma0_network_diagnostics_android_v1.py \
   selma0_crowrf_measurement_store_android_v1.py \
   selma0_crowrf_derived_metrics_android_v1.py \
   selma0_smoke_test_android_v1.sh \
