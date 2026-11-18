@@ -1,0 +1,17 @@
+{
+  "name": "project_recovery_inspector_v1",
+  "version": "1.0.0",
+  "description": "Evidence-first project root-cause inspector that scans real source files and user-authorized chat exports, classifies blockers, generates deterministic repair possibilities, and preserves verified/unverified/external truth states.",
+  "provider": "selma",
+  "capabilities": ["deep_scan_project_sources","parse_user_authorized_chat_exports","classify_blockers","generate_evidence_linked_repair_candidates","distinguish_code_failures_from_external_gates","write_json_and_markdown_recovery_reports"],
+  "network_access": false,
+  "automatic_chat_account_access": false,
+  "mock_or_placeholder_success": false,
+  "mutation_policy": "Read-only inspection by default. Report writing is a separately permissioned write. Repair execution remains outside this skill and must use Selma's existing command/permission/audit control plane.",
+  "supported_chat_inputs": ["ChatGPT conversations.json","json","jsonl","csv","txt"],
+  "tools": [
+    {"name":"recovery.inspect_project","risk":"read","requires_approval":false},
+    {"name":"recovery.inspect_workspace","risk":"read","requires_approval":false},
+    {"name":"recovery.write_report","risk":"write","requires_approval":true}
+  ]
+}

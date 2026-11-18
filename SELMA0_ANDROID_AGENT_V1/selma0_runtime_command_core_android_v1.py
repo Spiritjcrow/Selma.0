@@ -20,9 +20,20 @@ if REPLIKA_SKILL_DIR_V1 not in sys.path:
 
 from replika_migration_v1 import register_replika_migration_tools
 
+RECOVERY_SKILL_DIR_V1 = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "skills",
+    "project_recovery_inspector_v1",
+)
+if RECOVERY_SKILL_DIR_V1 not in sys.path:
+    sys.path.insert(0, RECOVERY_SKILL_DIR_V1)
+
+from project_recovery_inspector_v1 import register_project_recovery_tools
+
 
 COMMAND_ROUTER_V1 = Selma0CommandRouterAndroidV1()
 register_replika_migration_tools(COMMAND_ROUTER_V1.registry)
+register_project_recovery_tools(COMMAND_ROUTER_V1.registry)
 COMMAND_ROUTER_V1.registry.register(
     "selma.status",
     lambda: base.SELMA0_V1.status(),
