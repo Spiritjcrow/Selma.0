@@ -1,0 +1,78 @@
+# SelmaOS/EmberBot portable CI candidate.
+# Staged on the EmberBot feature branch, never enabled on any unverified destination.
+# The Android build consumes runner compute; owner enables explicitly with
+# EMBERBOT_AUTO_APK=true after confirming available GitLab runner minutes.
+stages:
+  - test
+  - package
+  - verify
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
+      when: always
+    - when: never
+
+unit_tests:
+  stage: test
+  image: python:3.12-slim
+  timeout: 5m
+  script:
+    - python3 -m compileall -q EmberBot
+    - python3 -m unittest discover -s EmberBot/tests -v
+
+emberbot_android_apk:
+  stage: package
+  image:
+    name: ghcr.io/kivy/buildozer:latest
+    entrypoint: [""]
+  needs:
+    - unit_tests
+  timeout: 2h
+  resource_group: emberbot-android-build
+  rules:
+    - if: '$EMBERBOT_AUTO_APK == "true"'
+      when: on_success
+    - when: manual
+      allow_failure: true
+  script:
+    - |
+      set -eu
+      cd EmberBot
+      buildozer android debug
+      APK="$(find bin -maxdepth 1 -name '*.apk' -print -quit)"
+      test -n "$APK"
+      cd "$(dirname "$APK")"
+      sha256sum "$(basename "$APK")" > "$(basename "$APK").sha256"
+  artifacts:
+    when: on_success
+    paths:
+      - EmberBot/bin/*.apk
+      - EmberBot/bin/*.apk.sha256
+    expire_in: 14 days
+
+verify_emberbot_apk:
+  stage: verify
+  image: alpine:3.21
+  needs:
+    - job: emberbot_android_apk
+      artifacts: true
+  before_script:
+    - apk add --no-cache unzip coreutils findutils
+  script:
+    - |
+      set -eu
+      found=0
+      for file in EmberBot/bin/*.apk; do
+        test -f "$file" || continue
+        test -s "$file"
+        unzip -tq "$file"
+        unzip -Z1 "$file" | grep -Fxq 'AndroidManifest.xml'
+        (
+          cd "$(dirname "$file")"
+          sha256sum --check "$(basename "$file").sha256"
+        )
+        found=1
+      done
+      test "$found" -eq 1
+      echo "APK archive validation succeeded; Android device install NOT tested."

@@ -1,0 +1,69 @@
+name: EmberBot Mines Android APK
+on:
+  pull_request:
+    paths:
+      - 'EmberBot/**'
+      - '.github/workflows/emberbot-apk.yml'
+  push:
+    paths:
+      - 'EmberBot/**'
+      - '.github/workflows/emberbot-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emberbot-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python tests and syntax validation
+        run: |
+          python3 -m compileall -q EmberBot
+          python3 -m unittest discover -s EmberBot/tests -v
+
+  android-apk:
+    needs: test
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Android debug APK
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          workdir: EmberBot
+          buildozer_version: stable
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: EmberBot-Mines-Android-Debug-APK
+          path: ${{ steps.buildozer.outputs.filename }}
+          if-no-files-found: error
+          retention-days: 30
+
+  verify-artifact:
+    needs: android-apk
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download exact APK artifact from this run
+        uses: actions/download-artifact@v4
+        with:
+          name: EmberBot-Mines-Android-Debug-APK
+          path: verified-apk
+      - name: Check APK ZIP integrity and expected manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="$(find verified-apk -type f -name '*.apk' -print -quit)"
+          test -n "$apk"
+          test "$(stat -c %s "$apk")" -gt 50000
+          unzip -tq "$apk"
+          unzip -Z1 "$apk" | grep -Fxq 'AndroidManifest.xml'
+          echo "Verified: APK file exists, ZIP validates, AndroidManifest.xml present."
+          sha256sum "$apk"
+          echo "Physical-device installation NOT tested."
