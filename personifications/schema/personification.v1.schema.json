@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://selma.local/schemas/personification.v1.schema.json",
+  "title": "Selma Personification Record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "personification_id", "record_version", "compatibility", "classification", "provenance", "consent", "localization", "behavior", "expression_contract", "quality"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "personification_id": {"type": "string", "pattern": "^personification:[a-z0-9][a-z0-9._-]*$"},
+    "record_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "compatibility": {
+      "type": "object", "additionalProperties": false,
+      "required": ["contract", "minimum_runtime", "renderers"],
+      "properties": {
+        "contract": {"const": "selma.personification.v1"},
+        "minimum_runtime": {"type": "string"},
+        "renderers": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["android-2d", "web-2d", "desktop-2d", "engine-3d"]}}
+      }
+    },
+    "classification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["identity_basis", "biography", "authored_design", "inferred_preferences", "synthetic_material"],
+      "properties": {
+        "identity_basis": {"enum": ["fictional", "synthetic", "authorized-subject"]},
+        "biography": {"type": "array", "items": {"$ref": "#/$defs/assertion"}},
+        "authored_design": {"type": "array", "items": {"$ref": "#/$defs/assertion"}},
+        "inferred_preferences": {"type": "array", "items": {"$ref": "#/$defs/inference"}},
+        "synthetic_material": {"type": "array", "items": {"$ref": "#/$defs/asset"}}
+      }
+    },
+    "provenance": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/source"}},
+    "consent": {
+      "type": "object", "additionalProperties": false,
+      "required": ["likeness_status", "voice_status", "commercial_use", "attribution", "license_spdx"],
+      "properties": {
+        "likeness_status": {"enum": ["not-applicable-synthetic", "documented-authorization", "prohibited"]},
+        "voice_status": {"enum": ["not-applicable-synthetic", "documented-authorization", "prohibited"]},
+        "commercial_use": {"enum": ["allowed", "restricted", "prohibited", "unknown"]},
+        "attribution": {"type": "array", "items": {"type": "string"}},
+        "license_spdx": {"type": "string", "minLength": 1}
+      }
+    },
+    "localization": {
+      "type": "object", "additionalProperties": false,
+      "required": ["default_locale", "supported_locales", "accessibility"],
+      "properties": {
+        "default_locale": {"type": "string", "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$"},
+        "supported_locales": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+        "accessibility": {"type": "object", "additionalProperties": {"type": ["string", "boolean", "number"]}}
+      }
+    },
+    "behavior": {
+      "type": "object", "additionalProperties": false,
+      "required": ["voice", "face", "gesture", "emotion", "turn_taking", "support_style"],
+      "properties": {
+        "voice": {"$ref": "#/$defs/stringMap"}, "face": {"$ref": "#/$defs/stringMap"},
+        "gesture": {"$ref": "#/$defs/stringMap"}, "emotion": {"$ref": "#/$defs/stringMap"},
+        "turn_taking": {"$ref": "#/$defs/stringMap"}, "support_style": {"$ref": "#/$defs/stringMap"}
+      }
+    },
+    "expression_contract": {
+      "type": "object", "additionalProperties": false,
+      "required": ["states", "parameters"],
+      "properties": {
+        "states": {"type": "array", "uniqueItems": true, "items": {"enum": ["IDLE", "LISTENING", "THINKING", "SPEAKING", "INTERRUPTED", "SLEEPING", "ERROR"]}},
+        "parameters": {"type": "object", "additionalProperties": {"type": "object", "required": ["minimum", "maximum", "neutral"], "properties": {"minimum": {"type": "number"}, "maximum": {"type": "number"}, "neutral": {"type": "number"}}}}
+      }
+    },
+    "quality": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_valid", "provenance_coverage", "renderer_mapping_coverage", "accessibility_reviewed"],
+      "properties": {
+        "schema_valid": {"type": "boolean"},
+        "provenance_coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "renderer_mapping_coverage": {"type": "number", "minimum": 0, "maximum": 1},
+        "accessibility_reviewed": {"type": "boolean"}
+      }
+    }
+  },
+  "$defs": {
+    "assertion": {"type": "object", "additionalProperties": false, "required": ["key", "value", "source_id"], "properties": {"key": {"type": "string"}, "value": {}, "source_id": {"type": "string"}}},
+    "inference": {"allOf": [{"$ref": "#/$defs/assertion"}, {"type": "object", "required": ["confidence"], "properties": {"confidence": {"type": "number", "minimum": 0, "maximum": 1}}}]},
+    "asset": {"type": "object", "additionalProperties": false, "required": ["asset_id", "kind", "source_id", "digest"], "properties": {"asset_id": {"type": "string"}, "kind": {"enum": ["voice", "face", "gesture", "animation", "text"]}, "source_id": {"type": "string"}, "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}}},
+    "source": {"type": "object", "additionalProperties": false, "required": ["source_id", "kind", "uri", "license_spdx", "commercial_use"], "properties": {"source_id": {"type": "string"}, "kind": {"enum": ["authored", "authorized", "public-domain", "licensed", "synthetic"]}, "uri": {"type": "string"}, "license_spdx": {"type": "string"}, "commercial_use": {"enum": ["allowed", "restricted", "prohibited", "unknown"]}}},
+    "stringMap": {"type": "object", "minProperties": 1, "additionalProperties": {"type": "string"}}
+  }
+}
