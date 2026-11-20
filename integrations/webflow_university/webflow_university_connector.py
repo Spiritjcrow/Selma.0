@@ -102,7 +102,7 @@ def query_courses(query="",level=None,limit=10):
     terms=re.findall(r"\w+",query,flags=re.UNICODE)
     with connection() as c:
         if terms:
-            expr=" AND ".join('"'+t+' "*' for t in terms[:12]).replace('" *','"*')
+            expr=" AND ".join('"'+t+'"*' for t in terms[:12])
             sql="SELECT c.* FROM courses c JOIN courses_fts ON courses_fts.rowid=c.rowid WHERE courses_fts MATCH ?"
             params=[expr]
         else:
