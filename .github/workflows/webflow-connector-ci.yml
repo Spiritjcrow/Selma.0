@@ -1,0 +1,29 @@
+name: Webflow University Connector Offline Checks
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'integrations/webflow_university/**'
+      - '.github/workflows/webflow-connector-ci.yml'
+  pull_request:
+    paths:
+      - 'integrations/webflow_university/**'
+      - '.github/workflows/webflow-connector-ci.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install pinned-minimum requirements
+        run: python -m pip install -r integrations/webflow_university/requirements.txt
+      - name: Offline preflight and tests
+        run: python integrations/webflow_university/preflight.py
