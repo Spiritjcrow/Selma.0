@@ -1,0 +1,11 @@
+{
+  "weights": {
+    "goal": 0.28,
+    "readiness": 0.22,
+    "reuse": 0.16,
+    "novelty": 0.12,
+    "evidence": 0.12,
+    "efficiency": 0.10
+  },
+  "remarks": "Initial heuristic values. Change with documented outcome data; no learning or model retraining is claimed."
+}
