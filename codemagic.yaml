@@ -16,11 +16,30 @@ workflows:
           test -f "$PROJECT/gradlew"
           test -f "$PROJECT/settings.gradle"
           test -f "$PROJECT/app/build.gradle"
-          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$PROJECT/local.properties"
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/share/android-sdk}}"
+          if [ ! -d "$SDK_ROOT" ]; then
+            echo "Android SDK directory not found: $SDK_ROOT" >&2
+            exit 1
+          fi
+          printf 'sdk.dir=%s\n' "$SDK_ROOT" > "$PROJECT/local.properties"
       - name: Install required Android SDK platform
         script: |
           set -eu
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/share/android-sdk}}"
+          PLATFORM_JAR="$SDK_ROOT/platforms/android-35/android.jar"
+          BUILD_TOOL="$SDK_ROOT/build-tools/35.0.0/aapt2"
+          if [ -s "$PLATFORM_JAR" ] && [ -x "$BUILD_TOOL" ]; then
+            echo "Android SDK API 35 and Build Tools 35.0.0 already installed."
+          else
+            SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+            if [ ! -x "$SDKMANAGER" ]; then
+              echo "Android SDK Manager missing or not executable: $SDKMANAGER" >&2
+              exit 1
+            fi
+            "$SDKMANAGER" --sdk_root="$SDK_ROOT" "platforms;android-35" "build-tools;35.0.0"
+          fi
+          test -s "$PLATFORM_JAR" || { echo "Android API 35 platform missing after setup" >&2; exit 1; }
+          test -x "$BUILD_TOOL" || { echo "Android Build Tools 35.0.0 missing after setup" >&2; exit 1; }
       - name: Lint, unit-test, and assemble debug APK
         script: |
           set -eu
