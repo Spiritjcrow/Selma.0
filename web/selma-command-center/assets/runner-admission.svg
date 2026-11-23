@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title desc">
+  <title id="title">Selma HyperCore runner admission</title>
+  <desc id="desc">A cyan-edged modular cube inside a mechanical gear, with an orange pause gate. Indicates runner admission needs review, not a completed build.</desc>
+  <defs><linearGradient id="cube" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#35D5FF"/><stop offset="1" stop-color="#0078FF"/></linearGradient></defs>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M43 8h10l2 8 7 3 7-4 7 7-4 7 3 7 8 2v10l-8 2-3 7 4 7-7 7-7-4-7 3-2 8H43l-2-8-7-3-7 4-7-7 4-7-3-7-8-2V38l8-2 3-7-4-7 7-7 7 4 7-3z" stroke="#24476D" stroke-width="3"/>
+    <circle cx="48" cy="43" r="27" stroke="#0078FF" stroke-width="2"/>
+    <path d="m48 23 19 11v21L48 66 29 55V34z" fill="#101722" stroke="url(#cube)" stroke-width="2.5"/>
+    <path d="m29 34 19 11 19-11M48 45v21" stroke="#35D5FF" stroke-width="2"/>
+    <path d="m48 26 16 9-16 9-16-9z" fill="#0078FF" fill-opacity=".25" stroke="none"/>
+    <path d="M48 70v8h20" stroke="#35D5FF" stroke-width="2.5"/>
+    <rect x="68" y="67" width="19" height="21" rx="5" fill="#101722" stroke="#FF7A00" stroke-width="2.5"/>
+    <path d="M75 73v9m5-9v9" stroke="#FF7A00" stroke-width="2.5"/>
+  </g>
+</svg>
