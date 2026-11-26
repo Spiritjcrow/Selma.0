@@ -41,7 +41,7 @@ SAFETY_V1 = Selma0SafetyGuardianAndroidV1()
 
 
 class Selma0RuntimeAndroidV1:
-    def chat(self, text):
+    def chat(self, text, offline_only=False):
         text = str(text).strip()
         if not text:
             return {"error": "empty message"}
@@ -53,19 +53,22 @@ class Selma0RuntimeAndroidV1:
             if item["role"] in ("user", "assistant"):
                 messages.append({"role": item["role"], "content": item["content"]})
 
-        result = ROUTER_V1.reply(messages)
-        MEMORY_V1.add("assistant", result["text"], {"route": result["route"], "error": result["error"]})
+        result = ROUTER_V1.reply(messages, offline_only=offline_only)
+        if result["route"] != "unavailable":
+            MEMORY_V1.add("assistant", result["text"], {"route": result["route"], "error": result["error"]})
         return result
 
     def status(self):
         return {
             "name": "Selma.0",
             "runtime": "SELMA0_ANDROID_AGENT_V1",
-            "platform": "Android 13+ / Termux and Codespaces development",
+            "platform": "Android 11+ / Termux or ChromeOS Linux",
             "host": SELMA0_HOST_V1,
             "port": SELMA0_PORT_V1,
             "memory_db": MEMORY_V1.db_path,
             "local_llm": ROUTER_V1.local_base,
+            "local_llm_loopback": ROUTER_V1.is_loopback_local(),
+            "offline_only_supported": True,
             "online_fallback_configured": bool(ROUTER_V1.online_base and ROUTER_V1.online_model),
             "safety_guardian": SAFETY_V1.status(),
             "replika_migration_skill": {

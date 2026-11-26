@@ -1,28 +1,29 @@
-# Selma.0
+# SelmaOS
 
-Synthetic Consciousness System Operator Assistant Collaborator
+Local-first mobile operating environment for Android-native devices and Chromebooks.
 
-## Active Android build
+## Release candidate components
 
-The current production-direction implementation is:
+- `SELMA0_ANDROID_NATIVE_V1/`: native Android 11+ home shell
+- `SELMA0_ANDROID_AGENT_V1/`: local command core and assistant runtime for Termux
+- `SELMAOS_CHROMEOS_V1/`: rootless ChromeOS Linux installer and launcher
+- `third_party/open_source_apps.json`: external Termux and F-Droid integrations
+- `core/` and `adapters/`: portable capability contracts and platform evidence
 
-`SELMA0_ANDROID_AGENT_V1/`
+The Android shell is selectable as the device Home app and has no remote-login dependency. The Chromebook package runs inside the ChromeOS Linux development environment. Both use the same command core at `127.0.0.1:8765`.
 
-This build is designed for Android 13+ with Termux as the immediate runtime and GitHub Codespaces as the development environment.
+## Implemented core
 
-### Current implemented core
-
-- Android/Termux Python runtime
-- Device-local HTTP API and mobile chat UI
+- Native home screen and installed-app launcher
+- Native local chat interface
 - Persistent SQLite conversation memory
-- Offline-first OpenAI-compatible LLM routing
-- Optional online fallback configured only through environment variables
-- Codespaces devcontainer
-- Unique `SELMA0_..._V1` namespace for project artifacts
+- Strict offline-only inference for native chat
+- Loopback-host enforcement, Host validation, origin validation, and redirect denial
+- Permission-gated command registry with a hash-chained local audit
+- Rootless Termux device bridge and ChromeOS Linux runtime
+- User-initiated Termux and F-Droid access without bundled third-party APKs
 
-### Termux install
-
-Clone the repository, enter it, and run:
+## Android and Termux
 
 ```bash
 chmod +x SELMA0_ANDROID_AGENT_V1/selma0_bootstrap_termux_android_v1.sh
@@ -30,35 +31,28 @@ chmod +x SELMA0_ANDROID_AGENT_V1/selma0_bootstrap_termux_android_v1.sh
 ~/SELMA0_ANDROID_AGENT_V1/selma0_start_android_v1.sh
 ```
 
-Then open:
+Build the native shell with JDK 17+, Android SDK platform 35, and Build Tools 35.0.0:
 
-`http://127.0.0.1:8765`
+```bash
+cd SELMA0_ANDROID_NATIVE_V1
+./gradlew --no-daemon --stacktrace :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
+```
 
-### Offline LLM
+## Chromebook Linux
 
-Selma.0 first attempts an OpenAI-compatible local endpoint at:
+```bash
+chmod +x SELMAOS_CHROMEOS_V1/*.sh SELMAOS_CHROMEOS_V1/selmaos-*
+./SELMAOS_CHROMEOS_V1/install.sh
+~/.local/bin/selmaos-open
+```
 
-`http://127.0.0.1:8080/v1`
+## Validation
 
-The next implementation milestone is the Android-local llama.cpp launcher/model profile so this endpoint is supplied entirely on-device.
-
-See `SELMA0_ANDROID_AGENT_V1/SELMA0_ANDROID_AGENT_V1_ARCHITECTURE.md` for the production roadmap.
-
-## Gate 1 cross-platform contracts
-
-The platform-neutral contract increment is under:
-
-- core/ for capability, result, cancellation, deadline, and offline-bootstrap contracts;
-- adapters/ for fail-closed implementations and platform evidence manifests;
-- docs/architecture/ for current truth state, migration map, execution tracker, and generated support matrix;
-- tests/ for offline/degraded-state contract tests.
-
-Run the portable evidence suite:
-
-~~~bash
+```bash
 python3 -m unittest discover -s SELMA0_ANDROID_AGENT_V1/tests -p 'test_*.py' -v
 python3 -m unittest discover -s tests -p 'test_*.py' -v
 python3 tools/generate_support_matrix.py --check
-~~~
+bash SELMA0_ANDROID_AGENT_V1/selma0_smoke_test_android_v1.sh
+```
 
-The support matrix records repository evidence only. It does not claim APK installation, physical-device behavior, offline model output, live avatar rendering, or sensor results without direct evidence.
+Repository checks prove source behavior. An official stable launch still requires the release APK, installation checks, and physical-device qualification recorded in `docs/SELMAOS_V1_RELEASE.md`.

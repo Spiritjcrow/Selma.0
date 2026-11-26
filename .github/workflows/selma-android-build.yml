@@ -9,8 +9,10 @@ on:
       - .github/workflows/selma-android-build.yml
       - SELMA0_ANDROID_AGENT_V1/**
       - SELMA0_ANDROID_NATIVE_V1/**
+      - SELMAOS_CHROMEOS_V1/**
       - adapters/**
       - core/**
+      - third_party/**
       - tests/**
       - tools/**
   pull_request:
@@ -18,8 +20,10 @@ on:
       - .github/workflows/selma-android-build.yml
       - SELMA0_ANDROID_AGENT_V1/**
       - SELMA0_ANDROID_NATIVE_V1/**
+      - SELMAOS_CHROMEOS_V1/**
       - adapters/**
       - core/**
+      - third_party/**
       - tests/**
       - tools/**
 
@@ -52,11 +56,12 @@ jobs:
           python -m unittest discover -s tests -p 'test_*.py' -v
           python tools/generate_support_matrix.py --check
           bash SELMA0_ANDROID_AGENT_V1/selma0_smoke_test_android_v1.sh
-      - name: Validate Termux scripts
+      - name: Validate deployment scripts and third-party catalog
         shell: bash
         run: |
           set -euo pipefail
-          while IFS= read -r -d '' script; do bash -n "$script"; done < <(find SELMA0_ANDROID_AGENT_V1 -type f -name '*.sh' -print0)
+          while IFS= read -r -d '' script; do bash -n "$script"; done < <(find SELMA0_ANDROID_AGENT_V1 SELMAOS_CHROMEOS_V1 -type f \( -name '*.sh' -o -name 'selmaos-*' \) -print0)
+          python -m json.tool third_party/open_source_apps.json >/dev/null
 
   native-android:
     name: Build Selma Android APK
@@ -86,7 +91,7 @@ jobs:
       - name: Upload Selma APK
         uses: actions/upload-artifact@v4
         with:
-          name: Selma-Android-v0.10.0-debug
+          name: SelmaOS-Android-v1.0.0-rc1-debug
           path: |
             SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk
             SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk.sha256

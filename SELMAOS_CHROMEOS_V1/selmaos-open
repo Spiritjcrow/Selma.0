@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+DATA_ROOT="$DATA_HOME/selmaos"
+BIN_ROOT="$HOME/.local/bin"
+STATUS_URL="http://127.0.0.1:8765/api/selma0/status/v1"
+
+if ! python3 - "$STATUS_URL" <<'PY'
+import sys
+import urllib.request
+
+try:
+    with urllib.request.urlopen(sys.argv[1], timeout=0.7) as response:
+        raise SystemExit(0 if response.status == 200 else 1)
+except Exception:
+    raise SystemExit(1)
+PY
+then
+  mkdir -p "$DATA_ROOT/state"
+  nohup "$BIN_ROOT/selmaos-runtime" > "$DATA_ROOT/state/runtime.log" 2>&1 &
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    if python3 - "$STATUS_URL" <<'PY'
+import sys
+import urllib.request
+
+try:
+    with urllib.request.urlopen(sys.argv[1], timeout=0.7) as response:
+        raise SystemExit(0 if response.status == 200 else 1)
+except Exception:
+    raise SystemExit(1)
+PY
+    then
+      break
+    fi
+    sleep 0.3
+  done
+fi
+
+exec xdg-open "http://127.0.0.1:8765/"

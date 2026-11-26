@@ -1,16 +1,24 @@
+import ipaddress
 import json
 import os
 import urllib.error
 import urllib.request
+from urllib.parse import urlsplit
+
+
+class _DenyRedirect(urllib.request.HTTPRedirectHandler):
+    """Do not let loopback model servers redirect strict-offline traffic."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
 
 
 class Selma0LLMRouterAndroidV1:
-    """Offline-first router for OpenAI-compatible chat endpoints.
+    """OpenAI-compatible router. Strict-offline requests cannot contact a remote model.
 
-    Defaults to a local llama.cpp-style server on 127.0.0.1:8080.
-    Set SELMA0_ONLINE_BASE_URL_V1 and SELMA0_ONLINE_API_KEY_V1 to enable
-    an online fallback. No network call is attempted unless local inference
-    fails and an online base URL is configured.
+    Ordinary calls preserve the older local-first/optional cloud fallback behavior.
+    Set offline_only=True for the native local agent. Strict mode requires an
+    HTTP(S) loopback URL, ignores environment proxy settings, and disallows redirects.
     """
 
     def __init__(self):
@@ -21,7 +29,24 @@ class Selma0LLMRouterAndroidV1:
         self.online_key = os.getenv("SELMA0_ONLINE_API_KEY_V1", "")
         self.timeout = float(os.getenv("SELMA0_LLM_TIMEOUT_V1", "45"))
 
-    def _chat(self, base, model, messages, api_key=""):
+    def is_loopback_local(self):
+        try:
+            parsed = urlsplit(self.local_base)
+            if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+                return False
+            if parsed.username is not None or parsed.password is not None:
+                return False
+            # Parse and reject malformed explicit ports, if any.
+            port = parsed.port
+            if port is not None and not (1 <= port <= 65535):
+                return False
+            if parsed.hostname.lower() == "localhost":
+                return True
+            return ipaddress.ip_address(parsed.hostname).is_loopback
+        except (ValueError, TypeError):
+            return False
+
+    def _chat(self, base, model, messages, api_key="", local_only=False):
         payload = json.dumps({"model": model, "messages": messages, "temperature": 0.6}).encode()
         req = urllib.request.Request(
             base.rstrip("/") + "/chat/completions",
@@ -31,19 +56,38 @@ class Selma0LLMRouterAndroidV1:
         )
         if api_key:
             req.add_header("Authorization", f"Bearer {api_key}")
-        with urllib.request.urlopen(req, timeout=self.timeout) as response:
+
+        if local_only:
+            # No environment HTTP proxy and no redirect to a non-loopback URL.
+            opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _DenyRedirect())
+            response = opener.open(req, timeout=self.timeout)
+        else:
+            response = urllib.request.urlopen(req, timeout=self.timeout)
+        with response:
             body = json.loads(response.read().decode("utf-8"))
         return body["choices"][0]["message"]["content"]
 
-    def reply(self, messages):
+    def reply(self, messages, offline_only=False):
+        # Fail closed before any network request if strict mode is given a remote URL.
+        if offline_only and not self.is_loopback_local():
+            return {
+                "text": "Selma.0 offline-only mode rejected a non-loopback model endpoint.",
+                "route": "unavailable",
+                "error": "offline_only requires a local loopback model URL",
+            }
+
         local_error = None
         try:
-            text = self._chat(self.local_base, self.local_model, messages)
+            if offline_only:
+                text = self._chat(self.local_base, self.local_model, messages, local_only=True)
+            else:
+                text = self._chat(self.local_base, self.local_model, messages)
             return {"text": text, "route": "offline-local", "error": None}
         except Exception as exc:
             local_error = str(exc)
 
-        if self.online_base and self.online_model:
+        # Never even attempt the online endpoint after an offline-only request.
+        if not offline_only and self.online_base and self.online_model:
             try:
                 text = self._chat(self.online_base, self.online_model, messages, self.online_key)
                 return {"text": text, "route": "online-fallback", "error": None}
@@ -55,7 +99,9 @@ class Selma0LLMRouterAndroidV1:
                 }
 
         return {
-            "text": "Selma.0 local inference is not running and no online fallback is configured.",
+            "text": "Selma.0 local inference is unavailable."
+                    if offline_only else
+                    "Selma.0 local inference is not running and no online fallback is configured.",
             "route": "unavailable",
             "error": local_error,
         }
