@@ -130,6 +130,19 @@ class LocalCIFallbackTests(unittest.TestCase):
         apk.parent.mkdir(parents=True)
         return apk
 
+    def test_android_offline_passes_flag_to_wrapper(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self.android_fixture(root)
+            with patch.object(ci, "ROOT", root), patch.object(
+                ci.shutil, "which", return_value="java"
+            ), patch.dict(ci.os.environ, {"ANDROID_HOME": str(root)}, clear=True), patch.object(
+                ci, "run", side_effect=subprocess.CalledProcessError(1, "gradlew")
+            ) as run_mock:
+                with self.assertRaises(subprocess.CalledProcessError):
+                    ci.build_android(offline=True)
+                self.assertIn("--offline", run_mock.call_args.args[0])
+
     def test_android_build_hashes_fresh_package_and_sidecar(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

@@ -4,6 +4,7 @@
 From a complete local checkout:
     python tools/ci_free_local.py
     python tools/ci_free_local.py --android
+    python tools/ci_free_local.py --android --offline
 This program never submits a GitHub Actions job or changes billing settings.
 """
 import argparse
@@ -188,7 +189,7 @@ def validate_shell():
     return True
 
 
-def build_android():
+def build_android(*, offline=False):
     project = ROOT / "SELMA0_ANDROID_NATIVE_V1"
     if not project.is_dir():
         raise RuntimeError("Native Android project is missing.")
@@ -211,11 +212,14 @@ def build_android():
         apk.unlink()
     if checksum.exists():
         checksum.unlink()
+    options = ["--no-daemon"]
+    if offline:
+        options.append("--offline")
     tasks = [":app:lintDebug", ":app:testDebugUnitTest", ":app:assembleDebug"]
     if os.name == "nt":
-        command = ["cmd", "/c", "gradlew.bat", "--no-daemon", *tasks]
+        command = ["cmd", "/c", "gradlew.bat", *options, *tasks]
     else:
-        command = ["./gradlew", "--no-daemon", *tasks]
+        command = ["./gradlew", *options, *tasks]
     run(command, cwd=project, timeout=ANDROID_TIMEOUT_SECONDS)
     if apk.is_symlink() or not apk.is_file():
         raise RuntimeError("Gradle returned without a newly generated regular debug APK.")
@@ -242,7 +246,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--android", action="store_true", help="Also build the debug Android APK (Java 17 and Android SDK required)")
     parser.add_argument("--expected-sha", metavar="SHA40", help="Exact commit SHA independently copied from the GitHub PR (not fetched or trusted automatically)")
+    parser.add_argument("--offline", action="store_true", help="Use cached Gradle dependencies for the Android build")
     args = parser.parse_args()
+    if args.offline and not args.android:
+        parser.error("--offline requires --android")
     os.chdir(ROOT)
     if sys.version_info < (3, 12):
         parser.error("Python 3.12 or newer is required.")
@@ -257,7 +264,7 @@ def main():
     validate_json()
     bash_complete = validate_shell()
     if args.android:
-        build_android()
+        build_android(offline=args.offline)
     if not bash_complete:
         print("PARTIAL: Python/JSON checks executed; Bash checks NOT_RUN. This is not a full CI PASS.")
         return 2

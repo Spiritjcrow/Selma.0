@@ -33,6 +33,12 @@ Requires Java 17 and an installed Android SDK (set ANDROID_HOME or ANDROID_SDK_R
 
 Runs `:app:lintDebug`, `:app:testDebugUnitTest` and `:app:assembleDebug` in `SELMA0_ANDROID_NATIVE_V1` with the checked-in Gradle wrapper. It removes only the prior generated `app-debug.apk` and `.apk.sha256` before attempting a fresh build, then requires the new APK to parse as a readable ZIP containing `AndroidManifest.xml`, `resources.arsc`, and `classes.dex`. It hashes the APK in chunks and creates `app-debug.apk.sha256` (digest and filename). Build timeout: 1,800 seconds. These lightweight checks **do not authenticate the APK signature, verify the Android manifest's contents, establish installability, or certify offline behavior**. Do not distribute a debug build as a production release.
 
+After the wrapper distribution, Android SDK packages and Gradle dependencies have been cached, use:
+
+       python tools/ci_free_local.py --android --offline
+
+The tasks and APK checks are identical. Gradle resolves dependencies from its cache and fails if any are missing. The wrapper starts before Gradle reads `--offline` and can attempt to download Gradle if the distribution has not been cached. For a build without network access, first run the regular Android command successfully, then rerun with `--offline` while disconnected using the same SDK and Gradle user home.
+
 ## Evidence and next steps
 Record the local Git commit SHA, independent expected SHA source (if provided), whether the checkout was clean, command, Python version, OS, exit status, APK SHA-256 and sidecar (if built), and non-sensitive logs in issue #26 or the relevant PR. A summarized three-line PASS message without actual command output and the full 40-character SHA is insufficient to confirm independent execution. Redact local paths, secrets and personal information. Keep #26 open until a real GitHub runner job starts or the owner formally changes the acceptance gates.
 
