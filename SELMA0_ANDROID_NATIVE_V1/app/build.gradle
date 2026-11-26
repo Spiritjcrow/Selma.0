@@ -3,6 +3,7 @@ plugins { id 'com.android.application' }
 android {
     namespace 'ai.selma.companion'
     compileSdk 35
+    buildToolsVersion "35.0.0"
 
     defaultConfig {
         applicationId 'ai.selma.companion'

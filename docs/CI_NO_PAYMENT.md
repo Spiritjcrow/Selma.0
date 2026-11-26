@@ -24,10 +24,10 @@ Before spending time on an APK build, run from the complete repository checkout:
 python tools/selma_android_preflight.py
 ```
 
-This read-only check reports whether **Java 17+**, the **Android SDK platform 35**, **build-tools 35.0.0**, and the checked-in **Gradle 8.9 wrapper with distribution SHA-256 pin** are present. It fails with a clear prerequisite list and changes no project files. Its checks are covered by `tests/test_selma_android_preflight.py` using synthetic fixtures; they do **not** run a real Gradle build. A preflight PASS is not evidence that dependencies will resolve, tests will pass, an APK will be produced, or a device installation will succeed. The script does not download toolchains, alter account billing, or touch repository credentials.
+This read-only check reports whether a full **JDK 17+** with `javac` and `jlink`, the **Android SDK platform 35**, **build-tools 35.0.0**, and the checked-in **Gradle 8.9 wrapper with distribution SHA-256 pin** are present. It fails with a clear prerequisite list and changes no project files. Its checks are covered by `tests/test_selma_android_preflight.py` using synthetic fixtures; they do **not** run a real Gradle build. A preflight PASS is not evidence that dependencies will resolve, tests will pass, an APK will be produced, or a device installation will succeed. The script does not download toolchains, alter account billing, or touch repository credentials.
 
 ## Optional debug APK build
-Requires Java 17 and an installed Android SDK (set ANDROID_HOME or ANDROID_SDK_ROOT). Gradle may need network access for toolchain dependencies, but it does **not** require paid GitHub Actions minutes.
+Requires a full JDK 17 or newer and an installed Android SDK (set ANDROID_HOME or ANDROID_SDK_ROOT). Gradle may need network access for toolchain dependencies, but it does **not** require paid GitHub Actions minutes.
 
        python tools/ci_free_local.py --android
 

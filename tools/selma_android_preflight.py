@@ -67,7 +67,10 @@ def check(project: Path, sdk: Path | None, java_text: str | None, *, windows: bo
 def main() -> int:
     path_text = os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT')
     sdk = Path(path_text).expanduser() if path_text else None
-    java = shutil.which('java')
+    windows = os.name == 'nt'
+    suffix = '.exe' if windows else ''
+    java_home = os.environ.get('JAVA_HOME')
+    java = str(Path(java_home) / 'bin' / f'java{suffix}') if java_home else shutil.which('java')
     version_text = None
     if java:
         try:
@@ -77,7 +80,12 @@ def main() -> int:
                 version_text = finished.stderr + finished.stdout
         except (OSError, subprocess.TimeoutExpired):
             pass
-    failures = check(PROJECT, sdk, version_text, windows=(os.name == 'nt'))
+    failures = check(PROJECT, sdk, version_text, windows=windows)
+    if version_text is not None:
+        java_bin = Path(java).resolve().parent
+        missing = [tool for tool in ('javac', 'jlink') if not (java_bin / f'{tool}{suffix}').is_file()]
+        if missing:
+            failures.append(f'Missing JDK tools: {", ".join(missing)}. Set JAVA_HOME to a full JDK 17 or newer.')
     if failures:
         print('BLOCKED: Android build prerequisites')
         for msg in failures:
