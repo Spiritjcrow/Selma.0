@@ -1,2 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources><string name="app_name">Selma</string></resources>
+<resources>
+    <string name="app_name">Selma</string>
+    <string name="companion_title">Selma° Companion</string>
+    <string name="browser_description">Open Selma° in your browser to sign in with ChatGPT.</string>
+    <string name="open_browser">Open in browser</string>
+    <string name="browser_unavailable">No browser is available. Enable a browser in Android Settings and try again.</string>
+</resources>
