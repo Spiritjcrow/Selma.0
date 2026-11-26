@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "release": "1.0.0-rc1",
+  "assessment_date": "2026-11-26",
+  "status": "release_candidate",
+  "stable_launch_readiness_percent": 63,
+  "repository": "Spiritjcrow/Selma.0",
+  "pull_request": 130,
+  "tested_local_commit": "6eb987cc50c5f1210bb42c7fbdd4e0d2a42b8f19",
+  "published_remote_commit": "e09a41d7242f5445afc216b1d1a8843ae14164ba",
+  "content_tree": "8245d91f92d67d2254dbefb216ed98b749125bdc",
+  "scores": [
+    {"area": "scope_architecture", "weight": 10, "earned": 10},
+    {"area": "shared_runtime_data", "weight": 20, "earned": 16},
+    {"area": "android_native_shell", "weight": 20, "earned": 10},
+    {"area": "chromebook_package", "weight": 15, "earned": 11},
+    {"area": "security_offline_controls", "weight": 15, "earned": 13},
+    {"area": "build_release_automation", "weight": 10, "earned": 3},
+    {"area": "hardware_qualification", "weight": 10, "earned": 0}
+  ],
+  "evidence": {
+    "unique_tests_passed": 144,
+    "runtime_smoke_passed": true,
+    "chromebook_isolated_install_launch_uninstall_passed": true,
+    "support_matrix_current": true,
+    "android_apk_built": false,
+    "android_physical_device_qualified": false,
+    "chromebook_physical_device_qualified": false
+  },
+  "third_party_apps": [
+    "com.termux",
+    "org.fdroid.fdroid"
+  ],
+  "blocking_gates": [
+    "official_android_sdk_build",
+    "apk_inspection_and_checksum",
+    "release_signing",
+    "android_device_matrix",
+    "offline_model_device_test",
+    "chromebook_device_test",
+    "release_operations"
+  ]
+}
