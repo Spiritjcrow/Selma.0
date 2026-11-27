@@ -9,6 +9,7 @@ on:
       - .github/workflows/selma-android-build.yml
       - SELMA0_ANDROID_AGENT_V1/**
       - SELMA0_ANDROID_NATIVE_V1/**
+      - SELMAHOME_ANDROID_V040/**
       - SELMAOS_CHROMEOS_V1/**
       - adapters/**
       - core/**
@@ -20,6 +21,7 @@ on:
       - .github/workflows/selma-android-build.yml
       - SELMA0_ANDROID_AGENT_V1/**
       - SELMA0_ANDROID_NATIVE_V1/**
+      - SELMAHOME_ANDROID_V040/**
       - SELMAOS_CHROMEOS_V1/**
       - adapters/**
       - core/**
@@ -60,7 +62,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          while IFS= read -r -d '' script; do bash -n "$script"; done < <(find SELMA0_ANDROID_AGENT_V1 SELMAOS_CHROMEOS_V1 -type f \( -name '*.sh' -o -name 'selmaos-*' \) -print0)
+          while IFS= read -r -d '' script; do bash -n "$script"; done < <(find SELMA0_ANDROID_AGENT_V1 SELMAHOME_ANDROID_V040 SELMAOS_CHROMEOS_V1 -type f \( -name '*.sh' -o -name 'selmaos-*' \) -print0)
           python -m json.tool third_party/open_source_apps.json >/dev/null
 
   native-android:
@@ -88,6 +90,30 @@ jobs:
         run: ./gradlew --no-daemon --stacktrace :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
       - name: Record APK checksum
         run: sha256sum SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk > SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk.sha256
+      - name: Build and verify Selma Home 0.4.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          key_dir="$(mktemp -d)"
+          trap 'rm -rf "$key_dir"' EXIT
+          openssl rand -base64 36 | tr -d '\n' > "$key_dir/pass"
+          printf '\n' >> "$key_dir/pass"
+          keytool -genkeypair -storetype PKCS12 -keystore "$key_dir/ci.p12" \
+            -storepass:file "$key_dir/pass" -keypass:file "$key_dir/pass" -alias ci \
+            -dname 'CN=Selma Home CI' -keyalg RSA -keysize 3072 -validity 1
+          ANDROID_JAR="$ANDROID_HOME/platforms/android-35/android.jar" \
+          ANDROID_BUILD_TOOLS="$ANDROID_HOME/build-tools/35.0.0" \
+          SELMA_KEYSTORE="$key_dir/ci.p12" SELMA_KEYPASS_FILE="$key_dir/pass" \
+          SELMA_APK_BASENAME=SelmaHome-0.4.0-ci-test \
+            ./SELMAHOME_ANDROID_V040/build-host.sh "$RUNNER_TEMP/selma-home-build"
+          python tools/verify_selmahome_apk.py \
+            --apk "$RUNNER_TEMP/selma-home-build/SelmaHome-0.4.0-ci-test.apk" \
+            --source SELMAHOME_ANDROID_V040 \
+            --rebuilt-dex "$RUNNER_TEMP/selma-home-build/dex/classes.dex" \
+            --apksigner "$ANDROID_HOME/build-tools/35.0.0/apksigner" \
+            --expected-package org.selma.home \
+            --json-output "$RUNNER_TEMP/selma-home-build/verification.json"
+          sha256sum "$RUNNER_TEMP/selma-home-build/SelmaHome-0.4.0-ci-test.apk" > "$RUNNER_TEMP/selma-home-build/SelmaHome-0.4.0-ci-test.apk.sha256"
       - name: Upload Selma APK
         uses: actions/upload-artifact@v4
         with:
@@ -95,5 +121,15 @@ jobs:
           path: |
             SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk
             SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk.sha256
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload Selma Home verification build
+        uses: actions/upload-artifact@v4
+        with:
+          name: SelmaHome-0.4.0-ci-test-signed
+          path: |
+            ${{ runner.temp }}/selma-home-build/SelmaHome-0.4.0-ci-test.apk
+            ${{ runner.temp }}/selma-home-build/SelmaHome-0.4.0-ci-test.apk.sha256
+            ${{ runner.temp }}/selma-home-build/verification.json
           if-no-files-found: error
           retention-days: 30

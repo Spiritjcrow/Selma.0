@@ -46,7 +46,34 @@ workflows:
           APK="$CM_BUILD_DIR/SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
           shasum -a 256 "$APK" > "${APK}.sha256"
+      - name: Build and verify Selma Home
+        script: |
+          set -eu
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/share/android-sdk}}"
+          KEY_DIR="$(mktemp -d)"
+          trap 'rm -rf "$KEY_DIR"' EXIT
+          openssl rand -base64 36 | tr -d '\n' > "$KEY_DIR/pass"
+          printf '\n' >> "$KEY_DIR/pass"
+          keytool -genkeypair -storetype PKCS12 -keystore "$KEY_DIR/ci.p12" \
+            -storepass:file "$KEY_DIR/pass" -keypass:file "$KEY_DIR/pass" -alias ci \
+            -dname 'CN=Selma Home CI' -keyalg RSA -keysize 3072 -validity 1
+          ANDROID_JAR="$SDK_ROOT/platforms/android-35/android.jar" \
+          ANDROID_BUILD_TOOLS="$SDK_ROOT/build-tools/35.0.0" \
+          SELMA_KEYSTORE="$KEY_DIR/ci.p12" SELMA_KEYPASS_FILE="$KEY_DIR/pass" \
+          SELMA_APK_BASENAME=SelmaHome-0.4.0-ci-test \
+            "$CM_BUILD_DIR/SELMAHOME_ANDROID_V040/build-host.sh" "$CM_BUILD_DIR/SELMAHOME_ANDROID_V040/build/codemagic"
+          python3 "$CM_BUILD_DIR/tools/verify_selmahome_apk.py" \
+            --apk "$CM_BUILD_DIR/SELMAHOME_ANDROID_V040/build/codemagic/SelmaHome-0.4.0-ci-test.apk" \
+            --source "$CM_BUILD_DIR/SELMAHOME_ANDROID_V040" \
+            --rebuilt-dex "$CM_BUILD_DIR/SELMAHOME_ANDROID_V040/build/codemagic/dex/classes.dex" \
+            --apksigner "$SDK_ROOT/build-tools/35.0.0/apksigner" \
+            --expected-package org.selma.home \
+            --json-output "$CM_BUILD_DIR/SELMAHOME_ANDROID_V040/build/codemagic/verification.json"
+          shasum -a 256 "$CM_BUILD_DIR/SELMAHOME_ANDROID_V040/build/codemagic/SelmaHome-0.4.0-ci-test.apk" > "$CM_BUILD_DIR/SELMAHOME_ANDROID_V040/build/codemagic/SelmaHome-0.4.0-ci-test.apk.sha256"
     artifacts:
       - SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/*.apk
       - SELMA0_ANDROID_NATIVE_V1/app/build/outputs/apk/debug/*.sha256
       - SELMA0_ANDROID_NATIVE_V1/app/build/reports/lint-results-debug.html
+      - SELMAHOME_ANDROID_V040/build/codemagic/*.apk
+      - SELMAHOME_ANDROID_V040/build/codemagic/*.sha256
+      - SELMAHOME_ANDROID_V040/build/codemagic/verification.json

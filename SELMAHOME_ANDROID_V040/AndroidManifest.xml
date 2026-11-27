@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.selma.home" android:versionCode="5" android:versionName="0.4.0">
+ <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="35"/>
+ <uses-permission android:name="android.permission.INTERNET"/>
+ <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+ <queries><intent><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent></queries>
+ <application android:label="Selma° Home" android:icon="@drawable/selma" android:allowBackup="false" android:theme="@android:style/Theme.Material.NoActionBar">
+ <service android:name="org.selma.home.ToasterDream" android:label="Selma Blank Screen" android:permission="android.permission.BIND_DREAM_SERVICE" android:exported="true"><intent-filter><action android:name="android.service.dreams.DreamService"/></intent-filter></service>
+ <service android:name="org.selma.home.ReviewJob" android:exported="true" android:permission="android.permission.BIND_JOB_SERVICE"/>
+ <activity android:name="org.selma.home.Desktop" android:exported="true" android:launchMode="singleTask" android:windowSoftInputMode="adjustResize">
+ <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.HOME"/><category android:name="android.intent.category.DEFAULT"/></intent-filter>
+ <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+ </activity></application></manifest>
