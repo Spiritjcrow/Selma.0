@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+DATA_ROOT="$DATA_HOME/selmaos"
+RUNTIME_ROOT="$DATA_ROOT/runtime"
+
+test -f "$RUNTIME_ROOT/selma0_runtime_command_core_android_v1.py"
+mkdir -p "$DATA_ROOT/state"
+export SELMA0_BASE_V1="$DATA_ROOT/state"
+export SELMA0_HOST_V1="127.0.0.1"
+export SELMA0_PORT_V1="8765"
+cd "$RUNTIME_ROOT"
+exec python3 selma0_runtime_command_core_android_v1.py

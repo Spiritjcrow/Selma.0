@@ -7,6 +7,10 @@ __pycache__/
 *.gguf
 *.bin
 *.onnx
+!SELMAHOME_ANDROID_V040/assets/tok.bin
+*.p12
+*.keystore
+*.jks
 SELMA0_ANDROID_AGENT_V1/selma0_data_android_v1/
 .gradle/
 **/.gradle/

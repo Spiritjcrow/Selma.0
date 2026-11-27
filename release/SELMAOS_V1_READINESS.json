@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "release": "1.0.0-rc1",
+  "assessment_date": "2026-11-26",
+  "status": "release_candidate",
+  "stable_launch_readiness_percent": 75,
+  "repository": "Spiritjcrow/Selma.0",
+  "pull_request": 130,
+  "tested_local_commit": "6183622dcfad56051706e84cd4d00e2e7108d803",
+  "published_remote_implementation_commit": "19b6b27a04020fd2e9f4bb9c6f3c58cbd2c1bb1a",
+  "implementation_tree": "781b2d9d91dd393cf4a3df8adb07e9c4a1213af6",
+  "scores": [
+    {"area": "scope_architecture", "weight": 10, "earned": 10},
+    {"area": "shared_runtime_data", "weight": 20, "earned": 18},
+    {"area": "android_native_shell", "weight": 20, "earned": 15},
+    {"area": "chromebook_package", "weight": 15, "earned": 11},
+    {"area": "security_offline_controls", "weight": 15, "earned": 14},
+    {"area": "build_release_automation", "weight": 10, "earned": 7},
+    {"area": "hardware_qualification", "weight": 10, "earned": 0}
+  ],
+  "evidence": {
+    "unique_tests_passed": 150,
+    "agent_and_security_tests_passed": 87,
+    "repository_platform_release_tests_passed": 61,
+    "foundation_tests_passed": 2,
+    "runtime_smoke_passed": true,
+    "chromebook_isolated_install_launch_uninstall_passed": true,
+    "support_matrix_current": true,
+    "android_apk_built": true,
+    "owner_apk_signature_verified": true,
+    "android_source_dex_match": true,
+    "android_apk_sha256": "c95185968d34ec6eeaae567afc4f6055ef9e112ad6e045d2c4710c678ab1a14e",
+    "android_apk_size_bytes": 1152563,
+    "android_dex_sha256": "b29fc2bc79feb6902e1084ab887ead1f5dcf11c92ffd81033a48051662905359",
+    "owner_certificate_sha256": "e87d7f0052f8555c97bf75dd6d2475a2cec754c02a8ad0cbb61e377cdd4cbab1",
+    "android_physical_device_qualified": false,
+    "chromebook_physical_device_qualified": false
+  },
+  "third_party_apps": [
+    "com.termux",
+    "org.fdroid.fdroid"
+  ],
+  "blocking_gates": [
+    "android_hardware_install_upgrade_uninstall_home_role_and_recovery",
+    "offline_model_sustained_handset_test",
+    "termux_phone_build_validation",
+    "chromebook_hardware_validation",
+    "restart_low_memory_storage_battery_accessibility_rotation_and_multiwindow",
+    "release_distribution_support_rollback_and_operations"
+  ]
+}

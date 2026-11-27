@@ -31,9 +31,9 @@ COMMAND_ROUTER_V1.registry.register(
 )
 COMMAND_ROUTER_V1.registry.register(
     "selma.chat",
-    lambda message="": base.SELMA0_V1.chat(message),
+    lambda message="", offline_only=False: base.SELMA0_V1.chat(message, offline_only=offline_only),
     risk="write",
-    description="Send a user-approved chat turn through Selma.0; this writes conversation memory and may use the configured online fallback.",
+    description="Send a user-approved chat turn through Selma.0; this writes conversation memory and defaults to strict local-only inference.",
 )
 COMMAND_ROUTER_V1.registry.register(
     "safety.record_incident",
@@ -220,7 +220,7 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
                     raise ValueError("message is required")
                 result = COMMAND_ROUTER_V1.execute(
                     "selma.chat",
-                    {"message": message},
+                    {"message": message, "offline_only": body.get("offline_only", True) is True},
                     approved=body.get("confirmed") is True,
                     request_id=body.get("request_id"),
                 )

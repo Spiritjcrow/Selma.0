@@ -6,10 +6,10 @@ android {
 
     defaultConfig {
         applicationId 'ai.selma.companion'
-        minSdk 26
+        minSdk 30
         targetSdk 35
-        versionCode 1000
-        versionName '0.10.0'
+        versionCode 100000
+        versionName '1.0.0-rc1'
     }
 
     buildTypes {

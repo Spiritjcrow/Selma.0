@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "selection_date": "2026-11-26",
+  "policy": {
+    "installation": "user_initiated_external",
+    "bundled_apks": false,
+    "silent_installation": false,
+    "signature_source_mixing": false
+  },
+  "apps": [
+    {
+      "name": "Termux",
+      "package_id": "com.termux",
+      "role": "SelmaOS local runtime and developer terminal",
+      "integration": "optional_external",
+      "license_spdx": "GPL-3.0-only",
+      "source_url": "https://github.com/termux/termux-app",
+      "install_url": "https://f-droid.org/packages/com.termux/",
+      "bundled": false
+    },
+    {
+      "name": "F-Droid",
+      "package_id": "org.fdroid.fdroid",
+      "role": "Open-source Android application catalog",
+      "integration": "optional_external",
+      "license_spdx": "GPL-3.0-or-later",
+      "source_url": "https://gitlab.com/fdroid/fdroidclient",
+      "install_url": "https://f-droid.org/packages/org.fdroid.fdroid/",
+      "bundled": false
+    }
+  ]
+}
