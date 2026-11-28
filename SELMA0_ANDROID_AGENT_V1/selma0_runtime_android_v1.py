@@ -6,6 +6,10 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from selma0_llm_router_android_v1 import Selma0LLMRouterAndroidV1
+from selma0_continuity_android_v1 import (
+    Selma0ContinuityAndroidV1,
+    validate_modality,
+)
 from selma0_memory_android_v1 import Selma0MemoryAndroidV1
 from selma0_safety_guardian_android_v1 import Selma0SafetyGuardianAndroidV1
 from selma0_reciprocal_empathy_android_v1 import (
@@ -41,38 +45,69 @@ except Exception as exc:
     REPLIKA_SKILL_ERROR_V1 = str(exc)
 
 MEMORY_V1 = Selma0MemoryAndroidV1()
+CONTINUITY_V1 = Selma0ContinuityAndroidV1(MEMORY_V1)
 ROUTER_V1 = Selma0LLMRouterAndroidV1()
 SAFETY_V1 = Selma0SafetyGuardianAndroidV1()
 
 
 class Selma0RuntimeAndroidV1:
-    def chat(self, text):
+    def __init__(self):
+        # Serialize logical turns regardless of text or voice input modality.
+        self._turn_lock = threading.RLock()
+
+    def chat(self, text, modality="text"):
+        modality = validate_modality(modality)
         text = str(text).strip()
         if not text:
             return {"error": "empty message"}
 
-        MEMORY_V1.add("user", text)
-        history = MEMORY_V1.recent(20)
-        messages = [{"role": "system", "content": compose_empathy_system_prompt(SELMA0_SYSTEM_V1, MEMORY_V1)}]
-        for item in history:
-            if item["role"] in ("user", "assistant"):
-                messages.append({"role": item["role"], "content": item["content"]})
+        with self._turn_lock:
+            state = CONTINUITY_V1.assert_provider(ROUTER_V1)
+            tags = {
+                "identity_id": state["identity_id"],
+                "thread_id": state["thread_id"],
+                "context_generation": state["context_generation"],
+                "modality": modality,
+            }
+            MEMORY_V1.add("user", text, tags)
+            history = CONTINUITY_V1.conversation_history(max_messages=40)
+            messages = [{
+                "role": "system",
+                "content": compose_empathy_system_prompt(SELMA0_SYSTEM_V1, MEMORY_V1),
+            }]
+            for item in history:
+                if item["role"] in ("user", "assistant"):
+                    messages.append({"role": item["role"], "content": item["content"]})
 
-        result = ROUTER_V1.reply(messages)
-        MEMORY_V1.add(
-            "assistant",
-            result["text"],
-            {
-                "route": result["route"],
-                "error": result["error"],
-                "empathy": {
-                    "principle_id": SELMA0_EMPATHY_PRINCIPLE_ID_V1,
-                    "intended_impact": "accurate_helpful_respectful",
-                    "observed_impact": "unverified",
+            result = ROUTER_V1.reply(messages, locked_route=state["locked_route"])
+            if result["route"] in ("offline-local", "online-fallback"):
+                CONTINUITY_V1.pin_provider(
+                    result["route"], ROUTER_V1.provider_fingerprint(result["route"])
+                )
+            MEMORY_V1.add(
+                "assistant",
+                result["text"],
+                {
+                    **tags,
+                    "route": result["route"],
+                    "error": result["error"],
+                    "empathy": {
+                        "principle_id": SELMA0_EMPATHY_PRINCIPLE_ID_V1,
+                        "intended_impact": "accurate_helpful_respectful",
+                        "observed_impact": "unverified",
+                    },
                 },
-            },
-        )
-        return result
+            )
+            return {
+                **result,
+                "continuity": CONTINUITY_V1.current(),
+                "modality": modality,
+            }
+
+    def refresh_context(self):
+        """Only call from an approved mutation route; preserves archived events."""
+        with self._turn_lock:
+            return CONTINUITY_V1.refresh_context()
 
     def record_empathy_feedback(self, effect="", context="", action_id=""):
         return record_feedback(MEMORY_V1, effect=effect, context=context, action_id=action_id)
@@ -85,6 +120,9 @@ class Selma0RuntimeAndroidV1:
             "host": SELMA0_HOST_V1,
             "port": SELMA0_PORT_V1,
             "memory_db": MEMORY_V1.db_path,
+            "continuity": CONTINUITY_V1.current(),
+            "supported_conversation_modalities": ["text", "voice"],
+            "voice_audio_adapter_integrated": False,
             "local_llm": ROUTER_V1.local_base,
             "online_fallback_configured": bool(ROUTER_V1.online_base and ROUTER_V1.online_model),
             "safety_guardian": SAFETY_V1.status(),
@@ -158,7 +196,9 @@ class Selma0HTTPAndroidV1(BaseHTTPRequestHandler):
         try:
             body = self.read_json_body()
             if self.path == "/api/selma0/chat/v1":
-                result = SELMA0_V1.chat(body.get("message", ""))
+                result = SELMA0_V1.chat(
+                    body.get("message", ""), modality=body.get("modality", "text")
+                )
                 self.send_json(200 if "error" not in result else 400, result)
                 return
             if self.path == "/api/selma0/replika/preview/v1":
