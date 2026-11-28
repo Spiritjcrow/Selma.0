@@ -8,6 +8,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from selma0_llm_router_android_v1 import Selma0LLMRouterAndroidV1
 from selma0_memory_android_v1 import Selma0MemoryAndroidV1
 from selma0_safety_guardian_android_v1 import Selma0SafetyGuardianAndroidV1
+from selma0_reciprocal_empathy_android_v1 import (
+    PRINCIPLE_ID as SELMA0_EMPATHY_PRINCIPLE_ID_V1,
+    compose_empathy_system_prompt,
+    record_feedback,
+)
 
 SELMA0_HOST_V1 = os.getenv("SELMA0_HOST_V1", "127.0.0.1")
 SELMA0_PORT_V1 = int(os.getenv("SELMA0_PORT_V1", "8765"))
@@ -48,14 +53,29 @@ class Selma0RuntimeAndroidV1:
 
         MEMORY_V1.add("user", text)
         history = MEMORY_V1.recent(20)
-        messages = [{"role": "system", "content": SELMA0_SYSTEM_V1}]
+        messages = [{"role": "system", "content": compose_empathy_system_prompt(SELMA0_SYSTEM_V1, MEMORY_V1)}]
         for item in history:
             if item["role"] in ("user", "assistant"):
                 messages.append({"role": item["role"], "content": item["content"]})
 
         result = ROUTER_V1.reply(messages)
-        MEMORY_V1.add("assistant", result["text"], {"route": result["route"], "error": result["error"]})
+        MEMORY_V1.add(
+            "assistant",
+            result["text"],
+            {
+                "route": result["route"],
+                "error": result["error"],
+                "empathy": {
+                    "principle_id": SELMA0_EMPATHY_PRINCIPLE_ID_V1,
+                    "intended_impact": "accurate_helpful_respectful",
+                    "observed_impact": "unverified",
+                },
+            },
+        )
         return result
+
+    def record_empathy_feedback(self, effect="", context="", action_id=""):
+        return record_feedback(MEMORY_V1, effect=effect, context=context, action_id=action_id)
 
     def status(self):
         return {
@@ -68,6 +88,14 @@ class Selma0RuntimeAndroidV1:
             "local_llm": ROUTER_V1.local_base,
             "online_fallback_configured": bool(ROUTER_V1.online_base and ROUTER_V1.online_model),
             "safety_guardian": SAFETY_V1.status(),
+            "empathy_drive": {
+                "principle_id": SELMA0_EMPATHY_PRINCIPLE_ID_V1,
+                "feedback_mode": "explicit_user_report",
+                "automatic_emotion_inference": False,
+                "enforcement_mode": "mandatory_in_chat",
+                "runtime_disable_switch": False,
+                "scope": "language_model_chat_turns",
+            },
             "replika_migration_skill": {
                 "available": REPLIKA_SKILL_AVAILABLE_V1,
                 "network_access": False,
