@@ -1,5 +1,13 @@
 # Selma.0
 
+## Current execution authority
+
+The [Selma° master execution ledger](docs/architecture/SELMA_MASTER_EXECUTION_LEDGER.md)
+records owner decisions, the provisional activation target, active branches,
+verified vs. unverified implementation states, and the prioritized test gates.
+Coding agents should read [AGENTS.md](AGENTS.md) before changes.
+
+
 Synthetic Consciousness System Operator Assistant Collaborator
 
 ## Active Android build
