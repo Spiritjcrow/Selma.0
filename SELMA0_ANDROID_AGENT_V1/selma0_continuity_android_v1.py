@@ -7,7 +7,6 @@ language-model provider. Explicit owner-approved context refresh is separate.
 
 import hashlib
 import json
-import sqlite3
 import threading
 import time
 import uuid
@@ -37,41 +36,58 @@ class Selma0ContinuityAndroidV1:
 
     def __init__(self, memory):
         self.memory = memory
-        self._lock = threading.RLock()
+        self._lock = getattr(memory, "_lock", threading.RLock())
         with self._lock:
             self.memory.conn.execute(
                 """CREATE TABLE IF NOT EXISTS selma0_instance_v1 (
                     slot TEXT PRIMARY KEY,
                     identity_id TEXT NOT NULL,
+                    thread_id TEXT,
                     context_generation INTEGER NOT NULL,
                     locked_route TEXT,
                     provider_fingerprint TEXT,
                     updated_at REAL NOT NULL
                 )"""
             )
+            # Upgrade a prototype database without changing its established identity.
+            columns = {
+                row[1] for row in self.memory.conn.execute(
+                    "PRAGMA table_info(selma0_instance_v1)"
+                ).fetchall()
+            }
+            if "thread_id" not in columns:
+                self.memory.conn.execute(
+                    "ALTER TABLE selma0_instance_v1 ADD COLUMN thread_id TEXT"
+                )
             self.memory.conn.execute(
                 """INSERT OR IGNORE INTO selma0_instance_v1
-                   (slot, identity_id, context_generation, locked_route,
+                   (slot, identity_id, thread_id, context_generation, locked_route,
                     provider_fingerprint, updated_at)
-                   VALUES ('primary', ?, 0, NULL, NULL, ?)""",
-                (uuid.uuid4().hex, time.time()),
+                   VALUES ('primary', ?, ?, 0, NULL, NULL, ?)""",
+                (uuid.uuid4().hex, uuid.uuid4().hex, time.time()),
+            )
+            self.memory.conn.execute(
+                """UPDATE selma0_instance_v1 SET thread_id=?
+                   WHERE slot='primary' AND thread_id IS NULL""",
+                (uuid.uuid4().hex,),
             )
             self.memory.conn.commit()
 
     def current(self):
         with self._lock:
             row = self.memory.conn.execute(
-                """SELECT identity_id, context_generation, locked_route,
-                          provider_fingerprint
+                """SELECT identity_id, thread_id, context_generation,
+                          locked_route, provider_fingerprint
                    FROM selma0_instance_v1 WHERE slot='primary'"""
             ).fetchone()
             if row is None:
                 raise RuntimeError("Selma instance identity is unavailable")
             return {
                 "identity_id": row[0],
-                "context_generation": row[1],
-                "locked_route": row[2],
-                "provider_fingerprint": row[3],
+                "thread_id": row[1],
+                "context_generation": row[2],
+                "locked_route": row[3],
+                "provider_fingerprint": row[4],
             }
 
     def pin_provider(self, route, fingerprint):
@@ -132,6 +148,7 @@ class Selma0ContinuityAndroidV1:
                 continue
             if (
                 metadata.get("identity_id") == state["identity_id"]
+                and metadata.get("thread_id") == state["thread_id"]
                 and metadata.get("context_generation") == state["context_generation"]
             ):
                 out.append(event)
