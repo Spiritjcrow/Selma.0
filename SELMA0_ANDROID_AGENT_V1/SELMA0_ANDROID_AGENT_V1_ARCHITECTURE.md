@@ -78,6 +78,19 @@ Online access is disabled unless explicitly configured. Set:
 
 If the local endpoint responds, no online request is made.
 
+## Reciprocal empathy cognition (V1)
+
+The base chat runtime composes a fixed, non-autonomous cognition preconfiguration
+from `selma0_reciprocal_empathy_android_v1.py`. It considers the intended
+impact of each response and labels its observed outcome as unverified until
+explicit user feedback is recorded.
+
+The `selma.empathy.feedback` capability is registered as `write` through
+the existing command router. Valid categorical outcomes are stored locally
+with user-reported provenance. Free-text feedback is never inserted into the
+system prompt. This changes neither permissions nor device capabilities.
+See `SELMA0_RECIPROCAL_EMPATHY_V1.md` for behavior, limitations, and tests.
+
 ## Persistent memory
 
 SQLite database:
