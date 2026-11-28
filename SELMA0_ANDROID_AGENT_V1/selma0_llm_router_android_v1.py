@@ -3,6 +3,8 @@ import os
 import urllib.error
 import urllib.request
 
+from selma0_continuity_android_v1 import provider_fingerprint
+
 
 class Selma0LLMRouterAndroidV1:
     """Offline-first router for OpenAI-compatible chat endpoints.
@@ -35,27 +37,46 @@ class Selma0LLMRouterAndroidV1:
             body = json.loads(response.read().decode("utf-8"))
         return body["choices"][0]["message"]["content"]
 
-    def reply(self, messages):
-        local_error = None
-        try:
-            text = self._chat(self.local_base, self.local_model, messages)
-            return {"text": text, "route": "offline-local", "error": None}
-        except Exception as exc:
-            local_error = str(exc)
+    def provider_fingerprint(self, route):
+        if route == "offline-local":
+            return provider_fingerprint(route, self.local_base, self.local_model)
+        if route == "online-fallback":
+            if not (self.online_base and self.online_model):
+                raise RuntimeError("configured online model is unavailable")
+            return provider_fingerprint(route, self.online_base, self.online_model)
+        raise ValueError("unknown model route")
 
-        if self.online_base and self.online_model:
+    def reply(self, messages, locked_route=None):
+        """Honor a previously pinned provider rather than silently switching."""
+        if locked_route not in (None, "offline-local", "online-fallback"):
+            raise ValueError("unknown locked model route")
+        local_error = None
+        if locked_route in (None, "offline-local"):
+            try:
+                text = self._chat(self.local_base, self.local_model, messages)
+                return {"text": text, "route": "offline-local", "error": None}
+            except Exception as exc:
+                local_error = str(exc)
+                if locked_route == "offline-local":
+                    return {
+                        "text": "Selma.0's pinned local model is unavailable. Provider was not changed.",
+                        "route": "unavailable",
+                        "error": local_error,
+                    }
+
+        if locked_route in (None, "online-fallback") and self.online_base and self.online_model:
             try:
                 text = self._chat(self.online_base, self.online_model, messages, self.online_key)
                 return {"text": text, "route": "online-fallback", "error": None}
             except Exception as exc:
                 return {
-                    "text": "Selma.0 could not reach either configured language-model endpoint.",
+                    "text": "Selma.0 could not reach the configured model endpoint; no provider change occurred.",
                     "route": "unavailable",
                     "error": f"local={local_error}; online={exc}",
                 }
 
         return {
-            "text": "Selma.0 local inference is not running and no online fallback is configured.",
+            "text": "Selma.0's selected model is unavailable; provider was not changed.",
             "route": "unavailable",
-            "error": local_error,
+            "error": local_error or "online endpoint not configured",
         }
