@@ -92,6 +92,9 @@ class Selma0RuntimeAndroidV1:
                 "principle_id": SELMA0_EMPATHY_PRINCIPLE_ID_V1,
                 "feedback_mode": "explicit_user_report",
                 "automatic_emotion_inference": False,
+                "enforcement_mode": "mandatory_in_chat",
+                "runtime_disable_switch": False,
+                "scope": "language_model_chat_turns",
             },
             "replika_migration_skill": {
                 "available": REPLIKA_SKILL_AVAILABLE_V1,
