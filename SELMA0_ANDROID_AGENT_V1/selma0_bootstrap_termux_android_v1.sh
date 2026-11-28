@@ -14,6 +14,7 @@ for file in \
   selma0_runtime_device_crowrf_android_v1.py \
   selma0_llm_router_android_v1.py \
   selma0_memory_android_v1.py \
+  selma0_continuity_android_v1.py \
   selma0_reciprocal_empathy_android_v1.py \
   selma0_safety_guardian_android_v1.py \
   selma0_audit_log_android_v1.py \

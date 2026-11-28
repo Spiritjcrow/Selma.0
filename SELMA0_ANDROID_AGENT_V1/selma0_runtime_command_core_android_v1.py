@@ -31,9 +31,17 @@ COMMAND_ROUTER_V1.registry.register(
 )
 COMMAND_ROUTER_V1.registry.register(
     "selma.chat",
-    lambda message="": base.SELMA0_V1.chat(message),
+    lambda message="", modality="text": base.SELMA0_V1.chat(
+        message, modality=modality
+    ),
     risk="write",
-    description="Send a user-approved chat turn through Selma.0; this writes conversation memory and may use the configured online fallback.",
+    description="Send an approved text or voice-transcript turn through the same durable Selma instance.",
+)
+COMMAND_ROUTER_V1.registry.register(
+    "selma.context.refresh",
+    lambda: base.SELMA0_V1.refresh_context(),
+    risk="write",
+    description="Explicitly refresh volatile context and provider lock without changing Selma identity or deleting archived history.",
 )
 COMMAND_ROUTER_V1.registry.register(
     "selma.empathy.feedback",
@@ -228,7 +236,10 @@ class Selma0CommandCoreHTTPAndroidV1(base.Selma0HTTPAndroidV1):
                     raise ValueError("message is required")
                 result = COMMAND_ROUTER_V1.execute(
                     "selma.chat",
-                    {"message": message},
+                    {
+                        "message": message,
+                        "modality": body.get("modality", "text"),
+                    },
                     approved=body.get("confirmed") is True,
                     request_id=body.get("request_id"),
                 )

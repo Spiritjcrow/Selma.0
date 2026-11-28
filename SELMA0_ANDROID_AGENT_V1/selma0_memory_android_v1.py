@@ -1,6 +1,7 @@
 import json
 import os
 import sqlite3
+import threading
 import time
 
 SELMA0_BASE_V1 = os.path.expanduser(os.getenv("SELMA0_BASE_V1", "~/SELMA0_ANDROID_AGENT_V1"))
@@ -12,6 +13,7 @@ os.makedirs(SELMA0_DATA_V1, exist_ok=True)
 class Selma0MemoryAndroidV1:
     def __init__(self, db_path=SELMA0_DB_V1):
         self.db_path = db_path
+        self._lock = threading.RLock()
         self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self.conn.execute("PRAGMA journal_mode=WAL")
         self.conn.execute("PRAGMA synchronous=NORMAL")
@@ -30,18 +32,20 @@ class Selma0MemoryAndroidV1:
 
     def add(self, role, content, metadata=None):
         metadata = metadata or {}
-        self.conn.execute(
-            "INSERT INTO selma0_events_v1(ts, role, content, metadata) VALUES(?,?,?,?)",
-            (time.time(), str(role), str(content), json.dumps(metadata, separators=(",", ":"))),
-        )
-        self.conn.commit()
+        with self._lock:
+            self.conn.execute(
+                "INSERT INTO selma0_events_v1(ts, role, content, metadata) VALUES(?,?,?,?)",
+                (time.time(), str(role), str(content), json.dumps(metadata, separators=(",", ":"))),
+            )
+            self.conn.commit()
 
     def recent(self, limit=24):
         limit = max(1, min(int(limit), 200))
-        rows = self.conn.execute(
-            "SELECT ts,role,content,metadata FROM selma0_events_v1 ORDER BY id DESC LIMIT ?",
-            (limit,),
-        ).fetchall()
+        with self._lock:
+            rows = self.conn.execute(
+                "SELECT ts,role,content,metadata FROM selma0_events_v1 ORDER BY id DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
         rows.reverse()
         return [
             {"ts": r[0], "role": r[1], "content": r[2], "metadata": json.loads(r[3])}
@@ -49,5 +53,6 @@ class Selma0MemoryAndroidV1:
         ]
 
     def clear(self):
-        self.conn.execute("DELETE FROM selma0_events_v1")
-        self.conn.commit()
+        with self._lock:
+            self.conn.execute("DELETE FROM selma0_events_v1")
+            self.conn.commit()
