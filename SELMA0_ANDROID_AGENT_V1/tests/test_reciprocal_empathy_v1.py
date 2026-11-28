@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """Portable, offline unit tests for Selma's Reciprocal Empathy Principle."""
+import os
 import sys
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 AGENT_ROOT = Path(__file__).resolve().parents[1]
 if str(AGENT_ROOT) not in sys.path:
     sys.path.insert(0, str(AGENT_ROOT))
 
+import selma0_reciprocal_empathy_android_v1 as empathy_policy
+
 from selma0_reciprocal_empathy_android_v1 import (
+    ENFORCEMENT_MODE,
     PRINCIPLE_ID,
     compose_empathy_system_prompt,
     record_feedback,
@@ -37,6 +42,39 @@ class ReciprocalEmpathyTests(unittest.TestCase):
         self.assertIn("Actions echo. That echo is the return.", prompt)
         self.assertIn("Do not infer guilt", prompt)
         self.assertNotIn("Recent explicitly reported", prompt)
+
+    def test_guidance_cannot_be_switched_off_by_environment(self):
+        with patch.dict(os.environ, {
+            "SELMA0_EMPATHY_ENABLED": "0",
+            "SELMA0_EMPATHY_DISABLED": "1",
+            "SELMA0_SYSTEM_PROMPT_V1": "",
+        }):
+            prompt = compose_empathy_system_prompt("", self.memory)
+        self.assertEqual(ENFORCEMENT_MODE, "mandatory_in_chat")
+        self.assertIn(PRINCIPLE_ID, prompt)
+        self.assertIn("Respect existing permissions", prompt)
+
+    def test_missing_mandatory_guidance_fails_closed(self):
+        with patch.object(empathy_policy, "SYSTEM_GUIDANCE", ""):
+            with self.assertRaisesRegex(RuntimeError, "mandatory reciprocal empathy"):
+                compose_empathy_system_prompt("Base", self.memory)
+
+    def test_negative_feedback_cannot_disable_empathy(self):
+        record_feedback(self.memory, "resistance", context="Explicit report")
+        prompt = compose_empathy_system_prompt("Base", self.memory)
+        self.assertIn("Actions echo. That echo is the return.", prompt)
+        self.assertIn("Do not infer guilt", prompt)
+        self.assertIn("resistance", prompt)
+
+    def test_chat_runtime_unconditionally_composes_empathy_context(self):
+        runtime_source = (AGENT_ROOT / "selma0_runtime_android_v1.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "compose_empathy_system_prompt(SELMA0_SYSTEM_V1, MEMORY_V1)",
+            runtime_source,
+        )
+        self.assertIn('"runtime_disable_switch": False', runtime_source)
 
     def test_explicit_feedback_is_categorized_and_provenanced(self):
         result = record_feedback(
