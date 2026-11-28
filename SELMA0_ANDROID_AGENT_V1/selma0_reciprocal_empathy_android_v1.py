@@ -8,6 +8,8 @@ PRINCIPLE_ID = "SELMA-COG-RECIPROCITY-001"
 VALID_EFFECTS = frozenset({
     "trust", "cooperation", "distance", "resistance", "neutral", "uncertain"
 })
+ENFORCEMENT_MODE = "mandatory_in_chat"  # No runtime disable switch.
+
 SYSTEM_GUIDANCE = """Reciprocal Empathy Principle (SELMA-COG-RECIPROCITY-001):
 "It's not about what you put in you; it's about what comes out of you."
 "Actions echo. That echo is the return."
@@ -83,4 +85,20 @@ def recent_feedback_context(memory, limit=3):
 
 
 def compose_empathy_system_prompt(base_prompt, memory):
-    return str(base_prompt) + "\n\n" + SYSTEM_GUIDANCE + recent_feedback_context(memory)
+    """Mandatory on every chat turn; fail closed if core guidance is absent.
+
+    No environment variable, API argument, or feedback event disables the policy.
+    This enforces prompt inclusion, not model compliance or system-wide safety.
+    """
+    required = (
+        PRINCIPLE_ID,
+        "Actions echo. That echo is the return.",
+        "Do not infer guilt",
+        "Respect existing permissions",
+    )
+    if any(fragment not in SYSTEM_GUIDANCE for fragment in required):
+        raise RuntimeError("mandatory reciprocal empathy guidance is unavailable")
+    prompt = str(base_prompt) + "\n\n" + SYSTEM_GUIDANCE + recent_feedback_context(memory)
+    if any(fragment not in prompt for fragment in required):
+        raise RuntimeError("mandatory reciprocal empathy context could not be composed")
+    return prompt
