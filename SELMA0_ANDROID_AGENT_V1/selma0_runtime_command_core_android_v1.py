@@ -36,6 +36,14 @@ COMMAND_ROUTER_V1.registry.register(
     description="Send a user-approved chat turn through Selma.0; this writes conversation memory and may use the configured online fallback.",
 )
 COMMAND_ROUTER_V1.registry.register(
+    "selma.empathy.feedback",
+    lambda effect="", context="", action_id="": base.SELMA0_V1.record_empathy_feedback(
+        effect=effect, context=context, action_id=action_id
+    ),
+    risk="write",
+    description="Record an explicit user-reported interaction outcome, without inferring guilt, intentions, or emotions.",
+)
+COMMAND_ROUTER_V1.registry.register(
     "safety.record_incident",
     lambda summary="", details=None, source="user_report", confidence=None, include_device_snapshot=False: base.SAFETY_V1.record_incident(
         summary=summary,
