@@ -51,12 +51,13 @@ evidence, privacy/permission controls, or the user's explicit current decisions.
 - Repository: `Spiritjcrow/Selma.0`.
 - `main` head at inspection: `472d6eb63ccee24b9c80914857148ae09e726562`.
 - Android/Termux implementation path: `SELMA0_ANDROID_AGENT_V1/`.
-- Existing main SQLite memory stores conversational events but does **not**
-  persist a stable single-logical-instance identifier or a text/voice
-  handoff contract (inspected source as of this snapshot).
-- The current language-model router may select offline-local inference or
-  an explicitly configured online fallback. Unless pinned, this can change
-  the model/provider experience.
+- The original `main` runtime SQLite memory stores conversational events but
+  does **not** persist a stable single-logical-instance identifier or a
+  text/voice handoff contract. Draft PR #135 adds these in source; it is
+  **not merged or deployed**.
+- The original `main` language-model router can fall back to online inference
+  without a persistent route pin. Draft PR #135 adds a route/configuration
+  lock in source; it does not prove identical remote model weights.
 - `docs/architecture/CURRENT_STATE.md` and `EXECUTION_TRACKER.md` are
   historical snapshots, not a fresh verification of all present branches.
 
@@ -66,7 +67,7 @@ evidence, privacy/permission controls, or the user's explicit current decisions.
 | --- | --- | --- | --- |
 | Reciprocal Empathy Drive V1 | [Draft PR #132](https://github.com/Spiritjcrow/Selma.0/pull/132), head `7ed9a0234127db1fcb1915a0d1ed9c789628d04d` | **coded_unmerged** | Mandatory chat-prompt composition, explicit categorized feedback, write approval; focused tests reported locally. Full regression, working CI, model behavior and device tests pending. |
 | Empathy policy on non-chat agents and device commands | [Issue #133](https://github.com/Spiritjcrow/Selma.0/issues/133) | **pending** | Map all paths; add enforceable policy boundaries, tests and rollout proof. |
-| Text↔voice single-logical-instance continuity | Branch `feature/selma-unified-instance-continuity-20261128`, commit `4f2f037d3cde15a4c44f7ed357625d4dba00f5af` | **prototype** | A standalone SQLite identity/continuity module is committed. It is **not yet wired** into chat, voice, model routing or the command core; no end-to-end handoff test. |
+| Text↔voice single-logical-instance continuity | [Draft PR #135](https://github.com/Spiritjcrow/Selma.0/pull/135), head `71ffa5b1534fec24a5b53fe5de33a6219dbe6a53` | **coded_unmerged** | Shared logical chat/voice-transcript route and SQLite identity/thread are wired in source, provider pinning and gated context refresh are added. Seven regression tests are committed but **not executed** in a full checkout; physical voice ASR/TTS, CI and device tests pending. Stacked on PR #132. |
 | CI and build evidence | GitHub Actions runs attached to PR #132 | **blocked** | Prior checks reported failed jobs with empty steps and no retrievable logs; no successful end-to-end CI evidence for this feature. |
 | Offline real inference, APK installation, voice loop, owner-device handoff | No new passing evidence in this snapshot | **pending** | Separate model, Android, live voice and on-device validation gates. |
 
@@ -132,12 +133,14 @@ Next 1–3 concrete actions:
 ## Decision / reconciliation log
 
 - **2026-11-28:** Consolidated the project continuity rules and source
-  snapshot. Retained 2026-12-19 as a provisional milestone. A branch
-  containing the first continuity module exists, but runtime voice/text
-  integration and physical validation have **not** occurred. The empathy
+  snapshot. Retained 2026-12-19 as a provisional milestone. Draft PR #135 now contains the source integration for shared text/voice
+  **transcript** chat, while actual microphone/ASR/TTS integration, complete
+  regression execution and physical validation have **not** occurred. The empathy
   implementation remains an unmerged draft; future work must preserve the
   distinction between chat-only prompt policy and whole-platform enforcement.
 
 **Maintenance note:** This ledger is intended to become current through
 evidence-backed updates. It is not an automated synchronization service;
 out-of-date entries must be reconciled against GitHub before action.
+
+- **2026-11-28, later update:** Created stacked [draft PR #135](https://github.com/Spiritjcrow/Selma.0/pull/135) with runtime continuity wiring, model route pin, context refresh gate, Termux bootstrap update, and seven new tests. These changes have only source-level commit verification; CI, complete regression, real voice and Android checks remain pending. Main branch still has no integrated voice continuity.
