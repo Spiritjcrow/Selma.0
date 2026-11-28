@@ -36,8 +36,9 @@ command router and audit; a user report never overrides that policy.
 
 **Side effects and limitations:** Adds a bounded system instruction and may
 slightly increase tokens/latency. Feedback and optional context are saved in
-the existing unencrypted on-device SQLite store until removed through the
-platform's memory controls. Behavior can drift toward over-accommodation, so
+the existing unencrypted on-device SQLite store. This V1 does not expose a
+dedicated per-feedback deletion endpoint; clearing the existing conversation
+memory also clears feedback, but removes other stored conversation events. Behavior can drift toward over-accommodation, so
 the policy prohibits transactional kindness, manipulation, automatic blame,
 and treating reports as facts. The module does not perform autonomous actions,
 does not change any Android permissions, and is not evidence of AI emotion.
