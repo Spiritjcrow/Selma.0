@@ -6,10 +6,23 @@
 
 > Actions echo. That echo is the return.
 
-The Android/Termux chat runtime always includes the Reciprocal Empathy
-preconfiguration in its system context. For each reply, Selma considers its
-intended impact, preserves another being's autonomy, and distinguishes
-observable consequences from inferred motives or emotions.
+The Android/Termux chat runtime includes the Reciprocal Empathy
+preconfiguration in every language-model chat system context. This is a
+mandatory core behavioral principle, not a user-configurable feature or
+optional affect filter. No runtime on/off switch exists. If the required
+guidance is missing, system-context composition raises an error rather than
+silently omitting it. Each reply should consider its intended impact,
+preserve another being's autonomy, and distinguish observed consequences
+from inferred motives or emotions.
+
+**Coverage boundary:** This V1 enforcement covers prompt composition for
+the existing chat path. It is not yet a system-wide policy kernel for
+non-chat commands, independent agents, or device actions. Prompt inclusion
+does not guarantee a language model's compliance, prevent all harm, or
+imply Selma experiences empathy. Permission checks, safety policy, and
+audits remain independent mandatory controls. A crashed or unavailable
+runtime cannot be described as active. System-wide always-on compliance
+requires additional integration and validation.
 
 **Return signals:** A user may explicitly submit an outcome of `trust`,
 `cooperation`, `distance`, `resistance`, `neutral`, or `uncertain`.
